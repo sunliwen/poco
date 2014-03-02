@@ -2,7 +2,7 @@ import json
 from elasticsearch import Elasticsearch
 
 
-items_path = "/Users/jacobfan/projects/ElasticSearchDemo/data/201312/items.json"
+#items_path = "/Users/jacobfan/projects/ElasticSearchDemo/data/201312/items.json"
 
 
 def load_items(items_path):
@@ -14,7 +14,7 @@ def load_items(items_path):
 
 
 # TODO: handling elasticsearch.exceptions.ConnectionError
-def run():
+def run(items_path):
     count = 0
     print "Begin Loading ..."
     items = load_items(items_path)
