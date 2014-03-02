@@ -1,0 +1,70 @@
+.legend-player {
+  background-color: black;
+  height: 500px;
+}
+
+.legend-player-addon {
+
+}
+
+.resource-sibling {
+  padding:15px;
+}
+
+.resource-list {
+}
+
+.resource-list-nav {
+  width: 25px;
+  height: 90px;
+  margin-top: 5px;
+  background-color: green;
+  font-size: 150%;
+  text-align: center;
+}
+
+.resource-list-nav.left {
+}
+
+.resource-list-nav.right {
+
+}
+
+/* how to select i? */
+.resource-list-nav.left,
+.resource-list-nav.right,{
+  font-size: 150%;
+}
+
+.legend-player-addon .resource-list {
+  height: 120px;
+  min-width: 940px;
+  margin-left: 4px;
+}
+
+
+.legend-resource-item-group {
+  height: 120px;
+}
+
+
+.legend-resource-item-group .thumbnail {
+  margin: 0!important;
+  background-color: transparent!important;
+}
+
+.legend-resource-item-group .info {
+text-align:center; margin:0;
+}
+
+.comment-user {
+  width:50px;height:50px;padding-top:15px;
+}
+
+.comment-text {
+  padding-left:5px;width:750px; min-height:50px;
+}
+
+.comment-group {
+  padding-top:15px
+}

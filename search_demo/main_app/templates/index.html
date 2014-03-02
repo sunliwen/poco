@@ -1,1 +1,483 @@
-Hello World!
+{% load staticfiles %}
+{% load bootstrap_pagination %}
+{% load i18n %}
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>产品搜索</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
+    <link href="{% static 'css/font-awesome.min.css' %}" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link rel="stylesheet" href="{% static 'css/tree.css' %}">
+    <link href="{% static 'css/non-responsive.css' %}" rel="stylesheet">
+    <link href="{% static 'css/main.css' %}" rel="stylesheet">
+    <link href="{% static 'css/page2.css' %}" rel="stylesheet">
+
+    <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+      <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  </head>
+
+  <body class="page2_1">
+
+    <div class="navbar navbar-inverse navbar-fixed-top legend-shadow" role="navigation">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="#" style="color:white">产品搜索</a>
+        </div>
+        <div class="collapse navbar-collapse">
+          <ul class="nav navbar-nav navbar-right">
+            <li class="active"><a href="#">首页</a></li>
+            <li><a href="#">全部资源</a></li>
+            <li><a href="#">欢迎！username</a></li>
+            <li><a href="#">进入个人中心</a></li>
+            <li><a href="#">帮助与反馈</a></li>
+          </ul>
+        </div><!--/.nav-collapse -->
+      </div>
+    </div>
+
+    <div class="container">
+
+      <div class="row upper">
+
+        <!-- logo block -->
+
+        <div class="col-xs-3 legend-header-resource legend-tree-enable">
+          <div class="row">
+            <div class="col-xs-12" style="color: white;background-color:#50a4d0;height:90px; font-size: 150%; text-align: center;padding-top: 20px;">
+              全部资源<br>
+              <i class="legend-header-tree-arrow fa fa-chevron-down"></i>
+              <span>
+            </div>
+          </div>
+
+          <div class="row tree">
+
+          <!-- LEFT NAV TREE START -->
+
+            <div class="all-sort-list legend-header-tree" style=" background-color: #FAFAFA; display: none; border: 2px solid grey">
+              <div class="item bo">
+                <h3><i class="fa fa-chevron-right"></i> <a href="#">Cat1</a>、<a href="#">Cat2</a>、<a href="#">Cat3</a></h3>
+                <div class="item-list clearfix">
+                  <div class="close">x</div>
+                  <div class="subitem">
+                    <dl class="fore1">
+                      <dt><a href="#">Cat1-1</a></dt>
+                      <dd><em><a href="#">Cat1-1-1</a></em><em><a href="#">Cat1-1-2</a></em><em><a href="#">Cat1-1-3</a></em><em><a href="#">Cat1-1-4</a></em><em><a href="#">Cat1-1-5</a></em><em><a href="#">Cat1-1-6</a></em><em><a href="#">Cat1-1-7</a></em></dd>
+                    </dl>
+                    <dl class="fore2">
+                      <dt><a href="#">Cat1-2</a></dt>
+                      <dd><em><a href="#">Cat1-2-1</a></em><em><a href="#">Cat1-2-2</a></em><em><a href="#">Cat1-2-3</a></em><em><a href="#">Cat1-2-4</a></em><em><a href="#">Cat1-2-5</a></em><em><a href="#">Cat1-2-6</a></em></dd>
+                    </dl>
+                    <dl class="fore3">
+                      <dt><a href="#">Cat2-1</a></dt>
+                      <dd><em><a href="#">Cat2-1-1</a></em><em><a href="#">Cat2-1-2</a></em><em><a href="#">Cat2-1-3</a></em><em><a href="#">Cat2-1-4</a></em></dd>
+                    </dl>
+                    <dl class="fore4">
+                      <dt>Cat3-1</dt>
+                      <dd><em><a href="#">Cat3-1-1</a></em><em><a href="#">Cat3-1-2</a></em><em><a href="#">Cat3-1-3</a></em><em><a href="#">Cat3-1-4</a></em><em><a href="#">Cat3-1-5</a></em></dd>
+                    </dl>
+                    <dl class="fore5">
+                      <dt>Cat3-2</dt>
+                      <dd><em><a href="#">Cat3-2-1</a></em><em><a href="#">Cat3-2-2</a></em><em><a href="#">Cat3-2-3</a></em><em><a href="#">Cat3-2-4</a></em><em><a href="#">Cat3-2-5</a></em><em><a href="#">Cat3-2-6</a></em></dd>
+                    </dl>
+                    <dl class="fore6">
+                      <dt>Cat3-3</dt>
+                      <dd><em><a href="#">Cat3-3-1</a></em><em><a href="#">Cat3-3-2</a></em><em><a href="#">Cat3-3-3</a></em><em><a href="#">Cat3-3-4</a></em></dd>
+                    </dl>
+                    <dl class="fore7">
+                      <dt>Cat3-4</dt>
+                      <dd><em><a href="#">Cat3-4-1</a></em><em><a href="#">Cat3-4-2</a></em><em><a href="#">Cat3-4-3</a></em><em><a href="#">Cat3-4-4</a></em><em><a href="#">Cat3-4-5</a></em><em><a href="#">Cat3-4-6</a></em><em><a href="#">Cat3-4-7</a></em><em><a href="#">Cat3-4-8</a></em><em><a href="#">Cat3-4-9</a></em><em><a href="#">Cat3-4-10</a></em></dd>
+                    </dl>
+                    <dl class="fore8">
+                      <dt>Cat3-5</dt>
+                      <dd><em><a href="#">Cat3-5-1</a></em><em><a href="#">Cat3-5-2</a></em><em><a href="#">Cat3-5-3</a></em><em><a href="#">Cat3-5-4</a></em><em><a href="#">Cat3-5-5</a></em><em><a href="#">Cat3-5-6</a></em><em><a href="#">Cat3-5-7</a></em><em><a href="#">Cat3-5-8</a></em></dd>
+                    </dl>
+                    <dl class="fore9">
+                      <dt>Cat3-6</dt>
+                      <dd><em><a href="#">Cat3-6-1</a></em><em><a href="#">Cat3-6-2</a></em><em><a href="#">Cat3-6-3</a></em><em><a href="#">Cat3-6-4</a></em><em><a href="#">Cat3-6-5</a></em></dd>
+                    </dl>
+                    <dl class="fore10">
+                      <dt>Cat3-7</dt>
+                      <dd><em><a href="#">Cat3-7-1</a></em><em><a href="#">Cat3-7-2</a></em><em><a href="#">Cat3-7-3</a></em></dd>
+                    </dl>
+                    <dl class="fore11">
+                      <dt>Cat3-8</dt>
+                      <dd><em><a href="#">Cat3-8-1</a></em><em><a href="#">Cat3-8-2</a></em><em><a href="#">Cat3-8-3</a></em><em><a href="#">Cat3-8-4</a></em><em><a href="#">Cat3-8-5</a></em></dd>
+                    </dl>
+                  </div>
+                </div>
+              </div>
+              <div class="item">
+                <h3><i class="fa fa-chevron-right"></i> <a href="#">Cat4</a>、<a href="#">Cat5</a>、<a href="#">Cat6</a></h3>
+                <div class="item-list clearfix">
+                  <div class="close">x</div>
+                  <div class="subitem">
+                    <dl class="fore1">
+                      <dt><a href="#">Cat4-1</a></dt>
+                      <dd><em><a href="#">Cat4-1-1</a></em><em><a href="#">Cat4-1-2</a></em><em><a href="#">Cat4-1-3</a></em><em><a href="#">Cat4-1-4</a></em><em><a href="#">Cat4-1-5</a></em><em><a href="#">Cat4-1-6</a></em><em><a href="#">Cat4-1-7</a></em></dd>
+                    </dl>
+                    <dl class="fore2">
+                      <dt><a href="#">Cat4-2</a></dt>
+                      <dd><em><a href="#">Cat4-2-1</a></em><em><a href="#">Cat4-2-2</a></em><em><a href="#">Cat4-2-3</a></em><em><a href="#">Cat4-2-4</a></em><em><a href="#">Cat4-2-5</a></em><em><a href="#">Cat4-2-6</a></em></dd>
+                    </dl>
+                    <dl class="fore3">
+                      <dt><a href="#">Cat5-1</a></dt>
+                      <dd><em><a href="#">Cat5-1-1</a></em><em><a href="#">Cat5-1-2</a></em><em><a href="#">Cat5-1-3</a></em><em><a href="#">Cat5-1-4</a></em></dd>
+                    </dl>
+                    <dl class="fore4">
+                      <dt>Cat5-2</dt>
+                      <dd><em><a href="#">Cat5-2-1</a></em><em><a href="#">Cat5-2-2</a></em><em><a href="#">Cat5-2-3</a></em><em><a href="#">Cat5-2-4</a></em><em><a href="#">Cat5-2-5</a></em></dd>
+                    </dl>
+                    <dl class="fore5">
+                      <dt>Cat5-3</dt>
+                      <dd><em><a href="#">Cat5-3-1</a></em><em><a href="#">Cat5-3-2</a></em><em><a href="#">Cat5-3-3</a></em><em><a href="#">Cat5-3-4</a></em><em><a href="#">Cat5-3-5</a></em><em><a href="#">Cat5-3-6</a></em></dd>
+                    </dl>
+                    <dl class="fore8">
+                      <dt>Cat6-1</dt>
+                      <dd><em><a href="#">Cat6-1-1</a></em><em><a href="#">Cat6-1-2</a></em><em><a href="#">Cat6-1-3</a></em><em><a href="#">Cat6-1-4</a></em><em><a href="#">Cat6-1-5</a></em><em><a href="#">Cat6-1-6</a></em><em><a href="#">Cat6-1-7</a></em><em><a href="#">Cat6-1-8</a></em></dd>
+                    </dl>
+                    <dl class="fore9">
+                      <dt>Cat6-2</dt>
+                      <dd><em><a href="#">Cat6-2-1</a></em><em><a href="#">Cat6-2-2</a></em><em><a href="#">Cat6-2-3</a></em><em><a href="#">Cat6-2-4</a></em><em><a href="#">Cat6-2-5</a></em></dd>
+                    </dl>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          <!-- /LEFT NAV TREE END -->
+
+          </div>
+
+
+        </div>
+
+        <!-- search block -->
+
+        <div class="col-xs-9 legend-header-search" style="height:90px; background-color: white">
+          <form action="{% url 'main_app_v_index' %}" method="GET">
+          <div class="row legend-search" style="padding-top: 15px">
+            <div class="col-xs-2 btn-group pull-left">
+              <button type="button" class="btn btn-default">全部</button>
+              <button type="button" class="btn btn-default btn-warning dropdown-toggle" data-toggle="dropdown">
+                <span class="caret"></span>
+                <span class="sr-only">Toggle Dropdown</span>
+              </button>
+              <ul class="dropdown-menu" role="menu">
+                <li><a href="#">分类1</a></li>
+                <li><a href="#">分类2</a></li>
+                <li><a href="#">分类3</a></li>
+                <li class="divider"></li>
+                <li><a href="#">分类4</a></li>
+              </ul>
+            </div>
+
+            <div class="col-xs-6 input-group pull-left">
+              <input type="text" class="form-control" name="q" value="{{ query_str }}">
+              <span class="input-group-btn">
+                <button class="btn btn-default btn-warning" type="submit">搜索</button>
+              </span>
+            </div><!-- /input-group -->
+
+            <!--
+            <div class="col-xs-2 btn-group pull-left">
+              <button type="button" class="btn btn-default btn-success">高级搜索</button>
+            </div> -->
+
+          </div>
+          </form>
+
+
+          <div class="legend-search-hot row" style="padding-top:10px">
+
+            <div class="col-xs-9">
+              热点字：
+              <a class="btn btn-xs">文字       </a>
+              <a class="btn btn-xs">艺术       </a>
+              <a class="btn btn-xs">浮士德     </a>
+              <a class="btn btn-xs">英语       </a>
+              <a class="btn btn-xs">卫星       </a>
+              <a class="btn btn-xs">虫洞       </a>
+              <a class="btn btn-xs">超马玄理论  </a>
+              <a class="btn btn-xs">诺贝尔      </a>
+              <a class="btn btn-xs">MORE      </a>
+            </div>
+
+          </div> <!-- /.legend-search-hot -->
+
+        </div>
+
+      </div>
+
+      <div class="row legend-breadcrumbs">
+        <ol class="breadcrumb">
+          <li class="glyphicon"><a href="#">首页</a></li>
+          <li class="glyphicon"><a href="#">全部资源</a></li>
+          <li class="glyphicon"><a href="#">一级栏目1</a></li>
+          <li class="glyphicon active">二级栏目1</li>
+        </ol>
+      </div>
+
+      <div class="row bottom" style="height: auto">
+        <div class="col-xs-3 legend-panel-left-dump" style="min-height: 600px">
+
+
+          <div class="row tree">
+
+<div class="panel-group" id="accordion">
+  <div class="panel panel-default">
+    <div class="panel-heading">
+      <a data-toggle="collapse" data-parent="#accordion" href="#collapseOne">
+
+        <h4 class="panel-title">
+            <i class="fa fa-chevron-right"></i> cat2-1
+        </h4>
+      </a>
+
+    </div>
+    <div id="collapseOne" class="panel-collapse collapse in">
+      <div class="panel-body">
+        <ul class="list-unstyled">
+          <li><a href="#"><i class="fa fa-chevron-right"></i> cat2-1-1</a></li>
+          <li><a href="#"><i class="fa fa-chevron-right"></i> cat2-1-2</a></li>
+          <li><a href="#"><i class="fa fa-chevron-right"></i> cat2-1-3</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="panel panel-default">
+
+    <div class="panel-heading">
+      <a data-toggle="collapse" data-parent="#accordion" href="#collapseTwo">
+
+        <h4 class="panel-title">
+            <i class="fa fa-chevron-right"></i> cat2-2
+        </h4>
+      </a>
+
+    </div>
+
+    <div id="collapseTwo" class="panel-collapse collapse">
+      <div class="panel-body">
+        <ul class="list-unstyled">
+          <li><a href="#"><i class="fa fa-chevron-right"></i> cat2-2-1</a></li>
+          <li><a href="#"><i class="fa fa-chevron-right"></i> cat2-2-2</a></li>
+          <li><a href="#"><i class="fa fa-chevron-right"></i> cat2-2-3</a></li>
+          <li><a href="#"><i class="fa fa-chevron-right"></i> cat2-2-4</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="panel panel-default">
+    <div class="panel-heading">
+      <a data-toggle="collapse" data-parent="#accordion" href="#collapseOne">
+
+        <h4 class="panel-title">
+            <i class="fa fa-chevron-right"></i> cat2-3
+        </h4>
+      </a>
+
+    </div>
+    <div id="collapseThree" class="panel-collapse collapse">
+      <div class="panel-body">
+          <li><a href="#"><i class="fa fa-chevron-right"></i> cat2-3-1</a></li>
+          <li><a href="#"><i class="fa fa-chevron-right"></i> cat2-3-2</a></li>
+          <li><a href="#"><i class="fa fa-chevron-right"></i> cat2-3-3</a></li>
+          <li><a href="#"><i class="fa fa-chevron-right"></i> cat2-3-4</a></li>
+      </div>
+    </div>
+  </div>
+</div>
+
+          </div>
+
+        </div>
+
+        <div class="col-xs-9 legend-panel-right" style="min-height: 600px">
+        {% if page %}
+          <div class="row legend-search-result legend-nav">
+
+          <!-- RESULT ORDERS AND VIEWS -->
+            <!-- latest upload/index/reco/result/count/views -->
+
+            <span class="legend-index-item latest pull-left">最新上传</span>
+            <span class="legend-index-item latest pull-left">最新排行</span>
+            <span class="legend-index-item latest pull-left">最新推荐</span>
+            <span class="legend-index-item latest pull-left">搜索结果</span>
+
+            <span class="legend-view-item pull-right"><a data-type="text"><i class="fa fa-align-justify" title="文字"></i></a></span>
+            <span class="legend-view-item pull-right"><a data-type="thumbtext" ><i class="fa fa-th-list"       title="图文"></i></a></span>
+            <span class="legend-view-item pull-right"><a data-type="thumb" class="active"><i class="fa fa-th-large"      title="图片"></i></a></span>
+            <span class="legend-view-item pull-right">共{{ page.paginator.count }}条</span>
+
+          <!-- /RESULT ORDERS AND VIEWS -->
+          </div>
+
+          <div class="row legend-search-result-items legend-view legend-view-thumb" style="">
+
+            {% bootstrap_paginate page range=10 url_param_name="p" show_first_last="true" %}
+            <div style="clear: both"></div>
+            {% for item in page %}
+            <div class="legend-resource-item pull-left">
+              <img class="thumbnail" src="{{ item.image_link }}"></img>
+              <div class="info" style="text-align:center; margin:0px; ">
+               {% if not item.available %}<span style="color: red;">[缺货]</span>{% endif %}
+                <a href="{{ item.item_link }}">{{ item.item_name }}</a>
+                <br>
+                ￥{{ item.price }} 
+                {% if item.price != item.market_price %}
+                <del style="text-decoration: line-through;">{{ item.market_price }}</del>
+                {% endif %}
+              </div>
+            </div>
+            {% endfor %}
+            <div style="clear: both"></div>
+            {% bootstrap_paginate page range=10 url_param_name="p" show_first_last="true" %}         
+
+          </div>
+
+          <div class="row legend-search-result-items legend-view legend-view-thumbtext hidden">
+
+            <div class="legend-resource-item ">
+              <div class="item-thumbnail-info pull-left">
+                <img class="thumbnail" src="statics/images/thumb.png"></img>
+                <div class="info" style="text-align:center; margin:0px; ">
+                  魔戒三部曲
+                </div>
+              </div>
+
+              <div class="item-detail-info pull-left">
+something
+              </div>
+
+
+              <div class="item-buttons pull-right">
+
+                <a class="btn btn-default btn-xs">播放</a>
+                <a class="btn btn-default btn-xs">下载</a>
+                <a class="btn btn-default btn-xs">收藏</a>
+                <a class="btn btn-default btn-xs">剪辑</a>
+                <a class="btn btn-default btn-xs">附件</a>
+                <a class="btn btn-default btn-xs">反馈</a>
+
+              </div>
+            </div>
+
+            <div class="legend-resource-item ">
+              <div class="item-thumbnail-info pull-left">
+                <img class="thumbnail" src="statics/images/thumb.png"></img>
+                <div class="info" style="text-align:center; margin:0px; ">
+                  魔戒三部曲
+                </div>
+              </div>
+
+              <div class="item-detail-info pull-left">
+something
+              </div>
+
+              <div class="item-buttons pull-right">
+
+                <a class="btn btn-default btn-xs">播放</a>
+                <a class="btn btn-default btn-xs">下载</a>
+                <a class="btn btn-default btn-xs">收藏</a>
+                <a class="btn btn-default btn-xs">剪辑</a>
+                <a class="btn btn-default btn-xs">附件</a>
+                <a class="btn btn-default btn-xs">反馈</a>
+
+              </div>
+            </div>
+
+            <div class="legend-resource-item ">
+              <div class="item-thumbnail-info pull-left">
+                <img class="thumbnail" src="statics/images/thumb.png"></img>
+                <div class="info" style="text-align:center; margin:0px; ">
+                  魔戒三部曲
+                </div>
+              </div>
+
+              <div class="item-detail-info pull-left">
+something
+              </div>
+
+              <div class="item-buttons pull-right">
+
+                <a class="btn btn-default btn-xs">播放</a>
+                <a class="btn btn-default btn-xs">下载</a>
+                <a class="btn btn-default btn-xs">收藏</a>
+                <a class="btn btn-default btn-xs">剪辑</a>
+                <a class="btn btn-default btn-xs">附件</a>
+                <a class="btn btn-default btn-xs">反馈</a>
+
+              </div>
+            </div>
+
+
+          </div>
+
+          <div class="row legend-search-result-items legend-view legend-view-text hidden">
+
+            <div class="legend-resource-item ">
+              test
+            </div>
+
+            <div class="legend-resource-item ">
+              test
+            </div>
+
+            <div class="legend-resource-item ">
+              test
+            </div>
+
+          </div>
+
+        </div> <!-- /.lengen-panel-right -->
+     {% endif %}
+      </div>
+
+
+    </div><!-- /.container -->
+
+
+    <!-- Wrap the rest of the page in another container to center all the content. -->
+
+    <div class="container-footer"  style="color: white; background: black; height: 100px;">
+      <div class="container marketing">
+
+        <!-- FOOTER -->
+        <footer style="padding: 20px">
+          <p class="text-center">&copy; 2014 All Rights Reserved.</p>
+        </footer>
+
+      </div><!-- /.container -->
+    </div>
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="statics/js/jquery.min.js"></script>
+    <script src="statics/js/bootstrap.min.js"></script>
+    <script src="statics/js/tree.js"></script>
+    <script src="statics/js/page2.js"></script>
+
+  </body>
+</html>
