@@ -22,13 +22,23 @@
     <link href="{% static 'css/non-responsive.css' %}" rel="stylesheet">
     <link href="{% static 'css/main.css' %}" rel="stylesheet">
     <link href="{% static 'css/page2.css' %}" rel="stylesheet">
+    <!--<link href="{% static 'select2/3.4.5/select2.css' %}" rel="stylesheet"> -->
+    <link href="{% static 'jquery-ui-1.10.4.custom/css/no-theme/jquery-ui-1.10.4.custom.min.css' %}" rel="stylesheet">
 
     <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
     <!--[if lt IE 9]>
       <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
       <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
     <![endif]-->
-  </head>
+
+    <!-- Typeahead css -->
+    <style>
+        ul.ui-autocomplete {
+            background-color: white;
+        }
+    </style>
+
+      </head>
 
   <body class="page2_1">
 
@@ -193,7 +203,7 @@
             </div>
 
             <div class="col-xs-6 input-group pull-left">
-              <input type="text" class="form-control" name="q" value="{{ query_str }}">
+              <input type="text" class="form-control" id="query-input" name="q" value="{{ query_str }}">
               <span class="input-group-btn">
                 <button class="btn btn-default btn-warning" type="submit">搜索</button>
               </span>
@@ -474,10 +484,28 @@ something
     <!-- Bootstrap core JavaScript
     ================================================== -->
     <!-- Placed at the end of the document so the pages load faster -->
-    <script src="statics/js/jquery.min.js"></script>
-    <script src="statics/js/bootstrap.min.js"></script>
-    <script src="statics/js/tree.js"></script>
-    <script src="statics/js/page2.js"></script>
+    <script src="{% static 'js/jquery.min.js' %}"></script>
+    <script src="{% static 'jquery-ui-1.10.4.custom/js/jquery-ui-1.10.4.custom.min.js' %}"></script>
+    <script src="{% static 'js/bootstrap.min.js' %}"></script>
+    <!--<script src="{% static 'select2/3.4.5/select2.min.js' %}"></script> -->
+
+    <script src="{% static 'js/tree.js' %}"></script>
+    <script src="{% static 'js/page2.js' %}"></script>
+
+    <script>
+        // refs: http://stackoverflow.com/questions/21385892/jquery-ui-autocomplete-ajax-example
+        // refs: http://jqueryui.com/autocomplete/
+        $("#query-input").autocomplete({
+            source: function(request, response) {
+                $.getJSON("{% url 'main_app_v_ajax_auto_complete_term' %}", {term: request.term},
+                      function(data) {
+                          console.log([data]);
+                          response(data);
+                      })},
+            minLength: 2
+        }
+        );
+    </script>
 
   </body>
 </html>

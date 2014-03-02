@@ -48,5 +48,7 @@ def run():
         print "Page:", page_num
         page = p.page(page_num)
         for item in page.object_list:
+            print item["item_name_suggest"]
             print item._score, item["item_id"], item["item_name"]
+            break
         print "------------------"

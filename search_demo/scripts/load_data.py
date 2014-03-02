@@ -24,6 +24,7 @@ def run():
         count += 1
         if (count % 50) == 0:
             print count
+        item["item_name_suggest"] = item["item_name"]
         res = es.index(index='item-index', doc_type='item', id=item["item_id"], body=item)
         #print item
     es.indices.refresh(index='item-index')
