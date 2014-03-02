@@ -16,9 +16,10 @@ def v_index(request):
     if query_str:
         #query_str = unicode(query_str
         s = S().indexes("item-index").doctypes("item")
-        query = {"multi_match": {"query": query_str, "operator": "or", 
+        query = {"multi_match": {"query": query_str, "operator": "or",
                              "fields": ["item_name"]}}
         s = s.query_raw(query)
+        s = s.filter(available=True)
         page = Paginator(s, 12).page(page_num)
     else:
         page = None
