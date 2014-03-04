@@ -1,4 +1,5 @@
 import json
+import pprint
 from elasticsearch import Elasticsearch
 from elasticsearch.exceptions import NotFoundError
 
@@ -47,6 +48,12 @@ def createIndex(es):
                )
 
 
+import jieba
+def get_item_name_suggest(item):
+    return {"input": [term for term in jieba.cut_for_search(item["item_name"]) if len(term) > 1],
+            "output": item["item_name"]}
+
+
 # TODO: handling elasticsearch.exceptions.ConnectionError
 # TODO: check elasticsearch array search problem
 def run(items_path):
@@ -61,9 +68,10 @@ def run(items_path):
         count += 1
         if (count % 50) == 0:
             print count
-        item["item_name_suggest"] = item["item_name"]
+        item["item_name_suggest"] = get_item_name_suggest(item)
         del item["_id"]
         item["categories"] = " ".join(item["categories"])
+        #pprint.pprint(item)
         res = es.index(index='item-index', doc_type='item', id=item["item_id"], body=item)
         #print item
     es.indices.refresh(index='item-index')

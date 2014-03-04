@@ -63,6 +63,7 @@ def get_breadcrumbs(category):
 
 
 # refs: http://blog.qbox.io/quick-and-dirty-autocomplete-with-elasticsearch-completion-suggest
+# refs: http://www.elasticsearch.org/blog/you-complete-me/
 def v_ajax_auto_complete_term(request):
     term_prefix = request.GET.get("term", "").strip()
     es = Elasticsearch()
