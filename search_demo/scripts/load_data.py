@@ -14,6 +14,39 @@ def load_items(items_path):
     f.close()
 
 
+def createIndex(es):
+    try:
+        es.indices.delete("item-index")
+    except NotFoundError:
+        pass
+    res = es.indices.create(index="item-index", 
+               #doc_type="item", 
+               body={
+                "settings": {
+                    "number_of_shards": 1
+                 },
+                "mappings": {
+                    "item": {
+                        "properties": {
+                            "available": {"type": "boolean"},
+                            "item_name": {"type": "string"},
+                            "price": {"type": "string"},
+                            "image_link": {"type": "string"},
+                            "item_link": {"type": "string"},
+                            "categories": {"type": "string", "index_name": "category"},
+                            "item_name_suggest": {
+                                "type": "completion",
+                                "index_analyzer": "simple",
+                                "search_analyzer": "simple",
+                                "payloads": False
+                            }
+                        }
+                    }
+                }
+               }
+               )
+
+
 # TODO: handling elasticsearch.exceptions.ConnectionError
 # TODO: check elasticsearch array search problem
 def run(items_path):
@@ -21,16 +54,14 @@ def run(items_path):
     print "Begin Loading ..."
     items = load_items(items_path)
     es = Elasticsearch()
-    try:
-        es.indices.delete("item-index")
-    except NotFoundError:
-        pass
+    createIndex(es)
+
     # TODO: use bulk
     for item in items:
         count += 1
         if (count % 50) == 0:
             print count
-        #item["item_name_suggest"] = item["item_name"]
+        item["item_name_suggest"] = item["item_name"]
         del item["_id"]
         item["categories"] = " ".join(item["categories"])
         res = es.index(index='item-index', doc_type='item', id=item["item_id"], body=item)

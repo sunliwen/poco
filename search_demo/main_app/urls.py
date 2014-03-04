@@ -6,4 +6,4 @@ urlpatterns = patterns('main_app.views',
     # url(r'^$', 'editable_pages_example.views.home', name='home'),
     # url(r'^blog/', include('blog.urls')),
     url(r'^$', 'v_index', name='main_app_v_index'),
-    url(r'^ajax/$', 'v_ajax_auto_complete_term', name='main_app_v_ajax_auto_complete_term'))
+    url(r'^ajax/auto-complete-term/$', 'v_ajax_auto_complete_term', name='main_app_v_ajax_auto_complete_term'))

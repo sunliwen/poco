@@ -4,6 +4,7 @@ import json
 from django.shortcuts import render, render_to_response, redirect
 from django.template import RequestContext
 from django.http import HttpResponse
+from elasticsearch import Elasticsearch
 from elasticutils import S, F
 from django.core.paginator import Paginator
 
@@ -61,15 +62,15 @@ def get_breadcrumbs(category):
     return breadcrumbs
 
 
-terms = ["This is a good",
-         "ABC",
-         "ABDEF",
-         "ABDKK"]
+# refs: http://blog.qbox.io/quick-and-dirty-autocomplete-with-elasticsearch-completion-suggest
 def v_ajax_auto_complete_term(request):
-    term_prefix = request.GET.get("term", None)
-    if term_prefix.strip() == "":
-        term_prefix = None
-    return HttpResponse(json.dumps([term for term in terms if term.startswith(term_prefix)]))
+    term_prefix = request.GET.get("term", "").strip()
+    es = Elasticsearch()
+    res = es.suggest(index="item-index", body={"item_suggest": {"text": term_prefix, "completion": {"field": "item_name_suggest"}}})
+    options = res["item_suggest"][0]["options"]
+    suggested_texts = [option["text"] for option in options]
+    return HttpResponse(json.dumps(suggested_texts))
+
 
 
 CATEGORY_TREE = {u'11': {u'1100': {'name': u'\u65b0\u751f\u513f'},
