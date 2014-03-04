@@ -15,7 +15,7 @@ def run():
                             "price": {"type": "string"},
                             "image_link": {"type": "string"},
                             "item_link": {"type": "string"},
-                            "categories": {"type": "string"},
+                            "categories": {"type": "string", "index_name": "category"},
                             "item_name_suggest": {
                                 "type": "completion",
                                 "index_analyzer": "simple",

@@ -17,7 +17,9 @@ def _run():
     res = es.search(index="item-index", 
                 body={#"explain": False,
                       #"from": 0, "size": 2,
-                      "query": query
+                      #"query": query,
+                      "query": {"term": {"categories": u"13"}},
+                      #"filter": {"term": {"categories": u"13"}}
                       })
     hits = res["hits"]
     if hits["total"] != 0:
@@ -25,6 +27,7 @@ def _run():
         for hit in hits["hits"]:
             _source = hit["_source"]
             print hit["_score"], _source["item_id"], _source["item_name"], "%(market_price)s/%(price)s" % _source
+            print _source["categories"]
     else:
         print "No search result."
 
@@ -37,6 +40,7 @@ def run():
     query = {"multi_match": {"query": query_str, "operator": "or", 
                              "fields": ["item_name"]}}
     s = s.query_raw(query)
+    s = s.filter(categories=u"13")
     #for result in s:
     #    print result["item_id"], result["item_name"]
     p = Paginator(s, 5)
@@ -48,7 +52,7 @@ def run():
         print "Page:", page_num
         page = p.page(page_num)
         for item in page.object_list:
-            print item["item_name_suggest"]
+            #print item["item_name_suggest"]
             print item._score, item["item_id"], item["item_name"]
             break
         print "------------------"
