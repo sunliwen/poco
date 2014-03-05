@@ -48,10 +48,17 @@ def createIndex(es):
                )
 
 
-import jieba
+#import jieba
+#def get_item_name_suggest(item):
+#    return {"input": [term for term in jieba.cut_for_search(item["item_name"]) if len(term) > 1],
+#            "output": item["item_name"]}
 def get_item_name_suggest(item):
-    return {"input": [term for term in jieba.cut_for_search(item["item_name"]) if len(term) > 1],
-            "output": item["item_name"]}
+    input = []
+    for start_idx in range(len(item["item_name"])):
+        term = item["item_name"][start_idx:]
+        if len(term) > 1 and term[0] != " ":
+            input.append(term)
+    return {"input": input, "output": item["item_name"]}
 
 
 # TODO: handling elasticsearch.exceptions.ConnectionError
