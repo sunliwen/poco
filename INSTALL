@@ -1,0 +1,8 @@
+1. Use pip install -r requirements.txt to install required Python packages.
+2. For elasticsearch, please use "git clone git://github.com/medcl/elasticsearch-rtf.git --depth=1" to install.
+   To run elasticsearch:
+      cd elasticsearch/bin/service
+      ./elasticsearch console
+
+3. before running the Django server, please run:
+    python manage.py runscript load_data --script-args=<path/to/items.json>

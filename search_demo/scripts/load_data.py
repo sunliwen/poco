@@ -15,37 +15,83 @@ def load_items(items_path):
     f.close()
 
 
+# refs: https://github.com/medcl/elasticsearch-analysis-pinyin
 def createIndex(es):
     try:
         es.indices.delete("item-index")
     except NotFoundError:
         pass
-    res = es.indices.create(index="item-index", 
-               #doc_type="item", 
-               body={
-                "settings": {
-                    "number_of_shards": 1
-                 },
-                "mappings": {
+    # pinying + ngram
+    # TODO: check alternative options
+    # TODO: check this http://bbs.elasticsearch.cn/discussion/245/elasticsearch-analysis-pinyin%E6%8F%92%E4%BB%B6%E4%BD%BF%E7%94%A8%E9%97%AE%E9%A2%98/p1
+    # TODO: about pinying plugin's different options http://log.medcl.net/item/2012/06/release-elasticsearch-analysis-pinyin/
+    # TODO: check elasticsearch.yml
+    mappings =   {
                     "item": {
                         "properties": {
                             "available": {"type": "boolean"},
-                            "item_name": {"type": "string"},
+                            "item_name": {"type": "multi_field",
+                                          "fields": {
+                                            "item_name": {
+                                                "type": "string",
+                                                "store": "no",
+                                                "term_vector": "with_positions_offsets",
+                                                "analyzer": "pinyin_ngram_analyzer",
+                                                "boost": 10
+                                            },
+                                            "primitive": {
+                                                "type": "string",
+                                                "store": "yes",
+                                                #"analyzer": "keyword"
+                                            }
+                                          }
+                                          },
                             "price": {"type": "string"},
                             "image_link": {"type": "string"},
                             "item_link": {"type": "string"},
                             "categories": {"type": "string", "index_name": "category"},
-                            "item_name_suggest": {
-                                "type": "completion",
-                                "index_analyzer": "simple",
-                                "search_analyzer": "simple",
-                                "payloads": False
-                            }
+                            #"item_name_suggest": {
+                            #    "type": "completion",
+                            #    #"index_analyzer": "simple",
+                            #    #"search_analyzer": "simple",
+                            #    "term_vector": "with_positions_offsets",
+                            #    "index_analyzer": "pinyin_ngram_analyzer",
+                            #    "search_analyzer": "pinyin_ngram_analyzer",
+                            #    "payloads": False
+                            #}
                         }
                     }
                 }
+
+
+    res = es.indices.create(index="item-index", 
+               #doc_type="item", 
+               body={
+                "settings": {
+                    "number_of_shards": 1,
+                 "index" : {
+                    "analysis" : {
+                        "analyzer" : {
+                            "pinyin_ngram_analyzer" : {
+                                "tokenizer" : ["my_pinyin"],
+                                "filter" : ["standard","nGram"] # TODO: check why.
+                            }
+                        },
+                        "tokenizer" : {
+                            "my_pinyin" : {
+                                "type" : "pinyin",
+                                "first_letter" : "prefix",
+                                "padding_char" : ""
+                            }
+                        }
+                    }
+                 }
+                 },
+                 "mappings": mappings
                }
                )
+
+
 
 
 #import jieba
