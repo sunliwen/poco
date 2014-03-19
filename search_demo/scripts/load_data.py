@@ -36,7 +36,8 @@ def createIndex(es):
                                                 "type": "string",
                                                 "store": "no",
                                                 "term_vector": "with_positions_offsets",
-                                                "analyzer": "pinyin_ngram_analyzer",
+                                                #"analyzer": "pinyin_ngram_analyzer",
+                                                "analyzer": "mycn_analyzer_wt_ngram",
                                                 "boost": 10
                                             },
                                             "primitive": {
@@ -50,15 +51,16 @@ def createIndex(es):
                             "image_link": {"type": "string"},
                             "item_link": {"type": "string"},
                             "categories": {"type": "string", "index_name": "category"},
-                            #"item_name_suggest": {
-                            #    "type": "completion",
-                            #    #"index_analyzer": "simple",
-                            #    #"search_analyzer": "simple",
-                            #    "term_vector": "with_positions_offsets",
-                            #    "index_analyzer": "pinyin_ngram_analyzer",
-                            #    "search_analyzer": "pinyin_ngram_analyzer",
-                            #    "payloads": False
-                            #}
+                            "item_name_suggest": {
+                                "type": "completion",
+                                "index_analyzer": "simple",
+                                #"search_analyzer": "simple",
+                                "search_analyzer": "mycn_analyzer_wo_ngram",
+                                #"term_vector": "with_positions_offsets",
+                                #"index_analyzer": "pinyin_ngram_analyzer",
+                                #"search_analyzer": "pinyin_ngram_analyzer",
+                                "payloads": False
+                            }
                         }
                     }
                 }
@@ -75,6 +77,16 @@ def createIndex(es):
                             "pinyin_ngram_analyzer" : {
                                 "tokenizer" : ["my_pinyin"],
                                 "filter" : ["standard","nGram"] # TODO: check why.
+                            },
+                            "mycn_analyzer_wo_ngram": {
+                                "type": "custom",
+                                "tokenizer": "keyword",
+                                "filter": ["my_pinyin_f"]
+                            },
+                            "mycn_analyzer_wt_ngram": {
+                                "type": "custom",
+                                "tokenizer": "keyword",
+                                "filter": ["my_pinyin_f", "ngram_1_to_2"]
                             }
                         },
                         "tokenizer" : {
@@ -82,6 +94,18 @@ def createIndex(es):
                                 "type" : "pinyin",
                                 "first_letter" : "prefix",
                                 "padding_char" : ""
+                            }
+                        },
+                        "filter": {
+                            "ngram_1_to_2": {
+                                "type": "nGram",
+                                "min_gram": 1,
+                                "max_gram": 2
+                            },
+                            "my_pinyin_f": {
+                                "type": "pinyin",
+                                "first_letter": "none",
+                                "padding_char": ""
                             }
                         }
                     }
@@ -98,12 +122,18 @@ def createIndex(es):
 #def get_item_name_suggest(item):
 #    return {"input": [term for term in jieba.cut_for_search(item["item_name"]) if len(term) > 1],
 #            "output": item["item_name"]}
-def get_item_name_suggest(item):
+def get_item_name_suggest(es, item):
+    item_name = item["item_name"]
+    res = es.indices.analyze(index="item-index", text=item_name, analyzer="mycn_analyzer_wo_ngram")
+    converted_item_name = "".join([token["token"] for token in res["tokens"]])
+    #print "CIN:", item_name, converted_item_name
     input = []
-    for start_idx in range(len(item["item_name"])):
-        term = item["item_name"][start_idx:]
+    for start_idx in range(len(converted_item_name)):
+        term = converted_item_name[start_idx:]
         if len(term) > 1 and term[0] != " ":
             input.append(term)
+    #print {"input": input, "output": item["item_name"]}
+    #import sys; sys.exit(1)
     return {"input": input, "output": item["item_name"]}
 
 
@@ -121,7 +151,7 @@ def run(items_path):
         count += 1
         if (count % 50) == 0:
             print count
-        item["item_name_suggest"] = get_item_name_suggest(item)
+        item["item_name_suggest"] = get_item_name_suggest(es, item)
         del item["_id"]
         item["categories"] = " ".join(item["categories"])
         #pprint.pprint(item)

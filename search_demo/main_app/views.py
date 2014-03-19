@@ -65,27 +65,28 @@ def get_breadcrumbs(category):
 
 # refs: http://blog.qbox.io/quick-and-dirty-autocomplete-with-elasticsearch-completion-suggest
 # refs: http://www.elasticsearch.org/blog/you-complete-me/
-#def v_ajax_auto_complete_term(request):
-#    term_prefix = request.GET.get("term", "").strip()
-#    es = Elasticsearch()
-#    res = es.suggest(index="item-index", body={"item_suggest": {"text": term_prefix, "completion": {"field": "item_name_suggest"}}})
-#    options = res["item_suggest"][0]["options"]
-#    suggested_texts = [option["text"] for option in options]
-#    return HttpResponse(json.dumps(suggested_texts))
-
 def v_ajax_auto_complete_term(request):
     term_prefix = request.GET.get("term", "").strip()
     es = Elasticsearch()
-    #res = es.search(index="item-index", doc_type="item", q=term_prefix)
-    res = es.search(index="item-index",
-                    doc_type="item",
-                    body={"query": {"multi_match": {"query": term_prefix, "operator": "and",
-                             "fields": ["item_name"]}},
-                          "filter": {"term": {"available": True}},
-                         })
-    print res
-    suggested_texts = [item["_source"]["item_name"] for item in res.get("hits", {}).get("hits", [])]
+    res = es.suggest(index="item-index", body={"item_suggest": {"text": term_prefix, "completion": {"field": "item_name_suggest"}}})
+    options = res["item_suggest"][0]["options"]
+    suggested_texts = [option["text"] for option in options]
     return HttpResponse(json.dumps(suggested_texts))
+
+
+#def v_ajax_auto_complete_term(request):
+#    term_prefix = request.GET.get("term", "").strip()
+#    es = Elasticsearch()
+#    #res = es.search(index="item-index", doc_type="item", q=term_prefix)
+#    res = es.search(index="item-index",
+#                    doc_type="item",
+#                    body={"query": {"multi_match": {"query": term_prefix, "operator": "and",
+#                             "fields": ["item_name"]}},
+#                          "filter": {"term": {"available": True}},
+#                         })
+#    print res
+#    suggested_texts = [item["_source"]["item_name"] for item in res.get("hits", {}).get("hits", [])]
+#    return HttpResponse(json.dumps(suggested_texts))
 
 
 CATEGORY_TREE = {u'11': {u'1100': {'name': u'\u65b0\u751f\u513f'},
