@@ -100,16 +100,16 @@ def createIndex(es):
                                 "tokenizer": "keyword",
                                 "filter": ["my_pinyin_f", "ngram_1_to_2"]
                             },
-                            "mycn_analyzer_jieba_index": {
-                                "type": "jieba",
-                                #"tokenizer": "my_jieba_index",
-                                "filter": ["my_pinyin_f"]
-                            },
-                            "mycn_analyzer_jieba_search": {
-                                "type": "jieba",
-                                #"tokenizer": "my_jieba_search",
-                                "filter": ["my_pinyin_f"]
-                            },
+                            #"mycn_analyzer_jieba_index": {
+                            #    "type": "jieba",
+                            #    #"tokenizer": "my_jieba_index",
+                            #    "filter": ["my_pinyin_f"]
+                            #},
+                            #"mycn_analyzer_jieba_search": {
+                            #    "type": "jieba",
+                            #    #"tokenizer": "my_jieba_search",
+                            #    "filter": ["my_pinyin_f"]
+                            #},
                             #"mycn_analyzer_mmseg": {
                             #    "type": "custom",
                             #    "tokenizer": "mmseg_maxword",
