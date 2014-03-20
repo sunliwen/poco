@@ -58,7 +58,7 @@ def createIndex(es):
                                 "type": "completion",
                                 "index_analyzer": "simple",
                                 #"search_analyzer": "simple",
-                                "search_analyzer": "mycn_analyzer_wo_ngram",
+                                "search_analyzer": "mycn_analyzer_pinyin_fully",
                                 #"term_vector": "with_positions_offsets",
                                 #"index_analyzer": "pinyin_ngram_analyzer",
                                 #"search_analyzer": "pinyin_ngram_analyzer",
@@ -85,10 +85,15 @@ def createIndex(es):
                             #    "tokenizer" : ["my_pinyin"],
                             #    "filter" : ["standard","nGram"] # TODO: check why.
                             #},
-                            "mycn_analyzer_wo_ngram": {
+                            "mycn_analyzer_pinyin_fully": {
                                 "type": "custom",
                                 "tokenizer": "keyword",
                                 "filter": ["my_pinyin_f"]
+                            },
+                            "mycn_analyzer_pinyin_first_only": {
+                                "type": "custom",
+                                "tokenizer": "keyword",
+                                "filter": ["my_pinyin_first_only"]
                             },
                             "mycn_analyzer_wt_ngram": {
                                 "type": "custom",
@@ -147,7 +152,12 @@ def createIndex(es):
                                 "type": "pinyin",
                                 "first_letter": "none",
                                 "padding_char": ""
-                            }
+                            },
+                            "my_pinyin_first_only": {
+                                "type": "pinyin",
+                                "first_letter": "only",
+                                "padding_char": ""
+                            },
                         }
                     }
                  }
@@ -174,9 +184,11 @@ def createIndex(es):
 
 def get_item_name_suggest(es, item):
     item_name = item["item_name"]
-    res = es.indices.analyze(index="item-index", text=item_name, analyzer="mycn_analyzer_wo_ngram")
+    res = es.indices.analyze(index="item-index", text=item_name, analyzer="mycn_analyzer_pinyin_fully")
     converted_item_name = "".join([token["token"] for token in res["tokens"]])
-    return {"input": [converted_item_name], "output": item["item_name"]}
+    res = es.indices.analyze(index="item-index", text=item_name, analyzer="mycn_analyzer_pinyin_first_only")
+    converted_first_only = "".join([token["token"] for token in res["tokens"]])
+    return {"input": [converted_item_name, converted_first_only], "output": item["item_name"]}
 
 
 import jieba
