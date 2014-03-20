@@ -9,6 +9,35 @@ from elasticutils import S, F
 from django.core.paginator import Paginator
 
 
+import jieba
+def preprocess_query_str(query_str):
+    result = []
+    keywords = [keyword for keyword in query_str.split(" ") if keyword.strip() != ""]
+    for keyword in keywords:
+        cutted_keyword = " ".join(["%s" % term for term in jieba.cut_for_search(keyword)])
+        result.append(cutted_keyword)
+    return result
+
+
+# refs: http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-dsl-bool-query.html
+def construct_query(query_str):
+    processed_keywords = preprocess_query_str(query_str)
+    query = {
+        "bool": {
+            "must": [
+                
+            ]
+        }
+    }
+    for keyword in processed_keywords:
+        sub_query = {"match": {"item_name": {"query": keyword,
+                                         "operator": "and",
+                                         #"fuzziness": "AUTO"
+                                         }}}
+        query["bool"]["must"].append(sub_query)
+    
+    return query
+
 def v_index(request):
     query_str = request.GET.get("q", "")
     page_num = request.GET.get("p", "1")
@@ -20,9 +49,11 @@ def v_index(request):
     s = S().indexes("item-index").doctypes("item")
     query_str = query_str.strip()
     if query_str:
-        query = {"multi_match": {"query": query_str, "operator": "and",
-                             "fields": ["item_name"]}}
+        #query = {"multi_match": {"query": query_str, "operator": "and",
+        #                     "fields": ["item_name"]}}
         #query = {"simple_query_string": {"query": query_str, "fields": ["item_name"], "default_operator": "and"}}
+        query = construct_query(query_str)
+        print "query:", query
         s = s.query_raw(query)
     s = s.filter(available=True)
     if cat:
@@ -38,7 +69,7 @@ def v_index(request):
     else:
         breadcrumbs = get_breadcrumbs(category)
 
-    print breadcrumbs
+    #print breadcrumbs
 
     page = Paginator(s, 12).page(page_num)
 
@@ -250,5 +281,5 @@ def fill_category_to_name(parent_id, id, dict):
             fill_category_to_name(id, key, dict[key])
             CATEGORY_MAP_BY_ID[id]["children"].append(dict[key])
 fill_category_to_name(None, None, CATEGORY_TREE)
-import pprint
-pprint.pprint(CATEGORY_MAP_BY_ID)
+#import pprint
+#pprint.pprint(CATEGORY_MAP_BY_ID)

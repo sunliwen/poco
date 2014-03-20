@@ -37,7 +37,10 @@ def createIndex(es):
                                                 "store": "no",
                                                 "term_vector": "with_positions_offsets",
                                                 #"analyzer": "pinyin_ngram_analyzer",
-                                                "analyzer": "mycn_analyzer_wt_ngram",
+                                                #"analyzer": "mycn_analyzer_wt_ngram",
+                                                #"analyzer": "mycn_analyzer_mmseg",
+                                                #"analyzer": "mycn_analyzer_jieba_index",
+                                                "analyzer": "whitespace_pinyin_analyzer",
                                                 "boost": 10
                                             },
                                             "primitive": {
@@ -74,10 +77,14 @@ def createIndex(es):
                  "index" : {
                     "analysis" : {
                         "analyzer" : {
-                            "pinyin_ngram_analyzer" : {
-                                "tokenizer" : ["my_pinyin"],
-                                "filter" : ["standard","nGram"] # TODO: check why.
+                            "whitespace_pinyin_analyzer": {
+                                "tokenizer": "whitespace",
+                                "filter": ["my_pinyin_f"]
                             },
+                            #"pinyin_ngram_analyzer" : {
+                            #    "tokenizer" : ["my_pinyin"],
+                            #    "filter" : ["standard","nGram"] # TODO: check why.
+                            #},
                             "mycn_analyzer_wo_ngram": {
                                 "type": "custom",
                                 "tokenizer": "keyword",
@@ -87,14 +94,43 @@ def createIndex(es):
                                 "type": "custom",
                                 "tokenizer": "keyword",
                                 "filter": ["my_pinyin_f", "ngram_1_to_2"]
-                            }
+                            },
+                            "mycn_analyzer_jieba_index": {
+                                "type": "jieba",
+                                #"tokenizer": "my_jieba_index",
+                                "filter": ["my_pinyin_f"]
+                            },
+                            "mycn_analyzer_jieba_search": {
+                                "type": "jieba",
+                                #"tokenizer": "my_jieba_search",
+                                "filter": ["my_pinyin_f"]
+                            },
+                            #"mycn_analyzer_mmseg": {
+                            #    "type": "custom",
+                            #    "tokenizer": "mmseg_maxword",
+                            #    "filter": ["my_pinyin_f"]
+                            #},
                         },
                         "tokenizer" : {
                             "my_pinyin" : {
                                 "type" : "pinyin",
                                 "first_letter" : "prefix",
                                 "padding_char" : ""
-                            }
+                            },
+                            #"my_jieba_index": {
+                            #    "type": "jieba",
+                            #    "seg_mode": "index",
+                            #    "stop": "true"
+                            #},
+                            #"my_jieba_search": {
+                            #    "type": "jieba",
+                            #    "seg_mode": "search",
+                            #    "stop": "true"
+                            #},
+                            #"mmseg_maxword": {
+                            #    "type": "mmseg",
+                            #    "seg_type": "max_word" # complex, simple
+                            #}
                         },
                         "filter": {
                             "ngram_1_to_2": {
@@ -102,6 +138,11 @@ def createIndex(es):
                                 "min_gram": 1,
                                 "max_gram": 2
                             },
+                            #"my_jieba_other": {
+                            #    "type": "jieba",
+                            #    "seg_mode": "other",
+                            #    "stop": "true"
+                            #},
                             "my_pinyin_f": {
                                 "type": "pinyin",
                                 "first_letter": "none",
@@ -116,26 +157,36 @@ def createIndex(es):
                )
 
 
+#def get_item_name_suggest(es, item):
+#    item_name = item["item_name"]
+#    res = es.indices.analyze(index="item-index", text=item_name, analyzer="mycn_analyzer_wo_ngram")
+#    converted_item_name = "".join([token["token"] for token in res["tokens"]])
+#    #print "CIN:", item_name, converted_item_name
+#    input = []
+#    for start_idx in range(len(converted_item_name)):
+#        term = converted_item_name[start_idx:]
+#        if len(term) > 1 and term[0] != " ":
+#            input.append(term)
+#    #print {"input": input, "output": item["item_name"]}
+#    #import sys; sys.exit(1)
+#    return {"input": input, "output": item["item_name"]}
 
 
-#import jieba
-#def get_item_name_suggest(item):
-#    return {"input": [term for term in jieba.cut_for_search(item["item_name"]) if len(term) > 1],
-#            "output": item["item_name"]}
 def get_item_name_suggest(es, item):
     item_name = item["item_name"]
     res = es.indices.analyze(index="item-index", text=item_name, analyzer="mycn_analyzer_wo_ngram")
     converted_item_name = "".join([token["token"] for token in res["tokens"]])
-    #print "CIN:", item_name, converted_item_name
-    input = []
-    for start_idx in range(len(converted_item_name)):
-        term = converted_item_name[start_idx:]
-        if len(term) > 1 and term[0] != " ":
-            input.append(term)
-    #print {"input": input, "output": item["item_name"]}
-    #import sys; sys.exit(1)
-    return {"input": input, "output": item["item_name"]}
+    return {"input": [converted_item_name], "output": item["item_name"]}
 
+
+import jieba
+def preprocess_query_str(query_str):
+    result = []
+    keywords = [keyword for keyword in query_str.split(" ") if keyword.strip() != ""]
+    for keyword in keywords:
+        cutted_keyword = " ".join(["%s" % term for term in jieba.cut_for_search(keyword)])
+        result.append(cutted_keyword)
+    return result
 
 # TODO: handling elasticsearch.exceptions.ConnectionError
 # TODO: check elasticsearch array search problem
@@ -154,7 +205,9 @@ def run(items_path):
         item["item_name_suggest"] = get_item_name_suggest(es, item)
         del item["_id"]
         item["categories"] = " ".join(item["categories"])
-        #pprint.pprint(item)
+        item["item_name"] = " ".join(preprocess_query_str(item["item_name"]))
+        #print item["item_name"]
+        #sys.exit(1)
         res = es.index(index='item-index', doc_type='item', id=item["item_id"], body=item)
         #print item
     es.indices.refresh(index='item-index')
