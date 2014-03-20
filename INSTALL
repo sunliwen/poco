@@ -6,3 +6,6 @@
 
 3. before running the Django server, please run:
     python manage.py runscript load_data --script-args=<path/to/items.json>
+
+== mmseg dict file ==
+elasticsearch/config/mmseg
