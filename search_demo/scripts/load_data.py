@@ -46,7 +46,8 @@ def createIndex(es):
                                             "primitive": {
                                                 "type": "string",
                                                 "store": "yes",
-                                                "analyzer": "whitespace"
+                                                #"analyzer": "whitespace"
+                                                "analyzer": "whitespace_lower_analyzer"
                                                 #"analyzer": "keyword"
                                             }
                                           }
@@ -78,10 +79,15 @@ def createIndex(es):
                  "index" : {
                     "analysis" : {
                         "analyzer" : {
+                            "whitespace_lower_analyzer": {
+                                "tokenizer": "whitespace",
+                                "filter": ["lowercase"]
+                            },
                             "whitespace_pinyin_analyzer": {
                                 "tokenizer": "whitespace",
-                                "filter": ["my_pinyin_f"]
+                                "filter": ["lowercase", "my_pinyin_f"]
                             },
+
                             #"pinyin_ngram_analyzer" : {
                             #    "tokenizer" : ["my_pinyin"],
                             #    "filter" : ["standard","nGram"] # TODO: check why.

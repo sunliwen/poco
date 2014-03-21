@@ -22,7 +22,28 @@ def preprocess_query_str(query_str):
 # refs: http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-dsl-bool-query.html
 def construct_query(query_str):
     splitted_keywords = " ".join(preprocess_query_str(query_str))
-    query = {'match': {'item_name': {'query': splitted_keywords, 'operator': "and"}}}
+    #query = {"bool": {
+    #           "should": [
+    #            {'match': {'item_name': {'query': splitted_keywords, 
+    #                                 'operator': "and"}}},
+    #            {"span_first": {'match': {"span_term": {"item_name": ""}}
+    #                            "end": 3
+    #                            }
+    #           ]
+    #         }
+    #        }
+    #query = {'match': {'item_name': {'query': splitted_keywords, 
+    #                                 'operator': "and"}}}
+
+    query = {"bool": {
+                            "should": [
+                                {"match": {"item_name": {"query": splitted_keywords, "operator": "and"}}},
+                                {"match": {"item_name.primitive": {"boost": 2.0, "query": splitted_keywords, "operator": "and"}}}
+                            ],
+                            "minimum_should_match": 1
+                        }
+                    }
+
 
     #processed_keywords = preprocess_query_str(query_str)
     #query = {
@@ -117,7 +138,7 @@ def _getQuerySuggestions(query_str):
     query = {'match': {'item_name': {'query': splitted_keywords, 'operator': "and"}}}
     print "Q:", query
     facets = {'suggested': {'terms': {'exclude': splitted_keywords.split(" ") + COMMON_EXCLUDES,
-                                      'field': 'item_name.primitive', 
+                                      'field': 'item_name.primitive',
                                       'size': 10}}
                             }
     es = Elasticsearch()
