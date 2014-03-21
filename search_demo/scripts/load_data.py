@@ -46,6 +46,7 @@ def createIndex(es):
                                             "primitive": {
                                                 "type": "string",
                                                 "store": "yes",
+                                                "analyzer": "whitespace"
                                                 #"analyzer": "keyword"
                                             }
                                           }

@@ -21,20 +21,23 @@ def preprocess_query_str(query_str):
 
 # refs: http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-dsl-bool-query.html
 def construct_query(query_str):
-    processed_keywords = preprocess_query_str(query_str)
-    query = {
-        "bool": {
-            "must": [
-                
-            ]
-        }
-    }
-    for keyword in processed_keywords:
-        sub_query = {"match": {"item_name": {"query": keyword,
-                                         "operator": "and",
-                                         #"fuzziness": "AUTO"
-                                         }}}
-        query["bool"]["must"].append(sub_query)
+    splitted_keywords = " ".join(preprocess_query_str(query_str))
+    query = {'match': {'item_name': {'query': splitted_keywords, 'operator': "and"}}}
+
+    #processed_keywords = preprocess_query_str(query_str)
+    #query = {
+    #    "bool": {
+    #        "must": [
+    #            
+    #        ]
+    #    }
+    #}
+    #for keyword in processed_keywords:
+    #    sub_query = {"match": {"item_name": {"query": keyword,
+    #                                     "operator": "and",
+    #                                     #"fuzziness": "AUTO"
+    #                                     }}}
+    #    query["bool"]["must"].append(sub_query)
     
     return query
 
@@ -53,7 +56,7 @@ def v_index(request):
         #                     "fields": ["item_name"]}}
         #query = {"simple_query_string": {"query": query_str, "fields": ["item_name"], "default_operator": "and"}}
         query = construct_query(query_str)
-        print "query:", query
+        print "query2:", query
         s = s.query_raw(query)
     s = s.filter(available=True)
     if cat:
@@ -98,11 +101,42 @@ def get_breadcrumbs(category):
 # refs: http://www.elasticsearch.org/blog/you-complete-me/
 def v_ajax_auto_complete_term(request):
     term_prefix = request.GET.get("term", "").strip()
-    es = Elasticsearch()
-    res = es.suggest(index="item-index", body={"item_suggest": {"text": term_prefix, "completion": {"field": "item_name_suggest"}}})
-    options = res["item_suggest"][0]["options"]
-    suggested_texts = [option["text"] for option in options]
+    #es = Elasticsearch()
+    #res = es.suggest(index="item-index", body={"item_suggest": {"text": term_prefix, "completion": {"field": "item_name_suggest"}}})
+    #options = res["item_suggest"][0]["options"]
+    #suggested_texts = [option["text"] for option in options]
+    suggested_terms = _getQuerySuggestions(term_prefix)
+    #suggested_texts = [term_prefix + " %(term)s {%(count)s}" % term for term in suggested_terms]
+    suggested_texts = [term_prefix + " %(term)s" % term for term in suggested_terms]
     return HttpResponse(json.dumps(suggested_texts))
+
+
+COMMON_EXCLUDES = ['+', '-', '(', ')', '/', '个', '组', '（', '）']
+def _getQuerySuggestions(query_str):
+    splitted_keywords = " ".join(preprocess_query_str(query_str))
+    query = {'match': {'item_name': {'query': splitted_keywords, 'operator': "and"}}}
+    print "Q:", query
+    facets = {'suggested': {'terms': {'exclude': splitted_keywords.split(" ") + COMMON_EXCLUDES,
+                                      'field': 'item_name.primitive', 
+                                      'size': 10}}
+                            }
+    es = Elasticsearch()
+    res = es.search(index="item-index", body={"query": query,
+                                              "facets": facets,
+                                              "filter": {"term": {"available": True}}})
+    suggested = res["facets"]["suggested"]
+    if suggested["total"] > 0:
+        print res["hits"]
+        hits_total = res["hits"]["total"]
+        half_hits_total = hits_total / 2.0
+        # Fillter out terms which does not help to narrow down
+        terms = [term for term in suggested["terms"] if term["count"]  < hits_total]
+        # Filter out terms which is
+        #TODO
+        terms.sort(lambda a,b: cmp(abs(a["count"] - half_hits_total), abs(b["count"] - half_hits_total)))
+        return terms
+    else:
+        return []
 
 
 #def v_ajax_auto_complete_term(request):
