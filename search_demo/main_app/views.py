@@ -35,14 +35,15 @@ def construct_query(query_str):
     #query = {'match': {'item_name': {'query': splitted_keywords, 
     #                                 'operator': "and"}}}
 
-    query = {"bool": {
+    query = {
+             "bool": {
                             "should": [
                                 {"match": {"item_name": {"query": splitted_keywords, "operator": "and"}}},
                                 {"match": {"item_name.primitive": {"boost": 2.0, "query": splitted_keywords, "operator": "and"}}}
                             ],
                             "minimum_should_match": 1
                         }
-                    }
+             }
 
 
     #processed_keywords = preprocess_query_str(query_str)
@@ -62,6 +63,15 @@ def construct_query(query_str):
     
     return query
 
+def _getSubCategoriesFacets(cat_id):
+    if cat_id is None:
+        regex = r"\d{2}"
+    elif len(cat_id) == 2: #FIXME: make filter work with facets instead
+        regex = r"%s\d{2}" % cat_id
+    else:
+        return None
+    return {'terms': {'regex': regex, 'field': 'categories', 'size': 20}}
+
 def v_index(request):
     query_str = request.GET.get("q", "")
     page_num = request.GET.get("p", "1")
@@ -73,18 +83,22 @@ def v_index(request):
     s = S().indexes("item-index").doctypes("item")
     query_str = query_str.strip()
     if query_str:
-        #query = {"multi_match": {"query": query_str, "operator": "and",
-        #                     "fields": ["item_name"]}}
-        #query = {"simple_query_string": {"query": query_str, "fields": ["item_name"], "default_operator": "and"}}
         query = construct_query(query_str)
         print "query2:", query
         s = s.query_raw(query)
     s = s.filter(available=True)
+    
+    sub_categories_facets = _getSubCategoriesFacets(cat)
     if cat:
         s = s.filter(categories__in=[cat])
+    if sub_categories_facets:
+        s = s.facet_raw(sub_categories=sub_categories_facets)
+        print s
+        sub_categories_list = [(facet["term"], CATEGORY_MAP_BY_ID[facet["term"]]["name"], facet["count"]) for facet in s.facet_counts().get("sub_categories", [])]
         category = CATEGORY_MAP_BY_ID.get(cat, None)
     else:
         category = CATEGORY_TREE
+        sub_categories_list = []
 
     # TODO: redirect when category is None
     if category is None:
@@ -99,6 +113,7 @@ def v_index(request):
 
     return render_to_response("index.html", 
             {"page": page, "query_str": query_str, "category": category,
+             "sub_categories_list": sub_categories_list,
              "breadcrumbs": breadcrumbs}, 
             RequestContext(request))
 
