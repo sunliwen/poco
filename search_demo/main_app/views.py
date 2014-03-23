@@ -91,13 +91,14 @@ def v_index(request):
     sub_categories_facets = _getSubCategoriesFacets(cat)
     if cat:
         s = s.filter(categories__in=[cat])
-    if sub_categories_facets:
-        s = s.facet_raw(sub_categories=sub_categories_facets)
-        print s
-        sub_categories_list = [(facet["term"], CATEGORY_MAP_BY_ID[facet["term"]]["name"], facet["count"]) for facet in s.facet_counts().get("sub_categories", [])]
         category = CATEGORY_MAP_BY_ID.get(cat, None)
     else:
         category = CATEGORY_TREE
+    if sub_categories_facets:
+        s = s.facet_raw(sub_categories=sub_categories_facets)
+        sub_categories_list = [(facet["term"], CATEGORY_MAP_BY_ID[facet["term"]]["name"], facet["count"]) for facet in s.facet_counts().get("sub_categories", [])]
+    else:
+        
         sub_categories_list = []
 
     # TODO: redirect when category is None
