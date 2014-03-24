@@ -33,18 +33,18 @@ def construct_query(query_str):
     #           ]
     #         }
     #        }
-    #query = {'match': {'item_name': {'query': splitted_keywords, 
-    #                                 'operator': "and"}}}
+    query = {'match': {'item_name': {'query': splitted_keywords, 
+                                     'operator': "and"}}}
 
-    query = {
-             "bool": {
-                            "should": [
-                                {"match": {"item_name": {"query": splitted_keywords, "operator": "and"}}},
-                                {"match": {"item_name.primitive": {"boost": 2.0, "query": splitted_keywords, "operator": "and"}}}
-                            ],
-                            "minimum_should_match": 1
-                        }
-             }
+    #query = {
+    #         "bool": {
+    #                        "should": [
+    #                            {"match": {"item_name": {"query": splitted_keywords, "operator": "and"}}},
+    #                            {"match": {"item_name.primitive": {"boost": 2.0, "query": splitted_keywords, "operator": "and"}}}
+    #                        ],
+    #                        "minimum_should_match": 1
+    #                    }
+    #         }
 
 
     #processed_keywords = preprocess_query_str(query_str)
@@ -186,7 +186,7 @@ def _tryAutoComplete(kw_prefix):
     return suggested_texts
 
 # TODO: limit g. single letter
-def _getQuerySuggestions(query_str):
+def _getQuerySuggestions(es, query_str):
     split_by_wspace = [kw.strip() for kw in query_str.split(" ") if kw.strip()]
     #splitted_keywords = " ".join(preprocess_query_str(query_str)).split(" ")
 
@@ -197,8 +197,18 @@ def _getQuerySuggestions(query_str):
         print "KW_PREFIX", kw_prefix
         possible_last_keywords = _tryAutoComplete(kw_prefix)
         print " ".join(possible_last_keywords)
-        completed_forms = [(" ".join(split_by_wspace[:-1]) + " " + kw).strip() for kw in possible_last_keywords]
-        print " ".join(completed_forms)
+        #completed_forms = [(" ".join(split_by_wspace[:-1]) + " " + kw).strip() for kw in possible_last_keywords]
+        completed_forms = []
+        # TODO: use msearch
+        for kw in possible_last_keywords:
+            completed_form = (" ".join(split_by_wspace[:-1]) + " " + kw).strip()
+            query = {'match': {'item_name': {'query': completed_form, 'operator': "and"}}}
+            res = es.search(index="item-index",
+                                    search_type="count",
+                                              body={"query": query,
+                                              "filter": {"term": {"available": True}}})
+            count = res["hits"]["total"]
+            completed_forms.append({"query": completed_form, "count": count})
 
         # also suggest more keywords
         if re.match(r"[a-zA-Z0-9]{1}", kw_prefix) is None: # not suggest for last keyword with only one letter/digit
@@ -210,7 +220,7 @@ def _getQuerySuggestions(query_str):
                         break
                 if skip:
                     continue
-                completed_forms.append(query_str + " " + suggested_term["term"])
+                completed_forms.append({"query": query_str + " " + suggested_term["term"], "count": suggested_term["count"]})
 
         return completed_forms
     else:
@@ -219,7 +229,10 @@ def _getQuerySuggestions(query_str):
 
 def v_ajax_auto_complete_term(request):
     query_str = request.GET.get("term", "").strip()
-    suggested_texts = _getQuerySuggestions(query_str)
+    es = Elasticsearch()
+    completed_forms = _getQuerySuggestions(es, query_str)
+    suggested_texts = [{"value": u"%(query)s" % completed_form,
+                        "label": u"%(query)s [结果数：%(count)s]" % completed_form} for completed_form in completed_forms]
     return HttpResponse(json.dumps(suggested_texts))
 
 

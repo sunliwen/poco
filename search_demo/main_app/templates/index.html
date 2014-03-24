@@ -363,7 +363,7 @@ something
             source: function(request, response) {
                 $.getJSON("{% url 'main_app_v_ajax_auto_complete_term' %}", {term: request.term},
                       function(data) {
-                          console.log([data]);
+                          //console.log([data]);
                           response(data);
                       })},
             minLength: 1
