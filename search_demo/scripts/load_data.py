@@ -47,6 +47,11 @@ def createIndex(es):
                                 "store": "yes",
                                 "analyzer": "whitespace_lower_analyzer"
                             },
+                            "item_name_standard_analyzed": {
+                                "type": "string",
+                                "store": "yes",
+                                "analyzer": "standard"
+                            },
                             "item_name_no_analysis": {
                                 "type": "string",
                                 "store": "yes",
@@ -298,6 +303,7 @@ def run(items_path):
         #print item["item_name"]
         fill_keywords(item)
         index_keywords(es, item)
+        item["item_name_standard_analyzed"] = item["item_name"]
         item["item_name_no_analysis"] = item["item_name"]
         item["item_name"] = " ".join(preprocess_query_str(item["item_name"]))
         #for kw in item["item_name"].split(" "):

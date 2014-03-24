@@ -33,8 +33,23 @@ def construct_query(query_str):
     #           ]
     #         }
     #        }
-    query = {'match': {'item_name': {'query': splitted_keywords, 
-                                     'operator': "and"}}}
+    #query = {'match': {'item_name': {'query': splitted_keywords, 
+    #                                 'operator': "and"}}}
+    keywords = [kw.strip() for kw in query_str.split(" ") if kw.strip()]
+    query = {
+        "bool": {
+            "must": [
+            ],
+            "should": [
+                {'match': {'item_name': {"boost": 2.0, 
+                                         'query': splitted_keywords,
+                                         'operator': "and"}}}
+            ]
+        }
+    }
+    for keyword in keywords:
+        query["bool"]["must"].append({"match_phrase": {"item_name_standard_analyzed": keyword}})
+
 
     #query = {
     #         "bool": {
@@ -152,7 +167,8 @@ def v_ajax_auto_complete_term(request):
 #COMMON_EXCLUDES = ['+', '-', '(', ')', '/', '个', '组', '（', '）']
 def _getMoreKeywordSuggestions(query_str):
     splitted_keywords = " ".join(preprocess_query_str(query_str))
-    query = {'match': {'item_name': {'query': splitted_keywords, 'operator': "and"}}}
+    #query = {'match': {'item_name': {'query': splitted_keywords, 'operator': "and"}}}
+    query = construct_query(query_str)
     print "Q:", query
     facets = {'suggested': {'terms': {'field': 'keywords',
                                       'size': 10}}
@@ -202,7 +218,8 @@ def _getQuerySuggestions(es, query_str):
         # TODO: use msearch
         for kw in possible_last_keywords:
             completed_form = (" ".join(split_by_wspace[:-1]) + " " + kw).strip()
-            query = {'match': {'item_name': {'query': completed_form, 'operator': "and"}}}
+            #query = {'match': {'item_name': {'query': completed_form, 'operator': "and"}}}
+            query = construct_query(completed_form)
             res = es.search(index="item-index",
                                     search_type="count",
                                               body={"query": query,
