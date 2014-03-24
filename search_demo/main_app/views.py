@@ -100,7 +100,7 @@ def v_index(request):
     query_str = query_str.strip()
     if query_str:
         query = construct_query(query_str)
-        print "query2:", query
+        #print "query2:", query
         s = s.query_raw(query)
     s = s.filter(available=True)
     #s = s.highlight("item_name_no_analysis")
@@ -225,7 +225,8 @@ def _getQuerySuggestions(es, query_str):
                                               body={"query": query,
                                               "filter": {"term": {"available": True}}})
             count = res["hits"]["total"]
-            completed_forms.append({"query": completed_form, "count": count})
+            if count > 0:
+                completed_forms.append({"query": completed_form, "count": count})
 
         # also suggest more keywords
         if re.match(r"[a-zA-Z0-9]{1}", kw_prefix) is None: # not suggest for last keyword with only one letter/digit
