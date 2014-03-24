@@ -1,6 +1,7 @@
 #encoding=utf8
 
 import json
+import re
 from django.shortcuts import render, render_to_response, redirect
 from django.template import RequestContext
 from django.http import HttpResponse
@@ -184,16 +185,32 @@ def _tryAutoComplete(kw_prefix):
     suggested_texts = [option["text"] for option in options]
     return suggested_texts
 
+# TODO: limit g. single letter
 def _getQuerySuggestions(query_str):
-    splitted_keywords = " ".join(preprocess_query_str(query_str)).split(" ")
-    if len(splitted_keywords) > 0:
-        kw_prefix = splitted_keywords[-1]
+    split_by_wspace = [kw.strip() for kw in query_str.split(" ") if kw.strip()]
+    #splitted_keywords = " ".join(preprocess_query_str(query_str)).split(" ")
+
+    #if len(splitted_keywords) > 0:
+    if len(split_by_wspace) > 0:
+        #kw_prefix = splitted_keywords[-1]
+        kw_prefix = split_by_wspace[-1]
+        print "KW_PREFIX", kw_prefix
         possible_last_keywords = _tryAutoComplete(kw_prefix)
-        completed_forms = [(" ".join(splitted_keywords[:-1]) + " " + kw).strip() for kw in possible_last_keywords]
+        print " ".join(possible_last_keywords)
+        completed_forms = [(" ".join(split_by_wspace[:-1]) + " " + kw).strip() for kw in possible_last_keywords]
+        print " ".join(completed_forms)
 
         # also suggest more keywords
-        for suggested_term in _getMoreKeywordSuggestions(query_str):
-            completed_forms.append(query_str + " " + suggested_term["term"])
+        if re.match(r"[a-zA-Z0-9]{1}", kw_prefix) is None: # not suggest for last keyword with only one letter/digit
+            for suggested_term in _getMoreKeywordSuggestions(query_str):
+                skip = False
+                for sk in split_by_wspace:
+                    if sk in suggested_term["term"] or suggested_term["term"] in sk:
+                        skip = True
+                        break
+                if skip:
+                    continue
+                completed_forms.append(query_str + " " + suggested_term["term"])
 
         return completed_forms
     else:
