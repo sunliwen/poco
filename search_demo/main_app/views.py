@@ -22,7 +22,7 @@ def preprocess_query_str(query_str):
 
 # refs: http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-dsl-bool-query.html
 def construct_query(query_str):
-    splitted_keywords = " ".join(preprocess_query_str(query_str))
+    splitted_keywords = " ".join(preprocess_query_str(query_str)).split(" ")
     #query = {"bool": {
     #           "should": [
     #            {'match': {'item_name': {'query': splitted_keywords, 
@@ -35,7 +35,7 @@ def construct_query(query_str):
     #        }
     #query = {'match': {'item_name': {'query': splitted_keywords, 
     #                                 'operator': "and"}}}
-    keywords = [kw.strip() for kw in query_str.split(" ") if kw.strip()]
+    #keywords = [kw.strip() for kw in query_str.split(" ") if kw.strip()]
     query = {
         "bool": {
             "must": [
@@ -47,7 +47,7 @@ def construct_query(query_str):
             ]
         }
     }
-    for keyword in keywords:
+    for keyword in splitted_keywords:
         query["bool"]["must"].append({"match_phrase": {"item_name_standard_analyzed": keyword}})
 
 
