@@ -176,6 +176,28 @@ def _getQuerySuggestions(query_str):
         return []
 
 
+def _tryAutoComplete(kw_prefix):
+    pass
+
+
+def _getQuerySuggestions(query_str):
+    splitted_keywords = " ".join(preprocess_query_str(query_str)).split(" ")
+    if len(splitted_keywords) > 0:
+        kw_prefix = splitted_keywords[-1]
+        possible_last_keywords = [kw_prefix] + _tryAutoComplete(kw_prefix)
+    else:
+        return []
+
+
+def v_ajax_auto_complete_term(request):
+    term_prefix = request.GET.get("term", "").strip()
+    es = Elasticsearch()
+    res = es.suggest(index="item-index", body={"kw": {"text": term_prefix, "completion": {"field": "keyword_completion"}}})
+    options = res["kw"][0]["options"]
+    suggested_texts = [option["text"] for option in options]
+    return HttpResponse(json.dumps(suggested_texts))
+
+
 #def v_ajax_auto_complete_term(request):
 #    term_prefix = request.GET.get("term", "").strip()
 #    es = Elasticsearch()

@@ -21,12 +21,24 @@ def createIndex(es):
         es.indices.delete("item-index")
     except NotFoundError:
         pass
+    try:
+        es.indices.delete("keyword-index")
+    except NotFoundError:
+        pass
     # pinying + ngram
     # TODO: check alternative options
     # TODO: check this http://bbs.elasticsearch.cn/discussion/245/elasticsearch-analysis-pinyin%E6%8F%92%E4%BB%B6%E4%BD%BF%E7%94%A8%E9%97%AE%E9%A2%98/p1
     # TODO: about pinying plugin's different options http://log.medcl.net/item/2012/06/release-elasticsearch-analysis-pinyin/
     # TODO: check elasticsearch.yml
-    mappings =   {
+    mappings =   {"keyword": {
+                        "properties": {
+                        "keyword_completion": {
+                            "type": "completion",
+                            "index_analyzer": "simple",
+                            "search_analyzer": "simple"
+                            }
+                        }
+                    },
                     "item": {
                         "properties": {
                             "available": {"type": "boolean"},
@@ -56,16 +68,27 @@ def createIndex(es):
                             "image_link": {"type": "string"},
                             "item_link": {"type": "string"},
                             "categories": {"type": "string", "index_name": "category"},
-                            "item_name_suggest": {
-                                "type": "completion",
-                                "index_analyzer": "simple",
-                                #"search_analyzer": "simple",
-                                "search_analyzer": "mycn_analyzer_pinyin_fully",
-                                #"term_vector": "with_positions_offsets",
-                                #"index_analyzer": "pinyin_ngram_analyzer",
-                                #"search_analyzer": "pinyin_ngram_analyzer",
-                                "payloads": False
-                            }
+                            #"keywords_completion_pinyin": {
+                            #    "type": "completion",
+                            #    "index_analyzer": "simple",
+                            #    "search_analyzer": "simple"
+                            #    },
+                            #"keywords_completion_hanzi": {
+                            #    "type": "completion",
+                            #    "index_analyzer": "simple",
+                            #    "search_analyzer": "simple"
+                            #    },
+                            "keywords": {"type": "string"},
+                            #"item_name_suggest": {
+                            #    "type": "completion",
+                            #    "index_analyzer": "simple",
+                            #    #"search_analyzer": "simple",
+                            #    "search_analyzer": "mycn_analyzer_pinyin_fully",
+                            #    #"term_vector": "with_positions_offsets",
+                            #    #"index_analyzer": "pinyin_ngram_analyzer",
+                            #    #"search_analyzer": "pinyin_ngram_analyzer",
+                            #    "payloads": False
+                            #}
                         }
                     }
                 }
@@ -101,6 +124,11 @@ def createIndex(es):
                                 "type": "custom",
                                 "tokenizer": "keyword",
                                 "filter": ["my_pinyin_first_only"]
+                            },
+                            "mycn_analyzer_whitespace_pinyin_first_n_full": {
+                                "type": "custom",
+                                "tokenizer": "whitespace",
+                                "filter": ["my_pinyin_first_n_full"]
                             },
                             "mycn_analyzer_wt_ngram": {
                                 "type": "custom",
@@ -165,6 +193,11 @@ def createIndex(es):
                                 "first_letter": "only",
                                 "padding_char": ""
                             },
+                            "my_pinyin_first_n_full": {
+                                "type": "pinyin",
+                                "first_letter": "prefix",
+                                "padding_char": "||"
+                            },
                         }
                     }
                  }
@@ -189,14 +222,41 @@ def createIndex(es):
 #    return {"input": input, "output": item["item_name"]}
 
 
-def get_item_name_suggest(es, item):
-    item_name = item["item_name"]
-    res = es.indices.analyze(index="item-index", text=item_name, analyzer="mycn_analyzer_pinyin_fully")
-    converted_item_name = "".join([token["token"] for token in res["tokens"]])
-    res = es.indices.analyze(index="item-index", text=item_name, analyzer="mycn_analyzer_pinyin_first_only")
-    converted_first_only = "".join([token["token"] for token in res["tokens"]])
-    return {"input": [converted_item_name, converted_first_only], "output": item["item_name"]}
+#def get_item_name_suggest(es, item):
+#    item_name = item["item_name"]
+#    res = es.indices.analyze(index="item-index", text=item_name, analyzer="mycn_analyzer_pinyin_fully")
+#    converted_item_name = "".join([token["token"] for token in res["tokens"]])
+#    res = es.indices.analyze(index="item-index", text=item_name, analyzer="mycn_analyzer_pinyin_first_only")
+#    converted_first_only = "".join([token["token"] for token in res["tokens"]])
+#    return {"input": [converted_item_name, converted_first_only], "output": item["item_name"]}
 
+from misc.keyword_whitelist import KEYWORD_WHITELIST
+def fill_keywords(item):
+    item_name = item["item_name"]
+    keywords = " ".join(preprocess_query_str(item_name)).split(" ")
+    #print "KW0:", " ".join(keywords)
+    #for keyword in keywords:
+    #    print keyword, keyword.encode("utf8") in KEYWORD_WHITELIST, keyword in KEYWORD_WHITELIST
+    keywords = [keyword for keyword in keywords if keyword.encode("utf8") in KEYWORD_WHITELIST]
+    item["keywords"] = keywords
+    #print "KWS:", keywords
+
+INDEXED_KEYWORDS = {}
+def index_keywords(es, item):
+    raw_keywords = item["keywords"]
+    res = es.indices.analyze(index="item-index", text=" ".join(raw_keywords),
+                             analyzer="mycn_analyzer_whitespace_pinyin_first_n_full")
+    for token_idx in range(len(res["tokens"])):
+        token = res["tokens"][token_idx]
+        raw_keyword = raw_keywords[token_idx]
+        if not INDEXED_KEYWORDS.has_key(raw_keyword):
+            #print "RKK:", raw_keyword
+            INDEXED_KEYWORDS[raw_keyword] = True
+            splitted_token = token["token"].split("||")
+            first_letters = splitted_token[0]
+            full_pinyin = "".join(splitted_token[1:])
+            result = {"keyword_completion": {"input": [raw_keyword, full_pinyin, first_letters], "output": raw_keyword}}
+            es.index(index='item-index', doc_type='keyword', body=result)
 
 import jieba
 def preprocess_query_str(query_str):
@@ -208,7 +268,7 @@ def preprocess_query_str(query_str):
     return result
 
 # TODO: handling elasticsearch.exceptions.ConnectionError
-# TODO: check elasticsearch array search problem
+#f = open("analyzed_words.txt", "w")
 def run(items_path):
     count = 0
     print "Begin Loading ..."
@@ -221,13 +281,20 @@ def run(items_path):
         count += 1
         if (count % 50) == 0:
             print count
-        item["item_name_suggest"] = get_item_name_suggest(es, item)
+        #item["item_name_suggest"] = get_item_name_suggest(es, item)
         del item["_id"]
         item["categories"] = " ".join(item["categories"])
+        #print item["item_name"]
+        fill_keywords(item)
+        index_keywords(es, item)
         item["item_name"] = " ".join(preprocess_query_str(item["item_name"]))
+        #for kw in item["item_name"].split(" "):
+        #    if kw:
+        #        f.write("%s\n" % kw.strip().encode("utf8"))
         #print item["item_name"]
         #sys.exit(1)
         res = es.index(index='item-index', doc_type='item', id=item["item_id"], body=item)
         #print item
     es.indices.refresh(index='item-index')
+    #f.close()
     print "Finish Loading"
