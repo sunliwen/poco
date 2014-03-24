@@ -88,7 +88,7 @@ def v_index(request):
         print "query2:", query
         s = s.query_raw(query)
     s = s.filter(available=True)
-    s = s.highlight("item_name")
+    #s = s.highlight("item_name_no_analysis")
     sub_categories_facets = _getSubCategoriesFacets(cat)
     if cat:
         s = s.filter(categories__in=[cat])
@@ -109,6 +109,8 @@ def v_index(request):
     else:
         breadcrumbs = get_breadcrumbs(category)
 
+    #for item in s:
+    #    print item._highlight
     page = Paginator(s, 12).page(page_num)
 
     return render_to_response("index.html", 
