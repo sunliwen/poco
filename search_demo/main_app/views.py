@@ -88,7 +88,7 @@ def v_index(request):
         print "query2:", query
         s = s.query_raw(query)
     s = s.filter(available=True)
-    
+    s = s.highlight("item_name")
     sub_categories_facets = _getSubCategoriesFacets(cat)
     if cat:
         s = s.filter(categories__in=[cat])
@@ -108,8 +108,6 @@ def v_index(request):
         pass
     else:
         breadcrumbs = get_breadcrumbs(category)
-
-    #print breadcrumbs
 
     page = Paginator(s, 12).page(page_num)
 
