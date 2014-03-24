@@ -148,13 +148,12 @@ def v_ajax_auto_complete_term(request):
     return HttpResponse(json.dumps(suggested_texts))
 
 
-COMMON_EXCLUDES = ['+', '-', '(', ')', '/', '个', '组', '（', '）']
-def _getQuerySuggestions(query_str):
+#COMMON_EXCLUDES = ['+', '-', '(', ')', '/', '个', '组', '（', '）']
+def _getMoreKeywordSuggestions(query_str):
     splitted_keywords = " ".join(preprocess_query_str(query_str))
     query = {'match': {'item_name': {'query': splitted_keywords, 'operator': "and"}}}
     print "Q:", query
-    facets = {'suggested': {'terms': {'exclude': splitted_keywords.split(" ") + COMMON_EXCLUDES,
-                                      'field': 'item_name.primitive',
+    facets = {'suggested': {'terms': {'field': 'keywords',
                                       'size': 10}}
                             }
     es = Elasticsearch()
@@ -163,7 +162,8 @@ def _getQuerySuggestions(query_str):
                                               "filter": {"term": {"available": True}}})
     suggested = res["facets"]["suggested"]
     if suggested["total"] > 0:
-        print res["hits"]
+        #for hit in res["hits"]["hits"]:
+        #    print " ".join(hit["_source"]["keywords"])
         hits_total = res["hits"]["total"]
         half_hits_total = hits_total / 2.0
         # Fillter out terms which does not help to narrow down
@@ -171,30 +171,38 @@ def _getQuerySuggestions(query_str):
         # Filter out terms which is
         #TODO
         terms.sort(lambda a,b: cmp(abs(a["count"] - half_hits_total), abs(b["count"] - half_hits_total)))
+        print "TS:", terms
         return terms
     else:
         return []
 
 
 def _tryAutoComplete(kw_prefix):
-    pass
-
+    es = Elasticsearch()
+    res = es.suggest(index="item-index", body={"kw": {"text": kw_prefix, "completion": {"field": "keyword_completion"}}})
+    options = res["kw"][0]["options"]
+    suggested_texts = [option["text"] for option in options]
+    return suggested_texts
 
 def _getQuerySuggestions(query_str):
     splitted_keywords = " ".join(preprocess_query_str(query_str)).split(" ")
     if len(splitted_keywords) > 0:
         kw_prefix = splitted_keywords[-1]
-        possible_last_keywords = [kw_prefix] + _tryAutoComplete(kw_prefix)
+        possible_last_keywords = _tryAutoComplete(kw_prefix)
+        completed_forms = [(" ".join(splitted_keywords[:-1]) + " " + kw).strip() for kw in possible_last_keywords]
+
+        # also suggest more keywords
+        for suggested_term in _getMoreKeywordSuggestions(query_str):
+            completed_forms.append(query_str + " " + suggested_term["term"])
+
+        return completed_forms
     else:
         return []
 
 
 def v_ajax_auto_complete_term(request):
-    term_prefix = request.GET.get("term", "").strip()
-    es = Elasticsearch()
-    res = es.suggest(index="item-index", body={"kw": {"text": term_prefix, "completion": {"field": "keyword_completion"}}})
-    options = res["kw"][0]["options"]
-    suggested_texts = [option["text"] for option in options]
+    query_str = request.GET.get("term", "").strip()
+    suggested_texts = _getQuerySuggestions(query_str)
     return HttpResponse(json.dumps(suggested_texts))
 
 

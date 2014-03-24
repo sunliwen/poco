@@ -42,28 +42,33 @@ def createIndex(es):
                     "item": {
                         "properties": {
                             "available": {"type": "boolean"},
-                            "item_name": {"type": "multi_field",
-                                          "fields": {
-                                            "item_name": {
-                                                "type": "string",
-                                                "store": "no",
-                                                "term_vector": "with_positions_offsets",
-                                                #"analyzer": "pinyin_ngram_analyzer",
-                                                #"analyzer": "mycn_analyzer_wt_ngram",
-                                                #"analyzer": "mycn_analyzer_mmseg",
-                                                #"analyzer": "mycn_analyzer_jieba_index",
-                                                "analyzer": "whitespace_pinyin_analyzer",
-                                                "boost": 10
-                                            },
-                                            "primitive": {
-                                                "type": "string",
-                                                "store": "yes",
-                                                #"analyzer": "whitespace"
-                                                "analyzer": "whitespace_lower_analyzer"
-                                                #"analyzer": "keyword"
-                                            }
-                                          }
-                                          },
+                            "item_name": {
+                                "type": "string",
+                                "store": "yes",
+                                "analyzer": "whitespace_lower_analyzer"
+                            },
+                            #"item_name": {"type": "multi_field",
+                            #              "fields": {
+                            #                "item_name": {
+                            #                    "type": "string",
+                            #                    "store": "no",
+                            #                    "term_vector": "with_positions_offsets",
+                            #                    #"analyzer": "pinyin_ngram_analyzer",
+                            #                    #"analyzer": "mycn_analyzer_wt_ngram",
+                            #                    #"analyzer": "mycn_analyzer_mmseg",
+                            #                    #"analyzer": "mycn_analyzer_jieba_index",
+                            #                    "analyzer": "whitespace_pinyin_analyzer",
+                            #                    "boost": 10
+                            #                },
+                            #                "primitive": {
+                            #                    "type": "string",
+                            #                    "store": "yes",
+                            #                    #"analyzer": "whitespace"
+                            #                    "analyzer": "whitespace_lower_analyzer"
+                            #                    #"analyzer": "keyword"
+                            #                }
+                            #              }
+                            #              },
                             "price": {"type": "string"},
                             "image_link": {"type": "string"},
                             "item_link": {"type": "string"},
@@ -78,7 +83,8 @@ def createIndex(es):
                             #    "index_analyzer": "simple",
                             #    "search_analyzer": "simple"
                             #    },
-                            "keywords": {"type": "string"},
+                            "keywords": {"type": "string",
+                                         "analyzer": "keyword"},
                             #"item_name_suggest": {
                             #    "type": "completion",
                             #    "index_analyzer": "simple",
