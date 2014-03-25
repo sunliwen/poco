@@ -100,7 +100,6 @@ def v_index(request):
     query_str = query_str.strip()
     if query_str:
         query = construct_query(query_str)
-        #print "query2:", query
         s = s.query_raw(query)
     s = s.filter(available=True)
     #s = s.highlight("item_name_no_analysis")
@@ -124,8 +123,6 @@ def v_index(request):
     else:
         breadcrumbs = get_breadcrumbs(category)
 
-    #for item in s:
-    #    print item._highlight
     page = Paginator(s, 12).page(page_num)
 
     return render_to_response("index.html", 
@@ -169,7 +166,6 @@ def _getMoreKeywordSuggestions(query_str):
     splitted_keywords = " ".join(preprocess_query_str(query_str))
     #query = {'match': {'item_name': {'query': splitted_keywords, 'operator': "and"}}}
     query = construct_query(query_str)
-    print "Q:", query
     facets = {'suggested': {'terms': {'field': 'keywords',
                                       'size': 10}}
                             }
@@ -179,8 +175,6 @@ def _getMoreKeywordSuggestions(query_str):
                                               "filter": {"term": {"available": True}}})
     suggested = res["facets"]["suggested"]
     if suggested["total"] > 0:
-        #for hit in res["hits"]["hits"]:
-        #    print " ".join(hit["_source"]["keywords"])
         hits_total = res["hits"]["total"]
         half_hits_total = hits_total / 2.0
         # Fillter out terms which does not help to narrow down
@@ -188,7 +182,6 @@ def _getMoreKeywordSuggestions(query_str):
         # Filter out terms which is
         #TODO
         terms.sort(lambda a,b: cmp(abs(a["count"] - half_hits_total), abs(b["count"] - half_hits_total)))
-        print "TS:", terms
         return terms
     else:
         return []
@@ -210,9 +203,7 @@ def _getQuerySuggestions(es, query_str):
     if len(split_by_wspace) > 0:
         #kw_prefix = splitted_keywords[-1]
         kw_prefix = split_by_wspace[-1]
-        print "KW_PREFIX", kw_prefix
         possible_last_keywords = _tryAutoComplete(kw_prefix)
-        print " ".join(possible_last_keywords)
         #completed_forms = [(" ".join(split_by_wspace[:-1]) + " " + kw).strip() for kw in possible_last_keywords]
         completed_forms = []
         # TODO: use msearch
@@ -264,7 +255,6 @@ def v_ajax_auto_complete_term(request):
 #                             "fields": ["item_name"]}},
 #                          "filter": {"term": {"available": True}},
 #                         })
-#    print res
 #    suggested_texts = [item["_source"]["item_name"] for item in res.get("hits", {}).get("hits", [])]
 #    return HttpResponse(json.dumps(suggested_texts))
 
@@ -426,9 +416,6 @@ def fill_category_to_name(parent_id, id, dict):
     CATEGORY_MAP_BY_ID[id]["children"] = []
     for key in dict.keys():
         if key not in ("name", "parent_id", "id", "children"):
-            #print "KEY=", key, dict
             fill_category_to_name(id, key, dict[key])
             CATEGORY_MAP_BY_ID[id]["children"].append(dict[key])
 fill_category_to_name(None, None, CATEGORY_TREE)
-#import pprint
-#pprint.pprint(CATEGORY_MAP_BY_ID)
