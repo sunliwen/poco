@@ -221,7 +221,7 @@
               <img class="thumbnail" src="{{ item.image_link }}"></img>
               <div class="info" style="text-align:center; margin:0px; ">
                {% if not item.available %}<span style="color: red;">[缺货]</span>{% endif %}
-                <a href="{{ item.item_link }}">{{ item.item_name_no_analysis}}</a>
+                <a href="{{ item.item_link }}">{{ item|obj_get:"_highlight"|dict_get:"item_name_standard_analyzed"|list_get:0|safe}}</a>
                 <br>
                 ￥{{ item.price }} 
                 {% if item.price != item.market_price %}

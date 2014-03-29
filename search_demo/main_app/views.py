@@ -102,7 +102,7 @@ def v_index(request):
         query = construct_query(query_str)
         s = s.query_raw(query)
     s = s.filter(available=True)
-    #s = s.highlight("item_name_no_analysis")
+    s = s.highlight("item_name_standard_analyzed")
     sub_categories_facets = _getSubCategoriesFacets(cat)
     if cat:
         s = s.filter(categories__in=[cat])
