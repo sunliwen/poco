@@ -92,6 +92,8 @@ def v_index(request):
     query_str = request.GET.get("q", "")
     page_num = request.GET.get("p", "1")
     cat = request.GET.get("cat", None)
+    op = request.GET.get("op", None)
+
     try:
         page_num = int(page_num)
     except TypeError:
@@ -113,8 +115,12 @@ def v_index(request):
         s = s.facet_raw(sub_categories=sub_categories_facets)
         sub_categories_list = [(facet["term"], CATEGORY_MAP_BY_ID[facet["term"]]["name"], facet["count"]) for facet in s.facet_counts().get("sub_categories", [])]
     else:
-        
         sub_categories_list = []
+
+    if op=="u":
+        s = s.order_by("price")
+    elif op=="d":
+        s = s.order_by("-price")
 
     # TODO: redirect when category is None
     if category is None:
@@ -128,7 +134,8 @@ def v_index(request):
     return render_to_response("index.html", 
             {"page": page, "query_str": query_str, "category": category,
              "sub_categories_list": sub_categories_list,
-             "breadcrumbs": breadcrumbs}, 
+             "breadcrumbs": breadcrumbs,
+             "op": op}, 
             RequestContext(request))
 
 

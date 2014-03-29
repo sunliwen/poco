@@ -2,6 +2,7 @@
 {% load bootstrap_pagination %}
 {% load i18n %}
 {% load get_attr %}
+{% load url_add_query %}
 
 <!DOCTYPE html>
 <html lang="en">
@@ -199,10 +200,10 @@
           <!-- RESULT ORDERS AND VIEWS -->
             <!-- latest upload/index/reco/result/count/views -->
 
-            <span class="legend-index-item latest pull-left">最新上传</span>
-            <span class="legend-index-item latest pull-left">最新排行</span>
+            <span class="legend-index-item latest pull-left"><a href="{% if op == "u" %}{% url_add_query op="d" %}{% elif op == "d" %}{% url_add_query op="" %}{% else %}{% url_add_query op="u" %}{% endif %}">价格排序{% if op == "u" %}↑{% elif op == "d" %}↓{% else %}{% endif %}</a></span>
+            <!--<span class="legend-index-item latest pull-left">最新排行</span>
             <span class="legend-index-item latest pull-left">最新推荐</span>
-            <span class="legend-index-item latest pull-left">搜索结果</span>
+            <span class="legend-index-item latest pull-left">搜索结果</span> -->
 
             <span class="legend-view-item pull-right"><a data-type="text"><i class="fa fa-align-justify" title="文字"></i></a></span>
             <span class="legend-view-item pull-right"><a data-type="thumbtext" ><i class="fa fa-th-list"       title="图文"></i></a></span>
@@ -221,7 +222,7 @@
               <img class="thumbnail" src="{{ item.image_link }}"></img>
               <div class="info" style="text-align:center; margin:0px; ">
                {% if not item.available %}<span style="color: red;">[缺货]</span>{% endif %}
-                <a href="{{ item.item_link }}">{{ item|obj_get:"_highlight"|dict_get:"item_name_standard_analyzed"|list_get:0|safe}}</a>
+                <a href="{{ item.item_link }}">{% if item|obj_get:"_highlight" %}{{ item|obj_get:"_highlight"|dict_get:"item_name_standard_analyzed"|list_get:0|safe}}{% else %}{{ item.item_name_standard_analyzed }}{% endif %}</a>
                 <br>
                 ￥{{ item.price }} 
                 {% if item.price != item.market_price %}
