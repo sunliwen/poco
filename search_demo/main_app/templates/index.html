@@ -14,7 +14,6 @@
     <meta name="author" content="">
 
     <title>产品搜索</title>
-
     <!-- Bootstrap core CSS -->
     <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
     <link href="{% static 'css/font-awesome.min.css' %}" rel="stylesheet">
@@ -38,9 +37,17 @@
         ul.ui-autocomplete {
             background-color: white;
         }
-        em {
+        em,
+        em.category{
             font-weight: bold;
             background-color: yellow;
+        }
+
+        /*.ui-menu-item a:hover {
+            background-color: grey;
+        }*/
+        .ui-state-focus {
+            background-color: #CCCCCC;
         }
     </style>
 
@@ -95,7 +102,7 @@
         <!-- search block -->
 
         <div class="col-xs-9 legend-header-search" style="height:90px; background-color: white">
-          <form action="{% url 'main_app_v_index' %}" method="GET">
+          <form id="form-query" action="{% url 'main_app_v_index' %}" method="GET">
           <div class="row legend-search" style="padding-top: 15px">
             <div class="col-xs-2 btn-group pull-left">
               <button type="button" class="btn btn-default">全部</button>
@@ -114,6 +121,7 @@
 
             <div class="col-xs-6 input-group pull-left">
               <input type="text" class="form-control" id="query-input" name="q" value="{{ query_str }}">
+              <input type="hidden" id="query-cat" name="cat" value="">
               <span class="input-group-btn">
                 <button class="btn btn-default btn-warning" type="submit">搜索</button>
               </span>
@@ -369,12 +377,29 @@ something
             source: function(request, response) {
                 $.getJSON("{% url 'main_app_v_ajax_auto_complete_term' %}", {term: request.term},
                       function(data) {
-                          //console.log([data]);
+                          //console.log(data);
                           response(data);
                       })},
+            /*focus: function(event, ui) {
+                //console.log(ui);
+                //$("#query-input").val(ui.item.label);
+                return false;
+            },*/
+            select: function(event, ui) {
+                console.log("Selected: " + "type:" + ui.item.type + ":" + ui.item.value);
+                if (ui.item.type == "category") {
+                    $("#query-cat").val(ui.item.category_id);
+                }
+                $("#form-query").submit();
+                return false;
+            },
             minLength: 1
-        }
-        );
+        })
+        .data("ui-autocomplete")._renderItem = function(ul, item) {
+            return $("<li>")
+                   .append("<a>" + item.label + "</a>")
+                   .appendTo(ul);
+        };
     </script>
 
   </body>

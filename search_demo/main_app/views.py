@@ -168,30 +168,38 @@ def v_ajax_auto_complete_term(request):
     return HttpResponse(json.dumps(suggested_texts))
 
 
-#COMMON_EXCLUDES = ['+', '-', '(', ')', '/', '个', '组', '（', '）']
-def _getMoreKeywordSuggestions(query_str):
+def _extractSuggestedTerms(res, name):
+    suggested_keywords = res["facets"][name]
+    if suggested_keywords["total"] > 0:
+        hits_total = res["hits"]["total"]
+        half_hits_total = hits_total / 2.0
+        # Fillter out terms which does not help to further narrow down results
+        terms = [term for term in suggested_keywords["terms"] if term["count"]  < hits_total]
+        # Filter out terms which is
+        #TODO
+        #terms.sort(lambda a,b: cmp(abs(a["count"] - half_hits_total), abs(b["count"] - half_hits_total)))
+        return terms
+    else:
+        return []
+
+
+
+
+def _getMoreSuggestions(query_str):
     splitted_keywords = " ".join(preprocess_query_str(query_str))
-    #query = {'match': {'item_name': {'query': splitted_keywords, 'operator': "and"}}}
     query = construct_query(query_str)
-    facets = {'suggested': {'terms': {'field': 'keywords',
-                                      'size': 10}}
+    facets = {'keywords': {'terms': {'field': 'keywords',
+                                      'size': 10}},
+              'categories': {'terms': {'regex': r'\d{4}', 'field': 'categories', 'size': 5}},
                             }
     es = Elasticsearch()
     res = es.search(index="item-index", body={"query": query,
                                               "facets": facets,
                                               "filter": {"term": {"available": True}}})
-    suggested = res["facets"]["suggested"]
-    if suggested["total"] > 0:
-        hits_total = res["hits"]["total"]
-        half_hits_total = hits_total / 2.0
-        # Fillter out terms which does not help to narrow down
-        terms = [term for term in suggested["terms"] if term["count"]  < hits_total]
-        # Filter out terms which is
-        #TODO
-        terms.sort(lambda a,b: cmp(abs(a["count"] - half_hits_total), abs(b["count"] - half_hits_total)))
-        return terms
-    else:
-        return []
+
+    suggested_categories = _extractSuggestedTerms(res, "categories")
+    suggested_categories = suggested_categories[:2]
+    return _extractSuggestedTerms(res, "keywords"), suggested_categories
 
 
 def _tryAutoComplete(kw_prefix):
@@ -224,11 +232,30 @@ def _getQuerySuggestions(es, query_str):
                                               "filter": {"term": {"available": True}}})
             count = res["hits"]["total"]
             if count > 0:
-                completed_forms.append({"query": completed_form, "count": count})
+                completed_forms.append({"type": "query_str",
+                                        "value": u"%s" % completed_form,
+                                        "label": u"%s [结果数：%s]" % (completed_form, count)})
 
         # also suggest more keywords
         if re.match(r"[a-zA-Z0-9]{1}", kw_prefix) is None: # not suggest for last keyword with only one letter/digit
-            for suggested_term in _getMoreKeywordSuggestions(query_str):
+            suggested_keywords, suggested_categories = _getMoreSuggestions(query_str)
+
+            completed_forms_categories = []
+            for suggested_term in suggested_categories:
+                category_id = suggested_term["term"]
+                category = CATEGORY_MAP_BY_ID.get(category_id, None)
+                if category:
+                    breadcrumbs = get_breadcrumbs(category)[1:]
+                    breadcrumbs_str = " > ".join([cat["category"]["name"] for cat in breadcrumbs])
+                    completed_forms_categories.append({"type": "category", 
+                                            "label": u"在 <em class='category'>%s</em>  分类中搜索 [结果数：%s]" % (breadcrumbs_str, suggested_term["count"]),
+                                            "value": query_str,
+                                            "category_id": category_id
+                                            })
+
+            completed_forms = completed_forms_categories + completed_forms
+
+            for suggested_term in suggested_keywords:
                 skip = False
                 for sk in split_by_wspace:
                     if sk in suggested_term["term"] or suggested_term["term"] in sk:
@@ -236,8 +263,11 @@ def _getQuerySuggestions(es, query_str):
                         break
                 if skip:
                     continue
-                completed_forms.append({"query": query_str + " " + suggested_term["term"], "count": suggested_term["count"]})
-
+                query = query_str + " " + suggested_term["term"]
+                completed_forms.append({"type": "query_str",
+                                        "value": u"%s" % query,
+                                        "label": u"%s [结果数：%s]" % (query, count)})
+            
         return completed_forms
     else:
         return []
@@ -246,9 +276,9 @@ def _getQuerySuggestions(es, query_str):
 def v_ajax_auto_complete_term(request):
     query_str = request.GET.get("term", "").strip()
     es = Elasticsearch()
-    completed_forms = _getQuerySuggestions(es, query_str)
-    suggested_texts = [{"value": u"%(query)s" % completed_form,
-                        "label": u"%(query)s [结果数：%(count)s]" % completed_form} for completed_form in completed_forms]
+    suggested_texts = _getQuerySuggestions(es, query_str)
+    #suggested_texts = [{"value": u"%(query)s" % completed_form,
+    #                    "label": u"%(query)s [结果数：%(count)s]" % completed_form} for completed_form in completed_forms]
     return HttpResponse(json.dumps(suggested_texts))
 
 
