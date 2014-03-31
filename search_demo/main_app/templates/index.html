@@ -180,7 +180,7 @@
       <div class="panel-body">
         <ul class="list-unstyled">
             {% for sub_category in sub_categories_list %}
-          <li><a href="{% url 'main_app_v_index' %}?cat={{ sub_category.0 }}"><i class="fa fa-chevron-right"></i> {{ sub_category.1 }}[{{ sub_category.2 }}]</a></li>
+          <li><a href="{% url_add_query cat=sub_category.0 %}"><i class="fa fa-chevron-right"></i> {{ sub_category.1 }}[{{ sub_category.2 }}]</a></li>
             {% endfor %}
         </ul>
       </div>
