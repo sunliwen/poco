@@ -234,7 +234,8 @@ def _getQuerySuggestions(es, query_str):
             if count > 0:
                 completed_forms.append({"type": "query_str",
                                         "value": u"%s" % completed_form,
-                                        "label": u"%s [结果数：%s]" % (completed_form, count)})
+                                        "label": u"%s" % completed_form,
+                                        "count": count})
 
         # also suggest more keywords
         if re.match(r"[a-zA-Z0-9]{1}", kw_prefix) is None: # not suggest for last keyword with only one letter/digit
@@ -248,12 +249,15 @@ def _getQuerySuggestions(es, query_str):
                     breadcrumbs = get_breadcrumbs(category)[1:]
                     breadcrumbs_str = " > ".join([cat["category"]["name"] for cat in breadcrumbs])
                     completed_forms_categories.append({"type": "category", 
-                                            "label": u"在 <em class='category'>%s</em>  分类中搜索 [结果数：%s]" % (breadcrumbs_str, suggested_term["count"]),
+                                            "label": u"在 <em class='category'>%s</em>  分类中搜索" % (breadcrumbs_str,),
                                             "value": query_str,
-                                            "category_id": category_id
+                                            "category_id": category_id,
+                                            "count": suggested_term["count"]
                                             })
 
             completed_forms = completed_forms_categories + completed_forms
+
+            #completed_forms.append({"type": "split"})
 
             for suggested_term in suggested_keywords:
                 skip = False
@@ -266,7 +270,8 @@ def _getQuerySuggestions(es, query_str):
                 query = query_str + " " + suggested_term["term"]
                 completed_forms.append({"type": "query_str",
                                         "value": u"%s" % query,
-                                        "label": u"%s [结果数：%s]" % (query, count)})
+                                        "count": count,
+                                        "label": u"%s" % (query, )})
             
         return completed_forms
     else:

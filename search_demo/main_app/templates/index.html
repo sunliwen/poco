@@ -36,6 +36,7 @@
     <style>
         ul.ui-autocomplete {
             background-color: white;
+            border: solid 1px rgb(66, 139, 202);
         }
         em,
         em.category{
@@ -397,7 +398,7 @@ something
         })
         .data("ui-autocomplete")._renderItem = function(ul, item) {
             return $("<li>")
-                   .append("<a>" + item.label + "</a>")
+                   .append("<a>" + item.label + "<span style='float: right;'>结果数：" + item.count + "个</span></a>")
                    .appendTo(ul);
         };
     </script>
