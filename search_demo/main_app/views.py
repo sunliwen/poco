@@ -273,7 +273,7 @@ def _getQuerySuggestions(es, query_str):
                 query = query_str + " " + suggested_term["term"]
                 completed_forms.append({"type": "query_str",
                                         "value": u"%s" % query,
-                                        "count": count,
+                                        "count": suggested_term["count"],
                                         "label": u"%s" % (query, )})
             
         return completed_forms
