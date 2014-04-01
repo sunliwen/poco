@@ -94,6 +94,9 @@ def v_index(request):
     cat = request.GET.get("cat", None)
     op = request.GET.get("op", None)
 
+    if cat is not None and cat.strip() == "":
+        cat = None
+
     try:
         page_num = int(page_num)
     except TypeError:
