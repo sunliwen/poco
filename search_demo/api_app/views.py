@@ -16,8 +16,8 @@ from elasticsearch import Elasticsearch
 @api_view(('GET',))
 def api_root(request, format=None):
     return Response({
-        'products-search': reverse('products-search', request=request, format=format),
-        'query-suggest': reverse('query-suggest', request=request, format=format),
+        'search': reverse('products-search', request=request, format=format),
+        'suggest': reverse('query-suggest', request=request, format=format),
         #'categories': reverse('categories-list', request=request, format=format)
     })
 
@@ -73,7 +73,12 @@ class ProductsSearch(APIView):
         s = s.highlight("item_name_standard_analyzed")
 
         return s
-    
+
+    def _validate(self, request):
+        errors = []
+        #if not isinstance(request.DATA.get("q", None), basestring):
+        #    errors.append(
+
     PER_PAGE = 20
     # refs: http://www.django-rest-framework.org/api-guide/pagination
     def post(self, request, format=None):
