@@ -6,3 +6,4 @@ django-bootstrap-pagination==1.5.0
 jieba==0.32
 elasticsearch==1.0.0
 pinyin4py==1.0.dev
+djangorestframework==2.3.13

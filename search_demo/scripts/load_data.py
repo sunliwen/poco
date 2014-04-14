@@ -214,6 +214,14 @@ def createIndex(es):
                                 "first_letter": "prefix",
                                 "padding_char": "||"
                             },
+                            "synonym_leyou": {
+                                "type": "synonym",
+                                #"synonyms_path" : "analysis/synonym.txt" TODO: use this later
+                                "synonyms" : [
+                                "女童,女孩",
+                                "牛奶,奶粉"
+                                ]
+                            }
                         }
                     }
                  }
