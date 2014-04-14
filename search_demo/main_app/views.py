@@ -108,12 +108,13 @@ def v_index(request):
         s = s.query_raw(query)
     s = s.filter(available=True)
     s = s.highlight("item_name_standard_analyzed")
-    sub_categories_facets = _getSubCategoriesFacets(cat)
     if cat:
         s = s.filter(categories__in=[cat])
         category = CATEGORY_MAP_BY_ID.get(cat, None)
     else:
         category = CATEGORY_TREE
+
+    sub_categories_facets = _getSubCategoriesFacets(cat)
     if sub_categories_facets:
         s = s.facet_raw(sub_categories=sub_categories_facets)
         sub_categories_list = [(facet["term"], CATEGORY_MAP_BY_ID[facet["term"]]["name"], facet["count"]) for facet in s.facet_counts().get("sub_categories", [])]

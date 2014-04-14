@@ -1,3 +1,4 @@
+#encoding=utf8
 import json
 import pprint
 from elasticsearch import Elasticsearch
@@ -79,7 +80,7 @@ def createIndex(es):
                             #                }
                             #              }
                             #              },
-                            "price": {"type": "string"},
+                            "price": {"type": "float"},
                             "image_link": {"type": "string"},
                             "item_link": {"type": "string"},
                             "categories": {"type": "string", "index_name": "category"},
@@ -214,14 +215,14 @@ def createIndex(es):
                                 "first_letter": "prefix",
                                 "padding_char": "||"
                             },
-                            "synonym_leyou": {
-                                "type": "synonym",
-                                #"synonyms_path" : "analysis/synonym.txt" TODO: use this later
-                                "synonyms" : [
-                                "女童,女孩",
-                                "牛奶,奶粉"
-                                ]
-                            }
+                            #"synonym_leyou": {
+                            #    "type": "synonym",
+                            #    #"synonyms_path" : "analysis/synonym.txt" TODO: use this later
+                            #    "synonyms" : [
+                            #    "女童,女孩",
+                            #    "牛奶,奶粉"
+                            #    ]
+                            #}
                         }
                     }
                  }
@@ -307,7 +308,7 @@ def run(items_path):
             print count
         #item["item_name_suggest"] = get_item_name_suggest(es, item)
         del item["_id"]
-        item["categories"] = " ".join(item["categories"])
+        #item["categories"] = " ".join(item["categories"])
         #print item["item_name"]
         fill_keywords(item)
         index_keywords(es, item)
@@ -319,6 +320,7 @@ def run(items_path):
         #        f.write("%s\n" % kw.strip().encode("utf8"))
         #print item["item_name"]
         #sys.exit(1)
+        item["price"] = float(item["price"])
         res = es.index(index='item-index', doc_type='item', id=item["item_id"], body=item)
         #print item
     es.indices.refresh(index='item-index')
