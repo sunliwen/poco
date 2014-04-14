@@ -7,7 +7,7 @@ from rest_framework.reverse import reverse
 from django.http import Http404
 from rest_framework.views import APIView
 from rest_framework import status
-
+from elasticsearch import Elasticsearch
 
 
 # TODO: highlight
@@ -16,7 +16,8 @@ from rest_framework import status
 @api_view(('GET',))
 def api_root(request, format=None):
     return Response({
-        'items': reverse('products-search', request=request, format=format),
+        'products-search': reverse('products-search', request=request, format=format),
+        'query-suggest': reverse('query-suggest', request=request, format=format),
         #'categories': reverse('categories-list', request=request, format=format)
     })
 
@@ -123,3 +124,12 @@ class ProductsSearch(APIView):
     #        return Response(serializer.data, status=status.HTTP_201_CREATED)
     #    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
+class QuerySuggest(APIView):
+    def post(self, request, format=None):
+        q = request.DATA.get("q", "")
+
+        es = Elasticsearch()
+        suggested_texts = main_app_views._getQuerySuggestions(es, q)
+        
+        return Response(suggested_texts)
