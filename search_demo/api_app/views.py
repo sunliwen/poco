@@ -81,7 +81,7 @@ class ProductsSearch(APIView):
 
     PER_PAGE = 20
     # refs: http://www.django-rest-framework.org/api-guide/pagination
-    def post(self, request, format=None):
+    def get(self, request, format=None):
         # TODO: validate the data
         # TODO: handle the api_key, config_key
         q = request.DATA.get("q", "")
@@ -131,7 +131,7 @@ class ProductsSearch(APIView):
 
 
 class QuerySuggest(APIView):
-    def post(self, request, format=None):
+    def get(self, request, format=None):
         q = request.DATA.get("q", "")
 
         es = Elasticsearch()
