@@ -6,7 +6,7 @@
 Poco 1.6 Search 文档
 ====================================
 
-Contents:
+目录
 
 .. toctree::
    :maxdepth: 2
