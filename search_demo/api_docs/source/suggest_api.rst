@@ -1,4 +1,4 @@
-查询推荐API
+Suggest API
 ============
 
 路径: /v1.6/suggest/

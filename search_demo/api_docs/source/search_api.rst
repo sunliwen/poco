@@ -1,4 +1,4 @@
-搜索API
+Search API
 ==========
 
 路径: /v1.6/search/
@@ -48,8 +48,8 @@ errors             错误信息。正常情况下为{}。
             "sort_fields": ["categories", "-brands"],
             "page": 2,
             "filters": {
-                "categories": [102233],
-                "brands": [3721],
+                "categories": ["102233"],
+                "brands": ["3721", "1125"],
                 "price": {
                     "type": "range",
                     "from": 3.00,
@@ -58,6 +58,11 @@ errors             错误信息。正常情况下为{}。
             },
             "config_key": "<本次搜索所用后台配置的key>"
          }'
+
+说明：
+    1. filters: 
+        1. categories和brands是列举相应category和brand的id。
+        2. price是根据范围过滤。
 
 结果::
 
