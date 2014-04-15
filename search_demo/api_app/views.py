@@ -49,7 +49,7 @@ from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 
 # TODO: http://www.django-rest-framework.org/topics/documenting-your-api
 class ProductsSearch(APIView):
-    def _search(self, q, sort_fields, filters):
+    def _search(self, q, sort_fields, filters, highlight):
         # TODO: this is just a simplified version of search
         s = S().indexes("item-index").doctypes("item")
         query = main_app_views.construct_query(q)
@@ -70,11 +70,14 @@ class ProductsSearch(APIView):
                     s = s.filter(**{"%s__range" % filter_field: (from_, to_)})
 
         # TODO: config this
-        s = s.highlight("item_name_standard_analyzed")
+        if highlight:
+            s = s.highlight("item_name_standard_analyzed")
 
         return s
 
     def _validate(self, request):
+        # TODO ignore fields and warn
+        # TODO category only one; facets.
         errors = []
         #if not isinstance(request.DATA.get("q", None), basestring):
         #    errors.append(
@@ -88,8 +91,9 @@ class ProductsSearch(APIView):
         sort_fields = request.DATA.get("sort_fields", [])
         page = request.DATA.get("page", 1)
         filters = request.DATA.get("filters", {})
+        highlight = request.DATA.get("highlight", False)
 
-        result_set = self._search(q, sort_fields, filters)
+        result_set = self._search(q, sort_fields, filters, highlight)
         paginator = Paginator(result_set, self.PER_PAGE)
 
         try:
