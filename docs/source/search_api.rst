@@ -20,7 +20,11 @@ api_key          是                                            分配给用户�
 =============    ==========  ===============================   =============================================
 
 注：
-    1. filters中，"categories"字段只接受0或1个值，不接受多个值。
+    1. filters:
+        1. "categories"字段只接受0或1个值，不接受多个值。
+        2. 实施过程中，需要确定哪些字段用来过滤。测试数据集中，仅price, market_price, categories和item_id可用来过滤。
+    2. sort_fields:
+        1. 实施过程中，需要确定哪些字段用来排序。测试数据集中，仅price和market_price可用来排序。
 
 返回结果
 ---------
@@ -41,8 +45,7 @@ errors             错误信息。正常情况下为{}。
 -----
 
 注：
-    1. 示例中的参数仅供参考，并非可以直接用于另行提供的测试站点实例
-    2. 请使用相应站点的api_key
+    1. 请使用相应站点的api_key
 
 请求::
 
@@ -50,16 +53,16 @@ errors             错误信息。正常情况下为{}。
          -H 'Content-Type: application/json' \
          -d '{
             "api_key": "<分配给用户站点的api key>",
-            "q": "奶粉",
+            "q": "bb",
             "sort_fields": ["-price"],
             "page": 1,
             "highlight": true,
             "filters": {
-                "categories": ["102233"],
+                "categories": ["17"],
                 "price": {
                     "type": "range",
-                    "from": 3.00,
-                    "to": 15.00
+                    "from": 50.00,
+                    "to": 150.00
                 }
             }
          }'
