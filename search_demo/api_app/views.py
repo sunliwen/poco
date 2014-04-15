@@ -181,6 +181,9 @@ class ProductsSearch(APIView):
     VALID_FILTER_FIELDS = ("price", "market_price", "categories", "item_id")
     PER_PAGE = 20
 
+    def post(self, request, format=None):
+	return self.get(request, format)
+
     # refs: http://www.django-rest-framework.org/api-guide/pagination
     def get(self, request, format=None):
         errors = self._validate(request)
@@ -188,13 +191,14 @@ class ProductsSearch(APIView):
             return Response({"records": {}, "info": {}, "errors": errors})
         # TODO: handle the api_key
         q = request.DATA.get("q", "")
+	per_page = request.DATA.get("per_page", self.PER_PAGE)
         sort_fields = request.DATA.get("sort_fields", [])
         page = request.DATA.get("page", 1)
         filters = request.DATA.get("filters", {})
         highlight = request.DATA.get("highlight", False)
 
         result_set, sub_categories_list = self._search(q, sort_fields, filters, highlight)
-        paginator = Paginator(result_set, self.PER_PAGE)
+        paginator = Paginator(result_set, per_page)
 
         try:
             items_page = paginator.page(page)
@@ -216,7 +220,7 @@ class ProductsSearch(APIView):
                   "info": {
                      "current_page": page,
                      "num_pages": paginator.num_pages,
-                     "per_page": self.PER_PAGE,
+                     "per_page": per_page,
                      "total_result_count": paginator.count,
                      "facets": {"categories": sub_categories_list}
                   },
@@ -251,6 +255,10 @@ class QuerySuggest(APIView):
                            "message": "'api_key' must be a string."})
 
         return errors
+
+
+    def post(self, request, format=None):
+	return self.get(request, format=None)
 
     def get(self, request, format=None):
         errors = self._validate(request)
