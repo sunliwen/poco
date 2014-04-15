@@ -69,11 +69,26 @@ class ProductsSearch(APIView):
                     to_   = filter_details["to"]
                     s = s.filter(**{"%s__range" % filter_field: (from_, to_)})
 
-        # TODO: config this
         if highlight:
             s = s.highlight("item_name_standard_analyzed")
 
-        return s
+        # TODO: check performance issue
+        categories = filters.get("categories", [])
+        if categories:
+            cat_id = categories[0]
+        else:
+            cat_id = None
+        sub_categories_facets = main_app_views._getSubCategoriesFacets(cat_id)
+        if sub_categories_facets:
+            s = s.facet_raw(sub_categories=sub_categories_facets)
+            sub_categories_list = [{"id": facet["term"],
+                                    "label": main_app_views.CATEGORY_MAP_BY_ID[facet["term"]]["name"], 
+                                    "count": facet["count"]} 
+                                    for facet in s.facet_counts().get("sub_categories", [])]
+        else:
+            sub_categories_list = []
+
+        return s, sub_categories_list
 
     def _validate(self, request):
         # TODO ignore fields and warn
@@ -118,10 +133,18 @@ class ProductsSearch(APIView):
                 else:
                     filter_details = filters[filter_key]
                     if isinstance(filter_details, list):
-                        if filter_key == "categories" and len(filter_details) > 1:
-                            errors.append({"code": "INVALID_PARAM", 
-                                  "param_name": "filters",
-                                  "message": u"'categories'只能包含0或1个值"})
+                        if filter_key == "categories":
+                            if len(filter_details) > 1:
+                                errors.append({"code": "INVALID_PARAM", 
+                                    "param_name": "filters",
+                                    "message": u"'categories'只能包含0或1个值"})
+                            else:
+                                for cat_id in filter_details:
+                                    if not isinstance(cat_id, basestring):
+                                        errors.append({"code": "INVALID_PARAM", 
+                                            "param_name": "filters",
+                                            "message": u"'categories'值应为字符串"})
+
                     elif isinstance(filter_details, dict):
                         if not (filter_details.has_key("type") 
                             and filter_details.has_key("from")
@@ -169,7 +192,7 @@ class ProductsSearch(APIView):
         filters = request.DATA.get("filters", {})
         highlight = request.DATA.get("highlight", False)
 
-        result_set = self._search(q, sort_fields, filters, highlight)
+        result_set, sub_categories_list = self._search(q, sort_fields, filters, highlight)
         paginator = Paginator(result_set, self.PER_PAGE)
 
         try:
@@ -194,7 +217,7 @@ class ProductsSearch(APIView):
                      "num_pages": paginator.num_pages,
                      "per_page": self.PER_PAGE,
                      "total_result_count": paginator.count,
-                     "facets": {}
+                     "facets": {"categories": sub_categories_list}
                   },
                   "errors": {}
                 }

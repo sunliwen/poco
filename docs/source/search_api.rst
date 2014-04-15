@@ -56,7 +56,6 @@ errors             错误信息。正常情况下为{}。
             "highlight": true,
             "filters": {
                 "categories": ["102233"],
-                "brands": ["3721", "1125"],
                 "price": {
                     "type": "range",
                     "from": 3.00,
@@ -66,9 +65,7 @@ errors             错误信息。正常情况下为{}。
          }'
 
 说明：
-    1. filters: 
-        1. categories和brands是列举相应category和brand的id。
-        2. price是根据范围过滤。
+    1. filters: price是根据范围过滤。
 
 结果::
 
@@ -88,8 +85,8 @@ errors             错误信息。正常情况下为{}。
                 "total_result_count": 100,
                 "facets": {
                     "categories": [
-                        {"label": "饮料", "id": 2255, "count": 15}
-                        {"label": "童装", "id": 3721, "count": 8}
+                        {"label": "饮料", "id": "2255", "count": 15}
+                        {"label": "童装", "id": "3721", "count": 8}
                         ]
                 }
             },
