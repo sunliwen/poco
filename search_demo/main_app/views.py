@@ -215,9 +215,9 @@ def _tryAutoComplete(kw_prefix):
 
 # TODO: limit g. single letter
 def _getQuerySuggestions(es, query_str):
-    import time
-    t1 = t2 = t3 = t4 = None
-    t1 = time.time()
+    #import time
+    #t1 = t2 = t3 = t4 = None
+    #t1 = time.time()
     split_by_wspace = [kw.strip() for kw in query_str.split(" ") if kw.strip()]
     #splitted_keywords = " ".join(preprocess_query_str(query_str)).split(" ")
 
@@ -243,7 +243,7 @@ def _getQuerySuggestions(es, query_str):
                                         "value": u"%s" % completed_form,
                                         "label": u"%s" % completed_form,
                                         "count": count})
-        t2 = time.time()
+        #t2 = time.time()
         # also suggest more keywords
         if re.match(r"[a-zA-Z0-9]{1}", kw_prefix) is None: # not suggest for last keyword with only one letter/digit
             suggested_keywords, suggested_categories = _getMoreSuggestions(query_str)
@@ -263,7 +263,7 @@ def _getQuerySuggestions(es, query_str):
                                             })
 
             completed_forms = completed_forms_categories + completed_forms
-            t3 = time.time()
+            #t3 = time.time()
             #completed_forms.append({"type": "split"})
 
             for suggested_term in suggested_keywords:
@@ -279,8 +279,8 @@ def _getQuerySuggestions(es, query_str):
                                         "value": u"%s" % query,
                                         "count": suggested_term["count"],
                                         "label": u"%s" % (query, )})
-            t4 = time.time()
-        print t1, t2, t3, t4
+        #    t4 = time.time()
+        #print t1, t2, t3, t4
         return completed_forms
     else:
         return []
