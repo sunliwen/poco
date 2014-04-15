@@ -12,6 +12,7 @@ class ItemSerializer(serializers.Serializer):
     item_name = serializers.SerializerMethodField("get_item_name")
     #item_name = serializers.CharField(required=True, max_length=256)
     price = serializers.FloatField(required=True)
+    market_price = serializers.FloatField(required=False)
     #image_link = serializers.CharField(required=False, max_length=1024)
     image_link = serializers.Field()
     item_link  = serializers.CharField(required=True, max_length=1024)

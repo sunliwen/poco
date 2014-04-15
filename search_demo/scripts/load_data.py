@@ -321,6 +321,7 @@ def run(items_path):
         #print item["item_name"]
         #sys.exit(1)
         item["price"] = float(item["price"])
+        item["market_price"] = float(item["market_price"])
         res = es.index(index='item-index', doc_type='item', id=item["item_id"], body=item)
         #print item
     es.indices.refresh(index='item-index')
