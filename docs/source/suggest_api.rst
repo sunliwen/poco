@@ -41,10 +41,10 @@ errors
 
 请求::
 
-    curl -X GET 'https://<sub_domain>.tuijianbao.net/v1.6/suggest/' \
+    curl -X GET 'http://search.tuijianbao.net/api/v1.6/suggest/' \
         -H 'Content-Type: application/json' \
         -d '{
-            "api_key": "<分配给用户站点的api key>",
+            "api_key": "123456",
             "q": "贝亲"
         }'
 

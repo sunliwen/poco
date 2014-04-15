@@ -49,19 +49,19 @@ errors             错误信息。正常情况下为{}。
 
 请求::
 
-    curl -X GET 'http://<sub_domain>.tuijianbao.net/v1.6/search/' \
+    curl -X GET 'http://search.tuijianbao.net/api/v1.6/search/' \
          -H 'Content-Type: application/json' \
          -d '{
-            "api_key": "<分配给用户站点的api key>",
+            "api_key": "123456",
             "q": "bb",
-            "sort_fields": ["-price"],
+            "sort_fields": ["-price", "-market_price"],
             "page": 1,
             "highlight": true,
             "filters": {
                 "categories": ["17"],
                 "price": {
                     "type": "range",
-                    "from": 50.00,
+                    "from": 15.00,
                     "to": 150.00
                 }
             }

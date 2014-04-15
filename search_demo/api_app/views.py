@@ -96,13 +96,13 @@ class ProductsSearch(APIView):
         errors = []
         if not isinstance(request.DATA.get("q", None), basestring):
             errors.append({"code": "PARAM_REQUIRED", "field_name": "q", 
-                           "message": u"'q'必填且必须是字符串。"})
+                           "message": u"'q' is required and must be of string type."})
 
         page = request.DATA.get("page", None)
         if page is not None and not isinstance(page, int):
             errors.append({"code": "INVALID_PARAM", 
                            "param_name": "page",
-                           "message": u"'page'必须是整数。"})
+                           "message": u"'page' must be of int type."})
 
 
         sort_fields = request.DATA.get("sort_fields", [])
@@ -112,16 +112,16 @@ class ProductsSearch(APIView):
             if invalid_sort_fields:
                 errors.append({"code": "INVALID_PARAM", 
                                "param_name": "sort_fields",
-                               "message": u"'sort_fields'包含非法字段名%s" % (",".join(invalid_sort_fields))})
+                               "message": u"'sort_fields' contains invalid field names: %s" % (",".join(invalid_sort_fields))})
         else:
             errors.append({"code": "INVALID_PARAM",
                            "param_name": "sort_fields",
-                           "message": u"'sort_fields'必须是一个列表"})
+                           "message": u"'sort_fields' must be a list"})
 
         if not isinstance(request.DATA.get("highlight", False), bool):
             errors.append({"code": "INVALID_PARAM",
                            "param_name": "highlight",
-                           "message": u"'highlight'必须是布尔值"})
+                           "message": u"'highlight' must be a boolean value."})
 
         filters = request.DATA.get("filters", {})
         if isinstance(filters, dict):
@@ -137,16 +137,17 @@ class ProductsSearch(APIView):
                             if len(filter_details) > 1:
                                 errors.append({"code": "INVALID_PARAM", 
                                     "param_name": "filters",
-                                    "message": u"'categories'只能包含0或1个值"})
+                                    "message": u"'categories' can not contain more than 1 value."})
                             else:
                                 for cat_id in filter_details:
                                     if not isinstance(cat_id, basestring):
                                         errors.append({"code": "INVALID_PARAM", 
                                             "param_name": "filters",
-                                            "message": u"'categories'值应为字符串"})
+                                            "message": u"'categories' should contain string values."})
 
                     elif isinstance(filter_details, dict):
                         if not (filter_details.has_key("type") 
+                            and filter_details["type"] == "range"
                             and filter_details.has_key("from")
                             and filter_details.has_key("to")):
                             invalid_details_filters.append(filter_key)
@@ -155,24 +156,24 @@ class ProductsSearch(APIView):
             if invalid_name_filters:
                 errors.append({"code": "INVALID_PARAM", 
                                "param_name": "filters",
-                               "message": u"'filters'包含非法字段名：%s" % (",".join(invalid_name_filters))})
+                               "message": u"'filters' contains invalid field names: %s" % (",".join(invalid_name_filters))})
             if invalid_details_filters:
                 errors.append({"code": "INVALID_PARAM", 
                                "param_name": "filters",
-                               "message": u"'filters'如下字段内容有误：%s" % (",".join(invalid_details_filters))})
+                               "message": u"'filters' contains fields with invalid content: %s" % (",".join(invalid_details_filters))})
         else:
             errors.append({"code": "INVALID_PARAM",
                            "param_name": "filters",
-                           "message": u"'filters'必须是一个dict/hashtable"})
+                           "message": u"'filters' must be a dict/hashtable"})
 
         api_key = request.DATA.get("api_key", None)
         if api_key is None:
             errors.append({"code": "PARAM_REQUIRED", "field_name": "api_key", 
-                           "message": "'api_key'必填且必须是字符串。"})
+                           "message": "'api_key' is required."})
         elif not isinstance(api_key, basestring):
             errors.append({"code": "INVALID_PARAM", 
                            "param_name": "api_key",
-                           "message": u"'api_key'必须是字符串。"})
+                           "message": u"'api_key' must be a string."})
 
         return errors
 
@@ -238,16 +239,16 @@ class QuerySuggest(APIView):
         errors = []
         if not isinstance(request.DATA.get("q", None), basestring):
             errors.append({"code": "PARAM_REQUIRED", "field_name": "q", 
-                           "message": "'q'必填且必须是字符串。"})
+                           "message": "'q' is required and must be a string."})
 
         api_key = request.DATA.get("api_key", None)
         if api_key is None:
             errors.append({"code": "PARAM_REQUIRED", "field_name": "api_key", 
-                           "message": "'api_key'必填且必须是字符串。"})
+                           "message": "'api_key' is required."})
         elif not isinstance(api_key, basestring):
             errors.append({"code": "INVALID_PARAM", 
                            "param_name": "api_key",
-                           "message": "'api_key'必须是字符串。"})
+                           "message": "'api_key' must be a string."})
 
         return errors
 
