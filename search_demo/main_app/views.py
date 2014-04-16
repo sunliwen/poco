@@ -21,62 +21,30 @@ def preprocess_query_str(query_str):
 
 
 # refs: http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-dsl-bool-query.html
-def construct_query(query_str):
+def construct_query(query_str, for_filter=False):
     splitted_keywords = " ".join(preprocess_query_str(query_str)).split(" ")
-    #query = {"bool": {
-    #           "should": [
-    #            {'match': {'item_name': {'query': splitted_keywords, 
-    #                                 'operator': "and"}}},
-    #            {"span_first": {'match': {"span_term": {"item_name": ""}}
-    #                            "end": 3
-    #                            }
-    #           ]
-    #         }
-    #        }
-    #query = {'match': {'item_name': {'query': splitted_keywords, 
-    #                                 'operator': "and"}}}
-    #keywords = [kw.strip() for kw in query_str.split(" ") if kw.strip()]
-    query = {
-        "bool": {
-            "must": [
-            ],
-            "should": [
-                {'match': {'item_name': {"boost": 2.0, 
-                                         'query': splitted_keywords,
-                                         'operator': "and"}}}
-            ]
-        }
-    }
+    match_phrases = []
     for keyword in splitted_keywords:
-        query["bool"]["must"].append({"match_phrase": {"item_name_standard_analyzed": keyword}})
+        match_phrases.append({"match_phrase": {"item_name_standard_analyzed": keyword}})
 
+    if for_filter:
+        query = {
+            "bool": {
+                "must": match_phrases
+            }
+        }
+    else:
+        query = {
+            "bool": {
+                "must": match_phrases,
+                "should": [
+                    {'match': {'item_name': {"boost": 2.0, 
+                                             'query': splitted_keywords,
+                                             'operator': "and"}}}
+                ]
+            }
+        }
 
-    #query = {
-    #         "bool": {
-    #                        "should": [
-    #                            {"match": {"item_name": {"query": splitted_keywords, "operator": "and"}}},
-    #                            {"match": {"item_name.primitive": {"boost": 2.0, "query": splitted_keywords, "operator": "and"}}}
-    #                        ],
-    #                        "minimum_should_match": 1
-    #                    }
-    #         }
-
-
-    #processed_keywords = preprocess_query_str(query_str)
-    #query = {
-    #    "bool": {
-    #        "must": [
-    #            
-    #        ]
-    #    }
-    #}
-    #for keyword in processed_keywords:
-    #    sub_query = {"match": {"item_name": {"query": keyword,
-    #                                     "operator": "and",
-    #                                     #"fuzziness": "AUTO"
-    #                                     }}}
-    #    query["bool"]["must"].append(sub_query)
-    
     return query
 
 def addFilterToFacets(s, facets):
@@ -166,20 +134,6 @@ def get_breadcrumbs(category):
     return breadcrumbs
 
 
-# refs: http://blog.qbox.io/quick-and-dirty-autocomplete-with-elasticsearch-completion-suggest
-# refs: http://www.elasticsearch.org/blog/you-complete-me/
-def v_ajax_auto_complete_term(request):
-    term_prefix = request.GET.get("term", "").strip()
-    #es = Elasticsearch()
-    #res = es.suggest(index="item-index", body={"item_suggest": {"text": term_prefix, "completion": {"field": "item_name_suggest"}}})
-    #options = res["item_suggest"][0]["options"]
-    #suggested_texts = [option["text"] for option in options]
-    suggested_terms = _getQuerySuggestions(term_prefix)
-    #suggested_texts = [term_prefix + " %(term)s {%(count)s}" % term for term in suggested_terms]
-    suggested_texts = [term_prefix + " %(term)s" % term for term in suggested_terms]
-    return HttpResponse(json.dumps(suggested_texts))
-
-
 def _extractSuggestedTerms(res, name):
     suggested_keywords = res["facets"][name]
     if suggested_keywords["total"] > 0:
@@ -195,8 +149,6 @@ def _extractSuggestedTerms(res, name):
         return []
 
 
-
-
 def _getMoreSuggestions(query_str):
     splitted_keywords = " ".join(preprocess_query_str(query_str))
     query = construct_query(query_str)
@@ -208,10 +160,15 @@ def _getMoreSuggestions(query_str):
                              "facet_filter": filter}
              }
     es = Elasticsearch()
-    res = es.search(index="item-index", body={"query": query,
+    import time
+    t1 = time.time()
+    res = es.search(index="item-index", 
+                    search_type="count",
+                    body={"query": query,
                                               "facets": facets,
                                               "filter": filter})
-
+    t2 = time.time()
+    print "TIME SPENT:", t2-t1
     suggested_categories = _extractSuggestedTerms(res, "categories")
     suggested_categories = suggested_categories[:2]
     return _extractSuggestedTerms(res, "keywords"), suggested_categories
@@ -226,7 +183,6 @@ def _tryAutoComplete(kw_prefix):
 
 # TODO: limit g. single letter
 def _getQuerySuggestions(es, query_str):
-    #import time
     #t1 = t2 = t3 = t4 = None
     #t1 = time.time()
     split_by_wspace = [kw.strip() for kw in query_str.split(" ") if kw.strip()]
@@ -243,18 +199,19 @@ def _getQuerySuggestions(es, query_str):
         for kw in possible_last_keywords:
             completed_form = (" ".join(split_by_wspace[:-1]) + " " + kw).strip()
             #query = {'match': {'item_name': {'query': completed_form, 'operator': "and"}}}
-            query = construct_query(completed_form)
+            query = construct_query(completed_form, for_filter=True)
+            #query.update({"term": {"available": True}})
             res = es.search(index="item-index",
                                     search_type="count",
-                                              body={"query": query,
-                                              "filter": {"term": {"available": True}}})
+                                    body={"query": query,
+                                    "filter": {"term": {"available": True}}})
             count = res["hits"]["total"]
             if count > 0:
                 completed_forms.append({"type": "query_str",
                                         "value": u"%s" % completed_form,
                                         "label": u"%s" % completed_form,
                                         "count": count})
-        #t2 = time.time()
+
         # also suggest more keywords
         if re.match(r"[a-zA-Z0-9]{1}", kw_prefix) is None: # not suggest for last keyword with only one letter/digit
             suggested_keywords, suggested_categories = _getMoreSuggestions(query_str)
@@ -274,8 +231,6 @@ def _getQuerySuggestions(es, query_str):
                                             })
 
             completed_forms = completed_forms_categories + completed_forms
-            #t3 = time.time()
-            #completed_forms.append({"type": "split"})
 
             for suggested_term in suggested_keywords:
                 skip = False
@@ -290,8 +245,6 @@ def _getQuerySuggestions(es, query_str):
                                         "value": u"%s" % query,
                                         "count": suggested_term["count"],
                                         "label": u"%s" % (query, )})
-        #    t4 = time.time()
-        #print t1, t2, t3, t4
         return completed_forms
     else:
         return []
@@ -301,23 +254,7 @@ def v_ajax_auto_complete_term(request):
     query_str = request.GET.get("term", "").strip()
     es = Elasticsearch()
     suggested_texts = _getQuerySuggestions(es, query_str)
-    #suggested_texts = [{"value": u"%(query)s" % completed_form,
-    #                    "label": u"%(query)s [结果数：%(count)s]" % completed_form} for completed_form in completed_forms]
     return HttpResponse(json.dumps(suggested_texts))
-
-
-#def v_ajax_auto_complete_term(request):
-#    term_prefix = request.GET.get("term", "").strip()
-#    es = Elasticsearch()
-#    #res = es.search(index="item-index", doc_type="item", q=term_prefix)
-#    res = es.search(index="item-index",
-#                    doc_type="item",
-#                    body={"query": {"multi_match": {"query": term_prefix, "operator": "and",
-#                             "fields": ["item_name"]}},
-#                          "filter": {"term": {"available": True}},
-#                         })
-#    suggested_texts = [item["_source"]["item_name"] for item in res.get("hits", {}).get("hits", [])]
-#    return HttpResponse(json.dumps(suggested_texts))
 
 
 CATEGORY_TREE = {u'11': {u'1100': {'name': u'\u65b0\u751f\u513f'},
