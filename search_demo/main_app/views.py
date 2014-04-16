@@ -79,14 +79,18 @@ def construct_query(query_str):
     
     return query
 
-def _getSubCategoriesFacets(cat_id):
+def _getSubCategoriesFacets(cat_id, s):
     if cat_id is None:
         regex = r"\d{2}"
     elif len(cat_id) == 2: #FIXME: make filter work with facets instead
         regex = r"%s\d{2}" % cat_id
     else:
         return None
-    return {'terms': {'regex': regex, 'field': 'categories', 'size': 20}}
+    filter = s._build_query().get("filter", None)
+    result = {'terms': {'regex': regex, 'field': 'categories', 'size': 20}}
+    if filter:
+        result["facet_filter"] = filter
+    return result
 
 def v_index(request):
     query_str = request.GET.get("q", "")
@@ -114,18 +118,18 @@ def v_index(request):
     else:
         category = CATEGORY_TREE
 
-    sub_categories_facets = _getSubCategoriesFacets(cat)
-    if sub_categories_facets:
-        s = s.facet_raw(sub_categories=sub_categories_facets)
-        sub_categories_list = [(facet["term"], CATEGORY_MAP_BY_ID[facet["term"]]["name"], facet["count"]) for facet in s.facet_counts().get("sub_categories", [])]
-    else:
-        sub_categories_list = []
-
     if op=="u":
         s = s.order_by("price")
     elif op=="d":
         s = s.order_by("-price")
 
+    sub_categories_facets = _getSubCategoriesFacets(cat, s)
+    if sub_categories_facets:
+        s = s.facet_raw(sub_categories=sub_categories_facets)
+        sub_categories_list = [(facet["term"], CATEGORY_MAP_BY_ID[facet["term"]]["name"], facet["count"]) for facet in s.facet_counts().get("sub_categories", [])]
+    else:
+        sub_categories_list = []
+    
     # TODO: redirect when category is None
     if category is None:
     #    redirect(

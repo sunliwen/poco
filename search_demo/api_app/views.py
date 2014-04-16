@@ -78,7 +78,7 @@ class ProductsSearch(APIView):
             cat_id = categories[0]
         else:
             cat_id = None
-        sub_categories_facets = main_app_views._getSubCategoriesFacets(cat_id)
+        sub_categories_facets = main_app_views._getSubCategoriesFacets(cat_id, s)
         if sub_categories_facets:
             s = s.facet_raw(sub_categories=sub_categories_facets)
             sub_categories_list = [{"id": facet["term"],
@@ -128,6 +128,7 @@ class ProductsSearch(APIView):
             invalid_name_filters = []
             invalid_details_filters = []
             for filter_key in filters.keys():
+                print filter_key, ":", not filter_key in self.VALID_FILTER_FIELDS
                 if not filter_key in self.VALID_FILTER_FIELDS:
                     invalid_name_filters.append(filter_key)
                 else:
@@ -178,7 +179,10 @@ class ProductsSearch(APIView):
         return errors
 
     VALID_SORT_FIELDS = ("price", "market_price")
-    VALID_FILTER_FIELDS = ("price", "market_price", "categories", "item_id")
+    VALID_FILTER_FIELDS = ("price", "market_price", "categories", "item_id", "available")
+    DEFAULT_FILTERS = {
+        "available": [True]
+    }
     PER_PAGE = 20
 
     def post(self, request, format=None):
@@ -196,6 +200,11 @@ class ProductsSearch(APIView):
         page = request.DATA.get("page", 1)
         filters = request.DATA.get("filters", {})
         highlight = request.DATA.get("highlight", False)
+
+        # Apply default filters
+        for filter_key , filter_content in self.DEFAULT_FILTERS.items():
+            if not filters.has_key(filter_key):
+                filters[filter_key] = filter_content
 
         result_set, sub_categories_list = self._search(q, sort_fields, filters, highlight)
         paginator = Paginator(result_set, per_page)

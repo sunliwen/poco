@@ -22,7 +22,8 @@ api_key          是                                            分配给用户�
 注：
     1. filters:
         1. "categories"字段只接受0或1个值，不接受多个值。
-        2. 实施过程中，需要确定哪些字段用来过滤。测试数据集中，仅price, market_price, categories和item_id可用来过滤。
+        2. 实施过程中，需要确定哪些字段用来过滤。测试数据集中，仅price, market_price, categories，item_id和available可用来过滤。
+        3. available 默认为[true]，即如果不在filter中指定available，则仅仅返回有售的产品。
     2. sort_fields:
         1. 实施过程中，需要确定哪些字段用来排序。测试数据集中，仅price和market_price可用来排序。
 
