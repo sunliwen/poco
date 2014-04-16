@@ -128,7 +128,6 @@ class ProductsSearch(APIView):
             invalid_name_filters = []
             invalid_details_filters = []
             for filter_key in filters.keys():
-                print filter_key, ":", not filter_key in self.VALID_FILTER_FIELDS
                 if not filter_key in self.VALID_FILTER_FIELDS:
                     invalid_name_filters.append(filter_key)
                 else:
