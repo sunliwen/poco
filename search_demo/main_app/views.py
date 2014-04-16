@@ -160,15 +160,11 @@ def _getMoreSuggestions(query_str):
                              "facet_filter": filter}
              }
     es = Elasticsearch()
-    import time
-    t1 = time.time()
     res = es.search(index="item-index", 
                     search_type="count",
                     body={"query": query,
                                               "facets": facets,
                                               "filter": filter})
-    t2 = time.time()
-    print "TIME SPENT:", t2-t1
     suggested_categories = _extractSuggestedTerms(res, "categories")
     suggested_categories = suggested_categories[:2]
     return _extractSuggestedTerms(res, "keywords"), suggested_categories
@@ -183,8 +179,6 @@ def _tryAutoComplete(kw_prefix):
 
 # TODO: limit g. single letter
 def _getQuerySuggestions(es, query_str):
-    #t1 = t2 = t3 = t4 = None
-    #t1 = time.time()
     split_by_wspace = [kw.strip() for kw in query_str.split(" ") if kw.strip()]
     #splitted_keywords = " ".join(preprocess_query_str(query_str)).split(" ")
 
