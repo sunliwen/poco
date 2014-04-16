@@ -388,7 +388,7 @@ something
             },*/
             select: function(event, ui) {
                 console.log("Selected: " + "type:" + ui.item.type + ":" + ui.item.value);
-                if (ui.item.type == "category") {
+                if (ui.item.type == "facet" && ui.item.field_name == "categories") {
                     $("#query-cat").val(ui.item.category_id);
                 }
                 $("#form-query").submit();
@@ -397,9 +397,16 @@ something
             minLength: 1
         })
         .data("ui-autocomplete")._renderItem = function(ul, item) {
-            return $("<li>")
-                   .append("<a>" + item.label + "<span style='float: right;'>结果数：" + item.count + "个</span></a>")
-                   .appendTo(ul);
+              if (item.type == "facet" && item.field_name == "categories") {
+                  item.label = "在 <em class='category'>" + item.facet_label + "</em> 分类中搜索";
+              }
+              else {
+                item.label = item.value;
+              };
+
+              return $("<li>")
+                       .append("<a>" + item.label + "<span style='float: right;'>结果数：" + item.count + "个</span></a>")
+                       .appendTo(ul);
         };
     </script>
 

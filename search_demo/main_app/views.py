@@ -207,9 +207,9 @@ def _getQuerySuggestions(es, query_str):
                                     "filter": {"term": {"available": True}}})
             count = res["hits"]["total"]
             if count > 0:
-                completed_forms.append({"type": "query_str",
+                completed_forms.append({"type": "completion",
                                         "value": u"%s" % completed_form,
-                                        "label": u"%s" % completed_form,
+                                        #"label": u"%s" % completed_form,
                                         "count": count})
 
         # also suggest more keywords
@@ -223,9 +223,12 @@ def _getQuerySuggestions(es, query_str):
                 if category:
                     breadcrumbs = get_breadcrumbs(category)[1:]
                     breadcrumbs_str = " > ".join([cat["category"]["name"] for cat in breadcrumbs])
-                    completed_forms_categories.append({"type": "category", 
-                                            "label": u"在 <em class='category'>%s</em>  分类中搜索" % (breadcrumbs_str,),
+                    completed_forms_categories.append({"type": "facet", 
+                                            "field_name": "categories",
+                                            #"label": u"在 <em class='category'>%s</em>  分类中搜索" % (breadcrumbs_str,),
+                                            "facet_label": breadcrumbs_str,
                                             "value": query_str,
+                                            #"label": query_str,
                                             "category_id": category_id,
                                             "count": suggested_term["count"]
                                             })
@@ -241,10 +244,11 @@ def _getQuerySuggestions(es, query_str):
                 if skip:
                     continue
                 query = query_str + " " + suggested_term["term"]
-                completed_forms.append({"type": "query_str",
+                completed_forms.append({"type": "more_keyword",
                                         "value": u"%s" % query,
-                                        "count": suggested_term["count"],
-                                        "label": u"%s" % (query, )})
+                                        "count": suggested_term["count"]
+                                        #"label": u"%s" % (query, )})
+                                        })
         return completed_forms
     else:
         return []

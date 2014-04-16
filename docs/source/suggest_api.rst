@@ -53,7 +53,9 @@ errors
     {
         "suggestions": [
             {"type": "completion", "value": "贝亲亲", "count": 15},
-            {"type": "facet", "field_name": "categories", "label": "童装", 
+            {"type": "facet", "field_name": "categories", 
+                     "facet_label": "童装", 
+                     "value": "贝亲",
                      "id": "3721", "count": 25},
             {"type": "more_keyword", "value": "贝亲 奶粉", "count": 38}
         ],
