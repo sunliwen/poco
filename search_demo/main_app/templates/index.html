@@ -376,16 +376,21 @@ something
         // refs: http://jqueryui.com/autocomplete/
         $("#query-input").autocomplete({
             source: function(request, response) {
-                $.getJSON("{% url 'main_app_v_ajax_auto_complete_term' %}", {term: request.term},
+                var request_body = {
+                    "api_key": "123456",
+                    "q": request.term
+                };
+
+                $.post("{% url 'query-suggest' %}", 
+                      request_body,
                       function(data) {
-                          //console.log(data);
-                          response(data);
-                      })},
-            /*focus: function(event, ui) {
-                //console.log(ui);
-                //$("#query-input").val(ui.item.label);
-                return false;
-            },*/
+                        if (Object.keys(data.errors).length == 0) {
+                          response(data.suggestions);
+                        }
+                        else {
+                          response([]);
+                        }
+                      }, "json")},
             select: function(event, ui) {
                 console.log("Selected: " + "type:" + ui.item.type + ":" + ui.item.value);
                 if (ui.item.type == "facet" && ui.item.field_name == "categories") {
