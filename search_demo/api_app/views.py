@@ -270,4 +270,4 @@ class QuerySuggest(APIView):
         es = Elasticsearch()
         suggested_texts = main_app_views._getQuerySuggestions(es, q)
         
-        return Response(suggested_texts)
+        return Response({"suggestions": suggested_texts, "errors": {}})
