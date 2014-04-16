@@ -99,7 +99,7 @@ class ProductsSearch(APIView):
                            "message": u"'q' is required and must be of string type."})
 
         page = request.DATA.get("page", None)
-        if page is not None and not isinstance(page, int):
+        if page is not None and not page.isdigit():
             errors.append({"code": "INVALID_PARAM", 
                            "param_name": "page",
                            "message": u"'page' must be of int type."})
