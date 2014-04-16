@@ -79,6 +79,12 @@ def construct_query(query_str):
     
     return query
 
+def addFilterToFacets(s, facets):
+    filter = s._build_query().get("filter", None)
+    if filter:
+        facets["facet_filter"] = filter
+    return filter
+
 def _getSubCategoriesFacets(cat_id, s):
     if cat_id is None:
         regex = r"\d{2}"
@@ -86,10 +92,8 @@ def _getSubCategoriesFacets(cat_id, s):
         regex = r"%s\d{2}" % cat_id
     else:
         return None
-    filter = s._build_query().get("filter", None)
     result = {'terms': {'regex': regex, 'field': 'categories', 'size': 20}}
-    if filter:
-        result["facet_filter"] = filter
+    addFilterToFacets(s, result)
     return result
 
 def v_index(request):
@@ -196,14 +200,17 @@ def _extractSuggestedTerms(res, name):
 def _getMoreSuggestions(query_str):
     splitted_keywords = " ".join(preprocess_query_str(query_str))
     query = construct_query(query_str)
+    filter = {"term": {"available": True}}
     facets = {'keywords': {'terms': {'field': 'keywords',
-                                      'size': 10}},
-              'categories': {'terms': {'regex': r'\d{4}', 'field': 'categories', 'size': 5}},
-                            }
+                                      'size': 10},
+                           "facet_filter": filter},
+              'categories': {'terms': {'regex': r'\d{4}', 'field': 'categories', 'size': 5},
+                             "facet_filter": filter}
+             }
     es = Elasticsearch()
     res = es.search(index="item-index", body={"query": query,
                                               "facets": facets,
-                                              "filter": {"term": {"available": True}}})
+                                              "filter": filter})
 
     suggested_categories = _extractSuggestedTerms(res, "categories")
     suggested_categories = suggested_categories[:2]
