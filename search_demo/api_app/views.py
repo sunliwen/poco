@@ -47,6 +47,31 @@ from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 """
 
 
+def is_float(value):
+    try:
+        float(value)
+        return True
+    except ValueError:
+        return False
+is_float.expected_type = "numeric"
+
+def is_string(value):
+    return isinstance(value, basestring)
+is_string.expected_type = "string"
+
+def is_boolean(value):
+    return isinstance(value, bool)
+is_boolean.expected_type = "boolean"
+
+def validate_list_value_types(list, expected_type):
+    for item in list:
+        if expected_type == "float":
+            return is_float(item)
+        elif expected_type == "string":
+            return isinstance(item, basestring)
+        else:
+            return True
+
 # TODO: http://www.django-rest-framework.org/topics/documenting-your-api
 class ProductsSearch(APIView):
     def _search(self, q, sort_fields, filters, highlight):
@@ -102,13 +127,14 @@ class ProductsSearch(APIView):
         if page is not None and not str(page).isdigit():
             errors.append({"code": "INVALID_PARAM", 
                            "param_name": "page",
-                           "message": u"'page' must be of int type."})
+                           "message": u"'page' must be a number."})
 
 
         sort_fields = request.DATA.get("sort_fields", [])
         if isinstance(sort_fields, list):
             invalid_sort_fields = [sort_field for sort_field in sort_fields
-                                   if not sort_field.strip("-") in self.VALID_SORT_FIELDS]
+                                   if (not isinstance(sort_field, basestring)) 
+                                       or (not sort_field.strip("-") in self.VALID_SORT_FIELDS)]
             if invalid_sort_fields:
                 errors.append({"code": "INVALID_PARAM", 
                                "param_name": "sort_fields",
@@ -128,7 +154,8 @@ class ProductsSearch(APIView):
             invalid_name_filters = []
             invalid_details_filters = []
             for filter_key in filters.keys():
-                if not filter_key in self.VALID_FILTER_FIELDS:
+                filter_validator = self.FILTER_FIELD_TYPE_VALIDATORS.get(filter_key, None)
+                if filter_validator is None:
                     invalid_name_filters.append(filter_key)
                 else:
                     filter_details = filters[filter_key]
@@ -138,18 +165,21 @@ class ProductsSearch(APIView):
                                 errors.append({"code": "INVALID_PARAM", 
                                     "param_name": "filters",
                                     "message": u"'categories' can not contain more than 1 value."})
-                            else:
-                                for cat_id in filter_details:
-                                    if not isinstance(cat_id, basestring):
-                                        errors.append({"code": "INVALID_PARAM", 
+                        for filter_details_item in filter_details:
+                            if not filter_validator(filter_details_item):
+                                errors.append({"code": "INVALID_PARAM", 
                                             "param_name": "filters",
-                                            "message": u"'categories' should contain string values."})
-
+                                            "message": u"'%s' should contain %s values." \
+                                                       % (filter_key, filter_validator.expected_type)})
+                                break
                     elif isinstance(filter_details, dict):
                         if not (filter_details.has_key("type") 
                             and filter_details["type"] == "range"
                             and filter_details.has_key("from")
                             and filter_details.has_key("to")):
+                            invalid_details_filters.append(filter_key)
+                        elif filter_key in ("price", "market_price") and \
+                                not (is_float(filter_details["from"]) and is_float(filter_details["to"])):
                             invalid_details_filters.append(filter_key)
                     else:
                         invalid_details_filters.append(filter_key)
@@ -178,7 +208,14 @@ class ProductsSearch(APIView):
         return errors
 
     VALID_SORT_FIELDS = ("price", "market_price")
-    VALID_FILTER_FIELDS = ("price", "market_price", "categories", "item_id", "available")
+    #VALID_FILTER_FIELDS = ("price", "market_price", "categories", "item_id", "available")
+    FILTER_FIELD_TYPE_VALIDATORS = {
+        "price": is_float,
+        "market_price": is_float,
+        "categories": is_string,
+        "item_id": is_string,
+        "available": is_boolean
+    }
     DEFAULT_FILTERS = {
         "available": [True]
     }
