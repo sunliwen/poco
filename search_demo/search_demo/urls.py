@@ -9,4 +9,5 @@ urlpatterns = patterns('',
     url(r'^admin/', include(admin.site.urls)),
     url(r'^', include('main_app.urls')),
     url(r'^api/', include('api_app.urls')),
+    url(r'^api/', include('recommender.urls')),
 )

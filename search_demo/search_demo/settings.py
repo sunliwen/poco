@@ -21,6 +21,7 @@ SECRET_KEY = '=bc0@z=9h)2r6h8h-us*p_c!r6d4&nzew*jzrkh0#y-mhjg#p2'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
+
 #DEBUG = False
 
 TEMPLATE_DEBUG = True
@@ -40,6 +41,8 @@ INSTALLED_APPS = (
     'bootstrap_pagination',
     'django_extensions',
     'rest_framework',
+    'api_app',
+    'recommender',
     'main_app',
     'gunicorn'
 )
@@ -98,3 +101,28 @@ LOGGING = {
     'version': 1,
     'disable_existing_loggers': True,
 }
+
+REST_FRAMEWORK = {
+    'DEFAULT_RENDERER_CLASSES': (
+        'rest_framework.renderers.UnicodeJSONRenderer',
+        'rest_framework.renderers.JSONPRenderer',
+        'rest_framework.renderers.BrowsableAPIRenderer',
+    )
+}
+
+
+# recommender app settings
+MONGODB_HOST = None
+REPLICA_SET = None
+PRINT_RAW_LOG = False
+API_SERVER_PREFIX = None
+# this should be a dictionary. set([site_id])
+#recommendation_deduplicate_item_names_required_set = None
+
+
+from local_settings import *
+
+
+assert MONGODB_HOST is not None
+assert API_SERVER_PREFIX is not None
+#assert recommendation_deduplicate_item_names_required_set is not None
