@@ -236,9 +236,9 @@ class MongoClient:
             item_in_db.update({"updated_on": datetime.datetime.now()})  # might be useful to have the updated_on
 
             # won't update item_name once generated, in case we met some bad server like 180.153.0.0/16
-            item_name_in_db = item_in_db.get("item_name", None)
-            if item_name_in_db:
-                del item["item_name"]  # won't update name twice
+            #item_name_in_db = item_in_db.get("item_name", None)
+            #if item_name_in_db:
+            #    del item["item_name"]  # won't update name twice
 
         item_in_db.update(item)
         c_items.save(item_in_db)
