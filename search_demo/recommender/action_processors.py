@@ -20,6 +20,8 @@ from mongo_client import MongoClient
 from mongo_client import SimpleRecommendationResultFilter
 from mongo_client import SameGroupRecommendationResultFilter
 
+from es_client import es_index_item
+
 
 #logging.basicConfig(format="%(asctime)s|%(levelname)s|%(name)s|%(message)s",
 #                    level=logging.WARNING,
@@ -403,7 +405,8 @@ class UpdateItemProcessor(ActionProcessor):
                 args["categories"] = smart_split(args["categories"], ",")
             if args["item_group"] is None:
                 del args["item_group"]
-            mongo_client.updateItem(site_id, args)
+            item = mongo_client.updateItem(site_id, args)
+            es_index_item(item)
             return {"code": 0}
 
 

@@ -41,7 +41,7 @@ GET /1.6/redirect/
 class APIRootView(APIView):
     def get(self, request, format=None):
         return Response({
-            'view-item': reverse('recommender-events-view-item', request=request, format=format),
+            'view-item': reverse('recommender-events', request=request, format=format),
         })
 
 
@@ -53,52 +53,26 @@ class ItemsAPIView(APIView):
         pass
 
 
-class CommonActionProcessorWrapperAPIView(APIView):
-    def handlePTMID(self):
-        # TODO
-        self.ptm_id = self.get_cookie("__ptmid")
-        if not self.ptm_id:
-            self.ptm_id = str(uuid.uuid4())
-            self.set_cookie("__ptmid", self.ptm_id, expires_days=109500)
+class ItemsAPIView(APIView):
+    def post(self, request, format=None):
+        pass
 
 
+class BaseAPIView(APIView):
+    def getActionProcessor(self, args):
+        #return action_processors.EVENT_TYPE2ACTION_PROCESSOR.get(event_type, None)
+        raise NotImplemented
 
-
-# TODO: note: difference between APIHandler and SingleRequestHandler
-class EventsAPIView(APIView):
-    MAX_AGE = 109500 * 3600 * 24
+    def process(self, request, response, site_id, args):
+        raise NotImplemented
 
     def _extractArguments(self, request):
         # TODO: make it more secure
         return dict(kv for kv in request.GET.items())
 
-    def get_ptm_id(self, request, response):
-        ptm_id = request.COOKIES.get("__ptmid", None)
-        if not ptm_id:
-            ptm_id = str(uuid.uuid4())
-            response.set_cookie("__ptmid", value=ptm_id, max_age=self.MAX_AGE)
-        return ptm_id
-
-    def process(self, request, response, site_id, args, action_processor):
-        not_log_action = "not_log_action" in args
-
-        processor = action_processor(not_log_action)
-        err_msg, args = processor.processArgs(args)
-        if err_msg:
-            return {"code": 1, "err_msg": err_msg}
-        else:
-            args["ptm_id"] = self.get_ptm_id(request, response)
-            referer = request.META.get("HTTP_REFERER", "")
-            args["referer"] = referer
-            return processor.process(site_id, args)
-
     def get(self, request, format=None):
         args = self._extractArguments(request)
         api_key = args.get("api_key", None)
-        event_type = args.get("event_type", None)
-        action_processor = action_processors.EVENT_TYPE2ACTION_PROCESSOR.get(event_type, None)
-        if action_processor is None:
-            return Response({"code": 2, "err_msg": "no or invalid event_type"})
         api_key2site_id = mongo_client.getApiKey2SiteID()
         if api_key not in api_key2site_id:
             return Response({'code': 2, 'err_msg': 'no such api_key'})
@@ -107,8 +81,77 @@ class EventsAPIView(APIView):
             del args["api_key"]
             try:
                 response = Response()
-                response_data = self.process(request, response, site_id, args, action_processor)
+                response_data = self.process(request, response, site_id, args)
                 response.data = response_data
                 return response
             except action_processors.ArgumentError as e:
                 return Response({"code": 1, "err_msg": e.message})
+
+    def post(self, request, format=None):
+        args = request.DATA
+        api_key = args.get("api_key", None)
+        api_key2site_id = mongo_client.getApiKey2SiteID()
+        if api_key not in api_key2site_id:
+            return Response({'code': 2, 'err_msg': 'no such api_key'})
+        else:
+            site_id = api_key2site_id[api_key]
+            del args["api_key"]
+            try:
+                response = Response()
+                response_data = self.process_post(request, response, site_id, args)
+                response.data = response_data
+                return response
+            except action_processors.ArgumentError as e:
+                return Response({"code": 1, "err_msg": e.message})
+
+
+class SingleRequestAPIView(BaseAPIView):
+    def process(self, request, response, site_id, args):
+        not_log_action = "not_log_action" in args
+        processor_found, processor_class = self.getActionProcessor(args)
+        if not processor_found:
+            response = processor_class
+            return response
+        else:
+            action_processor = processor_class(not_log_action)
+            err_msg, args = processor.processArgs(args)
+            if err_msg:
+                return {"code": 1, "err_msg": err_msg}
+            else:
+                args["ptm_id"] = self.get_ptm_id(request, response)
+                referer = request.META.get("HTTP_REFERER", "")
+                args["referer"] = referer
+                return processor.process(site_id, args)
+
+
+class ItemsAPIView(BaseAPIView):
+    def getActionProcessor(self, args):
+        return True, action_processors.UpdateItemProcessor
+
+    def process_post(self, request, response, site_id, args):
+        _, processor_class = self.getActionProcessor(args)
+        action_processor = processor_class()
+
+        return action_processor.process(site_id, args)
+
+
+class EventsAPIView(SingleRequestAPIView):
+    MAX_AGE = 109500 * 3600 * 24
+
+    def getActionProcessor(self, args):
+        event_type = args.get("event_type", None)
+        action_processor = action_processors.EVENT_TYPE2ACTION_PROCESSOR.get(event_type, None)
+        if action_processor is None:
+            return False, {"code": 2, "err_msg": "no or invalid event_type"}
+        else:
+            return True, action_processor
+
+    def get_ptm_id(self, request, response):
+        ptm_id = request.COOKIES.get("__ptmid", None)
+        if not ptm_id:
+            ptm_id = str(uuid.uuid4())
+            response.set_cookie("__ptmid", value=ptm_id, max_age=self.MAX_AGE)
+        return ptm_id
+
+
+

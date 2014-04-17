@@ -9,7 +9,9 @@ urlpatterns = patterns('main_app.views',
     # url(r'^blog/', include('blog.urls')),
     url(r'^v1.6/$', views.APIRootView.as_view(), name="api_root"),
     url(r'^v1.6/events/$', views.EventsAPIView.as_view(), 
-        name="recommender-events-view-item"),
+        name="recommender-events"),
+    url(r'^v1.6/items/$', views.ItemsAPIView.as_view(), 
+        name="recommender-items"),
     )
 
 

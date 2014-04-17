@@ -292,6 +292,7 @@ def preprocess_query_str(query_str):
         result.append(cutted_keyword)
     return result
 
+
 # TODO: handling elasticsearch.exceptions.ConnectionError
 #f = open("analyzed_words.txt", "w")
 def run(items_path):

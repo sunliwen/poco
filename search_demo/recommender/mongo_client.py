@@ -242,6 +242,7 @@ class MongoClient:
 
         item_in_db.update(item)
         c_items.save(item_in_db)
+        return item_in_db
 
     def removeItem(self, site_id, item_id):
         c_items = getSiteDBCollection(self.connection, site_id, "items")
