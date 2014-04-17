@@ -114,14 +114,14 @@ class SingleRequestAPIView(BaseAPIView):
             return response
         else:
             action_processor = processor_class(not_log_action)
-            err_msg, args = processor.processArgs(args)
+            err_msg, args = action_processor.processArgs(args)
             if err_msg:
                 return {"code": 1, "err_msg": err_msg}
             else:
                 args["ptm_id"] = self.get_ptm_id(request, response)
                 referer = request.META.get("HTTP_REFERER", "")
                 args["referer"] = referer
-                return processor.process(site_id, args)
+                return action_processor.process(site_id, args)
 
 
 class ItemsAPIView(BaseAPIView):
