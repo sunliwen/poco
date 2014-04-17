@@ -1,6 +1,5 @@
 #encoding=utf8
 import sys
-#sys.path.insert(0, "/Users/jacobfan/projects/PocoWeb/poco")
 import logging
 import uuid
 
