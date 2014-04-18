@@ -1,0 +1,4 @@
+MONGODB_HOST = "localhost"
+API_SERVER_PREFIX = "http://localhost:2222/"
+PRINT_RAW_LOG = True
+#recommendation_deduplicate_item_names_required_set = set([])
