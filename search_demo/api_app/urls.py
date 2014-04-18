@@ -8,8 +8,8 @@ urlpatterns = patterns('main_app.views',
     # url(r'^$', 'editable_pages_example.views.home', name='home'),
     # url(r'^blog/', include('blog.urls')),
     url(r'^v1.6/$', views.api_root, name="api_root"),
-    url(r'^v1.6/search/$', views.ProductsSearch.as_view(), name="products-search"),
-    url(r'^v1.6/suggest/$', views.QuerySuggest.as_view(), name="query-suggest"),
+    url(r'^v1.6/public/search/$', views.ProductsSearch.as_view(), name="products-search"),
+    url(r'^v1.6/public/suggest/$', views.QuerySuggest.as_view(), name="query-suggest"),
     )
 
 

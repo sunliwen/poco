@@ -834,3 +834,16 @@ EVENT_TYPE2ACTION_PROCESSOR = {
     "rate_item": RateItemProcessor
 }
 
+
+RECOMMEND_TYPE2ACTION_PROCESSOR = {
+    "AlsoViewed": GetAlsoViewedProcessor,
+    "ByBrowsingHistory": GetByBrowsingHistoryProcessor,
+    "AlsoBought": GetAlsoBoughtProcessor,
+    "BoughtTogether": GetBoughtTogetherProcessor,
+    "UltimatelyBought": GetUltimatelyBoughtProcessor,
+    "ByPurchasingHistory": GetByPurchasingHistoryProcessor,
+    "ByShoppingCart": GetByShoppingCartProcessor,
+    "ByEachBrowsedItem": GetByEachBrowsedItemProcessor,
+    "ByEachPurchasedItem": GetByEachPurchasedItemProcessor
+}
+

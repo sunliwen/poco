@@ -59,10 +59,6 @@ class ItemsAPIView(APIView):
 
 
 class BaseAPIView(APIView):
-    def getActionProcessor(self, args):
-        #return action_processors.EVENT_TYPE2ACTION_PROCESSOR.get(event_type, None)
-        raise NotImplemented
-
     def process(self, request, response, site_id, args):
         raise NotImplemented
 
@@ -106,6 +102,16 @@ class BaseAPIView(APIView):
 
 
 class SingleRequestAPIView(BaseAPIView):
+    def getActionProcessor(self, args):
+        raise NotImplemented
+
+    def get_ptm_id(self, request, response):
+        ptm_id = request.COOKIES.get("__ptmid", None)
+        if not ptm_id:
+            ptm_id = str(uuid.uuid4())
+            response.set_cookie("__ptmid", value=ptm_id, max_age=self.MAX_AGE)
+        return ptm_id
+
     def process(self, request, response, site_id, args):
         not_log_action = "not_log_action" in args
         processor_found, processor_class = self.getActionProcessor(args)
@@ -135,6 +141,53 @@ class ItemsAPIView(BaseAPIView):
         return action_processor.process(site_id, args)
 
 
+class RecommenderAPIView(SingleRequestAPIView):
+    def getDebugResponse(self, args, result):
+        amount = int(args["amount"])
+        if args.get("include_item_info", "yes") != "no":
+            return {
+                "topn": [
+                    {"item_name": "星月--动物音乐敲击琴",
+                     "price": "79.00",
+                     "market_price": "118.00", 
+                     "image_link": "http://image.example.com/blah.jpg", #TODO
+                     "score": 1.0, 
+                     "item_link": "http://example.com/products/3852023/", 
+                     "item_id": "3852023"
+                     }
+                ] * amount,
+                "code": 0,
+                "req_id": result["req_id"]
+            }
+        else:
+            return {
+                "topn": [
+                    {
+                     "score": 1.0, 
+                     "item_id": "3852023"
+                     }
+                ] * amount,
+                "code": 0,
+                "req_id": result["req_id"]
+            }
+
+    def process(self, request, response, site_id, args):
+        debug = args.get("debug", None) is not None
+        result = super(RecommenderAPIView, self).process(request, response, site_id, args)
+        if result["code"] == 0 and debug:
+            return self.getDebugResponse(args, result)
+        else:
+            return result
+
+    def getActionProcessor(self, args):
+        type = args.get("type", None)
+        action_processor = action_processors.RECOMMEND_TYPE2ACTION_PROCESSOR.get(type, None)
+        if action_processor is None:
+            return False, {"code": 2, "err_msg": "no or invalid type"}
+        else:
+            return True, action_processor
+
+
 class EventsAPIView(SingleRequestAPIView):
     MAX_AGE = 109500 * 3600 * 24
 
@@ -146,12 +199,6 @@ class EventsAPIView(SingleRequestAPIView):
         else:
             return True, action_processor
 
-    def get_ptm_id(self, request, response):
-        ptm_id = request.COOKIES.get("__ptmid", None)
-        if not ptm_id:
-            ptm_id = str(uuid.uuid4())
-            response.set_cookie("__ptmid", value=ptm_id, max_age=self.MAX_AGE)
-        return ptm_id
 
 
 
