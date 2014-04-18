@@ -302,20 +302,25 @@ def run(items_path):
     es = Elasticsearch()
     createIndex(es)
 
+    import time
+    t1 = time.time()
     # TODO: use bulk
     for item in items:
         count += 1
         if (count % 50) == 0:
-            print count
+            t2 = time.time()
+            print count, count/(t2-t1)
         #item["item_name_suggest"] = get_item_name_suggest(es, item)
         del item["_id"]
         #item["categories"] = " ".join(item["categories"])
         #print item["item_name"]
+        
         fill_keywords(item)
         index_keywords(es, item)
         item["item_name_standard_analyzed"] = item["item_name"]
         item["item_name_no_analysis"] = item["item_name"]
         item["item_name"] = " ".join(preprocess_query_str(item["item_name"]))
+        
         #for kw in item["item_name"].split(" "):
         #    if kw:
         #        f.write("%s\n" % kw.strip().encode("utf8"))
