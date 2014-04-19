@@ -1,0 +1,7 @@
+== Installation of ElasticSearch ==
+
+== Setup of the Django server ==
+    1. copy local_config.py.EXAMPLE as local_config.py and modify if it is necessary.
+
+== Setup the ElasticSearch Index for the client ==
+    1. python manage.py runscript reset_index --script-args=<site_id>
