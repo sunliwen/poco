@@ -81,10 +81,6 @@ def resetIndex(es, site_id):
         es.indices.delete(item_index)
     except NotFoundError:
         pass
-    try:
-        es.indices.delete(keyword_index)
-    except NotFoundError:
-        pass
 
     res = es.indices.create(index=item_index, body={"mappings": MAPPINGS, "settings": INDEX_SETTINGS})
 
