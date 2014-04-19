@@ -39,15 +39,9 @@ def preprocess_query_str(query_str):
     return result
 
 
-def construct_category_str(category, category_map):
-    pass
-
 def preprocess_categories(categories):
-    category_map = {}
-    for category in categories:
-        category_map[category["id"]] = category
-    for category in categories:
-        construct_category_str(category, category_map)
+    for_facets = ["%s__%s" % (category["parent_id"], category["id"]) for category in categories]
+    return [category["id"] for category in categories] + for_facets
 
 def es_index_item(item):
     es = Elasticsearch()
@@ -64,10 +58,9 @@ def es_index_item(item):
     del item["created_on"]
     del item["updated_on"]
 
-    # Simple Way:
-    item["categories"] = [category["id"] for category in item["categories"]]
+    item["categories"] = preprocess_categories(item["categories"])
     item["brand"] = item["brand"]["id"]
 
-    #print "ITEM to INDEX:", item
+    print "ITEM to INDEX:", item
     res = es.index(index='item-index', doc_type='item', id=item["item_id"], body=item)
 

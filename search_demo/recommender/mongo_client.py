@@ -2,6 +2,8 @@ import hashlib
 import random
 import time
 import datetime
+import pymongo
+from django.conf import settings
 from pymongo.read_preferences import ReadPreference
 from common.utils import getSiteDBCollection
 from common.utils import sign
@@ -222,6 +224,29 @@ class MongoClient:
             cat_in_db = {"_id": cat_in_db["_id"]}
         cat_in_db.update(category)
         c_categories.save(cat_in_db)
+
+    def updateProperty(self, site_id, property):
+        c_properties = getSiteDBCollection(self.connection, site_id, "properties")
+        prop_in_db = c_properties.find_one({"id": property["id"]})
+        if prop_in_db is None:
+            prop_in_db = {}
+        else:
+            prop_in_db = {"_id": prop_in_db["_id"]}
+        prop_in_db.update(property)
+        c_properties.save(prop_in_db)
+
+    def getProperty(self, site_id, property_type, property_id):
+        c_properties = getSiteDBCollection(self.connection, site_id, "properties")
+        result = c_properties.find_one({"type": property_type, "id": property_id}, 
+                                        read_preference=ReadPreference.SECONDARY_PREFERRED)
+        return result
+
+    def getPropertyName(self, site_id, property_type, property_id):
+        prop = self.getProperty(site_id, property_type, property_id)
+        if prop:
+            return prop.get("name", "")
+        else:
+            return ""
 
     def updateItem(self, site_id, item):
         item["available"] = True
@@ -480,3 +505,15 @@ class MongoClient:
         c_cached_hot_view = getSiteDBCollection(self.connection, site_id, "cached_hot_view")
         c_cached_hot_view.update({"type": HOT_INDEX_ALL_ITEMS}, 
                                  {"type": HOT_INDEX_ALL_ITEMS, "result": result}, upsert=True)
+
+
+def getConnection():
+    if(settings.REPLICA_SET):
+        return pymongo.MongoReplicaSetClient(settings.MONGODB_HOST, replicaSet=settings.REPLICA_SET)
+    else:
+        return pymongo.Connection(settings.MONGODB_HOST)
+
+
+def getMongoClient():
+    return MongoClient(getConnection())
+

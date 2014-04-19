@@ -8,6 +8,10 @@ from django.http import Http404
 from rest_framework.views import APIView
 from rest_framework import status
 from elasticsearch import Elasticsearch
+from recommender.mongo_client import getMongoClient
+
+
+mongo_client = getMongoClient()
 
 
 # TODO: highlight
@@ -72,9 +76,43 @@ def validate_list_value_types(list, expected_type):
         else:
             return True
 
+
+def get_last_cat_id(cat_id):
+    cat_ids = cat_id.split("__")
+    if len(cat_ids) > 0:
+        return cat_ids[-1]
+    else:
+        return ""
+
+
+def get_item_name(obj):
+    _highlight = getattr(obj, "_highlight", None)
+    if _highlight:
+        item_names = _highlight.get("item_name_standard_analyzed", None)
+        if item_names:
+            return item_names[0]
+    return obj.item_name_standard_analyzed
+
+
+# FIXME: ItemSerializer does not work correctly currently
+def serialize_items(item_list):
+    result = []
+    for item in item_list:
+        item_dict = {}
+        for field in ("item_id", "price", "market_price", "image_link",
+                      "item_link", "available", "item_group",
+                      "brand", "item_level", "item_spec", "item_comment_num"):
+            val = getattr(item, field, None)
+            if val is not None:
+                item_dict[field] = val
+        item_dict["categories"] = [cat for cat in getattr(item, "categories", []) if "__" not in cat]
+        item_dict["item_name"] = get_item_name(item)
+        result.append(item_dict)
+    return result
+
 # TODO: http://www.django-rest-framework.org/topics/documenting-your-api
 class ProductsSearch(APIView):
-    def _search(self, q, sort_fields, filters, highlight):
+    def _search(self, site_id, q, sort_fields, filters, highlight):
         # TODO: this is just a simplified version of search
         s = S().indexes("item-index").doctypes("item")
         query = main_app_views.construct_query(q)
@@ -105,21 +143,24 @@ class ProductsSearch(APIView):
             cat_id = None
         sub_categories_facets = main_app_views._getSubCategoriesFacets(cat_id, s)
         if sub_categories_facets:
+            print sub_categories_facets
             s = s.facet_raw(sub_categories=sub_categories_facets,
                             brand={'terms': {'field': 'brand', 'size': 20}})
-            facet_sub_categories_list = [{"id": facet["term"],
-                                    "label": main_app_views.CATEGORY_MAP_BY_ID[facet["term"]]["name"], 
+            facet_sub_categories_list = [{"id": get_last_cat_id(facet["term"]),
                                     "count": facet["count"]} 
                                     for facet in s.facet_counts().get("sub_categories", [])]
+            for facet_sub_cat in facet_sub_categories_list:
+                facet_sub_cat["label"] = mongo_client.getPropertyName(site_id, "category", facet_sub_cat["id"])
             facet_brand_list = [{"id": facet["term"],
-                                 "label": main_app_views.CATEGORY_MAP_BY_ID[facet["term"]]["name"], 
+                                 "label": mongo_client.getPropertyName(site_id, "brand", facet["term"]),
                                  "count": facet["count"]} 
                                  for facet in s.facet_counts().get("brand", [])
             ]
         else:
-            sub_categories_list = []
+            facet_sub_categories_list = []
+            facet_brand_list = []
 
-        return s, sub_categories_list
+        return s, {"categories": facet_sub_categories_list, "brand": facet_brand_list}
 
     def _validate(self, request):
         # TODO ignore fields and warn
@@ -210,8 +251,15 @@ class ProductsSearch(APIView):
             errors.append({"code": "INVALID_PARAM", 
                            "param_name": "api_key",
                            "message": u"'api_key' must be a string."})
+        if self.getSiteID(api_key) is None:
+            errors.append({"code": "INVALID_PARAM", "param_name": "api_key", 
+                           "message": "no such api_key"})
 
         return errors
+
+    def getSiteID(self, api_key):
+        api_key2site_id = mongo_client.getApiKey2SiteID()
+        return api_key2site_id.get(api_key, None)
 
     VALID_SORT_FIELDS = ("price", "market_price", "item_level", "item_comment_num")
     #VALID_FILTER_FIELDS = ("price", "market_price", "categories", "item_id", "available")
@@ -244,13 +292,15 @@ class ProductsSearch(APIView):
         page = request.DATA.get("page", 1)
         filters = request.DATA.get("filters", {})
         highlight = request.DATA.get("highlight", False)
+        api_key = request.DATA["api_key"]
 
         # Apply default filters
         for filter_key , filter_content in self.DEFAULT_FILTERS.items():
             if not filters.has_key(filter_key):
                 filters[filter_key] = filter_content
 
-        result_set, sub_categories_list = self._search(q, sort_fields, filters, highlight)
+        site_id = self.getSiteID(api_key)
+        result_set, facets_result = self._search(site_id, q, sort_fields, filters, highlight)
         paginator = Paginator(result_set, per_page)
 
         try:
@@ -264,18 +314,14 @@ class ProductsSearch(APIView):
 
         items_list = [item for item in items_page]
 
-        #serializer_context = {'request': request}
-        #serializer = PaginatedItemSerializer(instance=items, many=True, 
-        #                            context=serializer_context)
-        serializer = ItemSerializer(items_list, many=True)
-        # TODO: facets
-        result = {"records": serializer.data,
+        #serializer = ItemSerializer(items_list, many=True)
+        result = {"records": serialize_items(items_list),
                   "info": {
                      "current_page": page,
                      "num_pages": paginator.num_pages,
                      "per_page": per_page,
                      "total_result_count": paginator.count,
-                     "facets": {"categories": sub_categories_list}
+                     "facets": facets_result
                   },
                   "errors": {}
                 }

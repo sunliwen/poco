@@ -55,12 +55,11 @@ def addFilterToFacets(s, facets):
 
 def _getSubCategoriesFacets(cat_id, s):
     if cat_id is None:
-        regex = r"\d{2}"
-    elif len(cat_id) == 2: #FIXME: make filter work with facets instead
-        regex = r"%s\d{2}" % cat_id
+        regex = r"null__.*"
     else:
-        return None
+        regex = r"%s__.*" % cat_id
     result = {'terms': {'regex': regex, 'field': 'categories', 'size': 20}}
+    #result = {'terms': {'field': 'categories', 'size': 20}}
     addFilterToFacets(s, result)
     return result
 

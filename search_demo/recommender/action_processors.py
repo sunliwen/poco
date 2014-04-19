@@ -16,11 +16,12 @@ import logging
 
 from common.utils import smart_split
 
-from mongo_client import MongoClient
+from mongo_client import getMongoClient
 from mongo_client import SimpleRecommendationResultFilter
 from mongo_client import SameGroupRecommendationResultFilter
 
 #from es_client import es_index_item
+from tasks import es_index_item
 
 
 #logging.basicConfig(format="%(asctime)s|%(levelname)s|%(name)s|%(message)s",
@@ -28,14 +29,7 @@ from mongo_client import SameGroupRecommendationResultFilter
 #                    datefmt="%Y-%m-%d %I:%M:%S")
 
 
-def getConnection():
-    if(settings.REPLICA_SET):
-        return pymongo.MongoReplicaSetClient(settings.MONGODB_HOST, replicaSet=settings.REPLICA_SET)
-    else:
-        return pymongo.Connection(settings.MONGODB_HOST)
-
-
-mongo_client = MongoClient(getConnection())
+mongo_client = getMongoClient()
 
 mongo_client.reloadApiKey2SiteID()
 
@@ -405,6 +399,9 @@ class UpdateItemProcessor(ActionProcessor):
                     return {"code": 1, "err_msg": "categories content should contains key: '%s'" % expected_key}
                 if (not isinstance(category[expected_key], basestring)) or (len(category[expected_key].strip()) == 0):
                     return {"code": 1, "err_msg": "'%s' of category should be a non empty string." % expected_key}
+            for expected_key in ("id", "parent_id"):
+                if re.match(r"[A-Za-z0-9]+", category[expected_key]) is None:
+                    return {"code": 1, "err_msg": "category ids can only contains digits and letters."}
         return None
 
     def _validateBrand(self, args):
@@ -418,16 +415,6 @@ class UpdateItemProcessor(ActionProcessor):
                 if not args_brand.has_key(expected_key):
                     return {"code": 1, "err_msg": "brand content should contains key: '%s'" % expected_key}
         return None
-
-    def construct_category_tree(self, category, category_map):
-        pass
-
-    def preprocess_categories_tree(self, categories):
-        category_map = {}
-        for category in categories:
-            category_map[category["id"]] = category
-        for category in categories:
-            construct_category_tree(category, category_map)
 
     def _process(self, site_id, args):
         err_msg, args = self.ap.processArgs(args)
@@ -454,16 +441,19 @@ class UpdateItemProcessor(ActionProcessor):
                 return err_response
             if args["item_group"] is None:
                 del args["item_group"]
+
+            for category in args["categories"]:
+                mongo_client.updateProperty(site_id, category)
+            if args.get("brand", None):
+                mongo_client.updateProperty(site_id, args["brand"])
             item = mongo_client.updateItem(site_id, args)
             
-            from tasks import es_index_item
-            #from es_client import es_index_item
-            import time
-            t1 = time.time()
+            #import time
+            #t1 = time.time()
             es_index_item.delay(item)
             #es_index_item(item)
-            t2 = time.time()
-            #print "BLAH:", t2 - t1
+            #t2 = time.time()
+            #print t2 - t1
             return {"code": 0}
 
 
