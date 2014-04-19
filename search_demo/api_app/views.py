@@ -105,11 +105,17 @@ class ProductsSearch(APIView):
             cat_id = None
         sub_categories_facets = main_app_views._getSubCategoriesFacets(cat_id, s)
         if sub_categories_facets:
-            s = s.facet_raw(sub_categories=sub_categories_facets)
-            sub_categories_list = [{"id": facet["term"],
+            s = s.facet_raw(sub_categories=sub_categories_facets,
+                            brand={'terms': {'field': 'brand', 'size': 20}})
+            facet_sub_categories_list = [{"id": facet["term"],
                                     "label": main_app_views.CATEGORY_MAP_BY_ID[facet["term"]]["name"], 
                                     "count": facet["count"]} 
                                     for facet in s.facet_counts().get("sub_categories", [])]
+            facet_brand_list = [{"id": facet["term"],
+                                 "label": main_app_views.CATEGORY_MAP_BY_ID[facet["term"]]["name"], 
+                                 "count": facet["count"]} 
+                                 for facet in s.facet_counts().get("brand", [])
+            ]
         else:
             sub_categories_list = []
 
@@ -207,14 +213,16 @@ class ProductsSearch(APIView):
 
         return errors
 
-    VALID_SORT_FIELDS = ("price", "market_price")
+    VALID_SORT_FIELDS = ("price", "market_price", "item_level", "item_comment_num")
     #VALID_FILTER_FIELDS = ("price", "market_price", "categories", "item_id", "available")
     FILTER_FIELD_TYPE_VALIDATORS = {
         "price": is_float,
         "market_price": is_float,
         "categories": is_string,
         "item_id": is_string,
-        "available": is_boolean
+        "available": is_boolean,
+        "item_level": is_float,
+        "item_comment_num": is_float
     }
     DEFAULT_FILTERS = {
         "available": [True]
@@ -222,7 +230,7 @@ class ProductsSearch(APIView):
     PER_PAGE = 20
 
     def post(self, request, format=None):
-	return self.get(request, format)
+        return self.get(request, format)
 
     # refs: http://www.django-rest-framework.org/api-guide/pagination
     def get(self, request, format=None):
@@ -231,7 +239,7 @@ class ProductsSearch(APIView):
             return Response({"records": {}, "info": {}, "errors": errors})
         # TODO: handle the api_key
         q = request.DATA.get("q", "")
-	per_page = request.DATA.get("per_page", self.PER_PAGE)
+        per_page = request.DATA.get("per_page", self.PER_PAGE)
         sort_fields = request.DATA.get("sort_fields", [])
         page = request.DATA.get("page", 1)
         filters = request.DATA.get("filters", {})
