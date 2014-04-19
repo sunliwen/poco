@@ -4,6 +4,7 @@
         * simple way is to down load this directory https://github.com/medcl/elasticsearch-rtf/tree/master/plugins/analysis-pinyin and put it under the <elastic search root>/plugins/analysis-pinyin
 
 == Setup of the Django server ==
+    0. install packages in requirements.txt
     1. copy local_config.py.EXAMPLE as local_config.py and modify if it is necessary.
     2. Now, we can just use the BROKER_URL in local_config.py.EXAMPLE. (For RappidMQ setup, follow this instruction: http://docs.celeryproject.org/en/latest/getting-started/brokers/rabbitmq.html)
     3. Also don't forget to set up the MONGODB_HOST/replica_set correctly.
