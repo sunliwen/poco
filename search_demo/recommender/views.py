@@ -102,6 +102,8 @@ class BaseAPIView(APIView):
 
 
 class SingleRequestAPIView(BaseAPIView):
+    MAX_AGE = 109500 * 3600 * 24
+    
     def getActionProcessor(self, args):
         raise NotImplemented
 
@@ -143,6 +145,7 @@ class ItemsAPIView(BaseAPIView):
 
 class RecommenderAPIView(SingleRequestAPIView):
     def getDebugResponse(self, args, result):
+        # for byEach... do 
         amount = int(args["amount"])
         if args.get("include_item_info", "yes") != "no":
             return {
@@ -189,7 +192,6 @@ class RecommenderAPIView(SingleRequestAPIView):
 
 
 class EventsAPIView(SingleRequestAPIView):
-    MAX_AGE = 109500 * 3600 * 24
 
     def getActionProcessor(self, args):
         event_type = args.get("event_type", None)

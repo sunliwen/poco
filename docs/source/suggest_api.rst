@@ -3,7 +3,7 @@ Suggest API
 
 路径: /v1.6/suggest/
 
-HTTP方法: GET
+HTTP方法: GET/POST
 
 说明：
     根据用户输入的查询内容，推荐更多的查询内容。推荐分三种：

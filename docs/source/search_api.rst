@@ -3,7 +3,7 @@ Search API
 
 路径: /v1.6/search/
 
-HTTP方法: GET
+HTTP方法: GET/POST
 
 传入参数
 ---------

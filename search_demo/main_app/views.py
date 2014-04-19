@@ -95,9 +95,15 @@ def v_index(request):
         s = s.order_by("-price")
 
     sub_categories_facets = _getSubCategoriesFacets(cat, s)
+    def getLastCatID(term):
+        splitted = term.split("__")
+        if splitted:
+            return splitted[-1]
+        else:
+            return ""
     if sub_categories_facets:
         s = s.facet_raw(sub_categories=sub_categories_facets)
-        sub_categories_list = [(facet["term"], CATEGORY_MAP_BY_ID[facet["term"]]["name"], facet["count"]) for facet in s.facet_counts().get("sub_categories", [])]
+        sub_categories_list = [(getLastCatID(facet["term"]), CATEGORY_MAP_BY_ID.get(getLastCatID(facet["term"]), {}).get("name", ""), facet["count"]) for facet in s.facet_counts().get("sub_categories", [])]
     else:
         sub_categories_list = []
     
@@ -169,7 +175,7 @@ def _getMoreSuggestions(query_str):
     return _extractSuggestedTerms(res, "keywords"), suggested_categories
 
 
-def _tryAutoComplete(kw_prefix):
+def _tryAutoComplete(es, kw_prefix):
     es = Elasticsearch()
     res = es.suggest(index="item-index", body={"kw": {"text": kw_prefix, "completion": {"field": "keyword_completion"}}})
     options = res["kw"][0]["options"]
@@ -179,21 +185,15 @@ def _tryAutoComplete(kw_prefix):
 # TODO: limit g. single letter
 def _getQuerySuggestions(es, query_str):
     split_by_wspace = [kw.strip() for kw in query_str.split(" ") if kw.strip()]
-    #splitted_keywords = " ".join(preprocess_query_str(query_str)).split(" ")
 
-    #if len(splitted_keywords) > 0:
     if len(split_by_wspace) > 0:
-        #kw_prefix = splitted_keywords[-1]
         kw_prefix = split_by_wspace[-1]
-        possible_last_keywords = _tryAutoComplete(kw_prefix)
-        #completed_forms = [(" ".join(split_by_wspace[:-1]) + " " + kw).strip() for kw in possible_last_keywords]
+        possible_last_keywords = _tryAutoComplete(es, kw_prefix)
         completed_forms = []
         # TODO: use msearch
         for kw in possible_last_keywords:
             completed_form = (" ".join(split_by_wspace[:-1]) + " " + kw).strip()
-            #query = {'match': {'item_name': {'query': completed_form, 'operator': "and"}}}
             query = construct_query(completed_form, for_filter=True)
-            #query.update({"term": {"available": True}})
             res = es.search(index="item-index",
                                     search_type="count",
                                     body={"query": query,
@@ -202,7 +202,6 @@ def _getQuerySuggestions(es, query_str):
             if count > 0:
                 completed_forms.append({"type": "completion",
                                         "value": u"%s" % completed_form,
-                                        #"label": u"%s" % completed_form,
                                         "count": count})
 
         # also suggest more keywords
@@ -218,10 +217,8 @@ def _getQuerySuggestions(es, query_str):
                     breadcrumbs_str = " > ".join([cat["category"]["name"] for cat in breadcrumbs])
                     completed_forms_categories.append({"type": "facet", 
                                             "field_name": "categories",
-                                            #"label": u"在 <em class='category'>%s</em>  分类中搜索" % (breadcrumbs_str,),
                                             "facet_label": breadcrumbs_str,
                                             "value": query_str,
-                                            #"label": query_str,
                                             "category_id": category_id,
                                             "count": suggested_term["count"]
                                             })
@@ -240,7 +237,6 @@ def _getQuerySuggestions(es, query_str):
                 completed_forms.append({"type": "more_keyword",
                                         "value": u"%s" % query,
                                         "count": suggested_term["count"]
-                                        #"label": u"%s" % (query, )})
                                         })
         return completed_forms
     else:

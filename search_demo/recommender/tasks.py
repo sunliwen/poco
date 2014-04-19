@@ -4,5 +4,5 @@ from celery import shared_task
 import es_client
 
 @shared_task
-def es_index_item(item):
-    es_client.es_index_item(item)
+def es_index_item(site_id, item):
+    es_client.es_index_item(site_id, item)

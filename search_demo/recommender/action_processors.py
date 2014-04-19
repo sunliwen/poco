@@ -382,7 +382,8 @@ class UpdateItemProcessor(ActionProcessor):
             ("brand", False),
             ("item_level", False),
             ("item_spec", False),
-            ("item_comment_num", False)
+            ("item_comment_num", False),
+            ("origin_place", False)
         )
     )
 
@@ -442,6 +443,13 @@ class UpdateItemProcessor(ActionProcessor):
             if args["item_group"] is None:
                 del args["item_group"]
 
+            for key in ("item_level", "item_comment_num", "origin_place"):
+                if args.get(key, None) is not None:
+                    try:
+                        args[key] = int(args[key])
+                    except (ValueError, TypeError):
+                        return {"code": 1, "err_msg": "%s should be an integer." % key}
+
             for category in args["categories"]:
                 mongo_client.updateProperty(site_id, category)
             if args.get("brand", None):
@@ -450,7 +458,7 @@ class UpdateItemProcessor(ActionProcessor):
             
             #import time
             #t1 = time.time()
-            es_index_item.delay(item)
+            es_index_item.delay(site_id, item)
             #es_index_item(item)
             #t2 = time.time()
             #print t2 - t1
@@ -890,7 +898,7 @@ RECOMMEND_TYPE2ACTION_PROCESSOR = {
     "UltimatelyBought": GetUltimatelyBoughtProcessor,
     "ByPurchasingHistory": GetByPurchasingHistoryProcessor,
     "ByShoppingCart": GetByShoppingCartProcessor,
-    "ByEachBrowsedItem": GetByEachBrowsedItemProcessor,
-    "ByEachPurchasedItem": GetByEachPurchasedItemProcessor
+    #"ByEachBrowsedItem": GetByEachBrowsedItemProcessor,
+    #"ByEachPurchasedItem": GetByEachPurchasedItemProcessor
 }
 

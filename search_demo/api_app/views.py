@@ -7,7 +7,7 @@ from rest_framework.reverse import reverse
 from django.http import Http404
 from rest_framework.views import APIView
 from rest_framework import status
-from elasticsearch import Elasticsearch
+import es_search_functions
 from recommender.mongo_client import getMongoClient
 
 
@@ -26,29 +26,9 @@ def api_root(request, format=None):
     })
 
 
-from main_app import views as main_app_views
 from elasticutils import S, F
 from serializers import PaginatedItemSerializer, ItemSerializer
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
-
-"""
-{
-        "api_key": "<分配给用户站点的api key>",
-        "q": "奶粉",
-        "sort_fields": ["price"],
-        "page": 2,
-        "filters": {
-            "categories": ["200400"],
-            "price": {
-                "type": "range",
-                "from": 3.00,
-                "to": 15.00
-            }
-        },
-        "config_key": "<本次搜索所用后台配置的key>"
-     }
-
-"""
 
 
 def is_float(value):
@@ -110,13 +90,21 @@ def serialize_items(item_list):
         result.append(item_dict)
     return result
 
+
+class BaseAPIView(APIView):
+    def getSiteID(self, api_key):
+        api_key2site_id = mongo_client.getApiKey2SiteID()
+        return api_key2site_id.get(api_key, None)
+
+
 # TODO: http://www.django-rest-framework.org/topics/documenting-your-api
-class ProductsSearch(APIView):
+class ProductsSearch(BaseAPIView):
     def _search(self, site_id, q, sort_fields, filters, highlight):
         # TODO: this is just a simplified version of search
-        s = S().indexes("item-index").doctypes("item")
-        query = main_app_views.construct_query(q)
-        s = s.query_raw(query)
+        s = S().indexes(es_search_functions.getESItemIndexName(site_id)).doctypes("item")
+        if q.strip():
+            query = es_search_functions.construct_query(q)
+            s = s.query_raw(query)
         #s = s.filter(available=True) # TODO: this should be configurable in dashboard
         s = s.order_by(*sort_fields)
 
@@ -141,7 +129,7 @@ class ProductsSearch(APIView):
             cat_id = categories[0]
         else:
             cat_id = None
-        sub_categories_facets = main_app_views._getSubCategoriesFacets(cat_id, s)
+        sub_categories_facets = es_search_functions._getSubCategoriesFacets(cat_id, s)
         if sub_categories_facets:
             print sub_categories_facets
             s = s.facet_raw(sub_categories=sub_categories_facets,
@@ -251,15 +239,12 @@ class ProductsSearch(APIView):
             errors.append({"code": "INVALID_PARAM", 
                            "param_name": "api_key",
                            "message": u"'api_key' must be a string."})
-        if self.getSiteID(api_key) is None:
+        elif self.getSiteID(api_key) is None:
             errors.append({"code": "INVALID_PARAM", "param_name": "api_key", 
                            "message": "no such api_key"})
 
         return errors
 
-    def getSiteID(self, api_key):
-        api_key2site_id = mongo_client.getApiKey2SiteID()
-        return api_key2site_id.get(api_key, None)
 
     VALID_SORT_FIELDS = ("price", "market_price", "item_level", "item_comment_num")
     #VALID_FILTER_FIELDS = ("price", "market_price", "categories", "item_id", "available")
@@ -337,7 +322,7 @@ class ProductsSearch(APIView):
     #    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class QuerySuggest(APIView):
+class QuerySuggest(BaseAPIView):
     def _validate(self, request):
         errors = []
         if not isinstance(request.DATA.get("q", None), basestring):
@@ -352,12 +337,15 @@ class QuerySuggest(APIView):
             errors.append({"code": "INVALID_PARAM", 
                            "param_name": "api_key",
                            "message": "'api_key' must be a string."})
+        elif self.getSiteID(api_key) is None:
+            errors.append({"code": "INVALID_PARAM", "param_name": "api_key", 
+                           "message": "no such api_key"})
 
         return errors
 
 
     def post(self, request, format=None):
-	return self.get(request, format=None)
+        return self.get(request, format=None)
 
     def get(self, request, format=None):
         errors = self._validate(request)
@@ -365,8 +353,10 @@ class QuerySuggest(APIView):
             return Response({"suggestions": [], "errors": errors})
 
         q = request.DATA.get("q", "")
+        api_key = request.DATA.get("api_key", "")
+        site_id = self.getSiteID(api_key)
 
-        es = Elasticsearch()
-        suggested_texts = main_app_views._getQuerySuggestions(es, q)
+        suggester = es_search_functions.Suggester(site_id)
+        suggested_texts = suggester.getQuerySuggestions(q)
         
         return Response({"suggestions": suggested_texts, "errors": {}})
