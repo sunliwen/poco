@@ -8,7 +8,8 @@
     1. copy local_config.py.EXAMPLE as local_config.py and modify if it is necessary.
     2. Now, we can just use the BROKER_URL in local_config.py.EXAMPLE. (For RappidMQ setup, follow this instruction: http://docs.celeryproject.org/en/latest/getting-started/brokers/rabbitmq.html)
     3. Also don't forget to set up the MONGODB_HOST/replica_set correctly.
-    4. Also run "celery -A search_demo worker" in the root dir of the search_demo project
+    4. "python manage.py syncdb"
+    5. Also run "celery -A search_demo worker" in the root dir of the search_demo project
 
 == Setup the ElasticSearch Index for the client site ==
     1. python manage.py runscript reset_index --script-args=<site_id>
