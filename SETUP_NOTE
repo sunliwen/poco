@@ -1,7 +1,13 @@
 == Installation of ElasticSearch ==
+    1. Install elasticsearch 1.0.1
+    2. Install  elasticsearch-analysis-pinyin
+        * simple way is to down load this directory https://github.com/medcl/elasticsearch-rtf/tree/master/plugins/analysis-pinyin and put it under the <elastic search root>/plugins/analysis-pinyin
 
 == Setup of the Django server ==
     1. copy local_config.py.EXAMPLE as local_config.py and modify if it is necessary.
+    2. You need to change "BROKER_URL", and follow this instruction: http://docs.celeryproject.org/en/latest/getting-started/brokers/rabbitmq.html
+    3. Also don't forget to set up the MONGODB_HOST/replica_set correctly.
 
-== Setup the ElasticSearch Index for the client ==
+== Setup the ElasticSearch Index for the client site ==
     1. python manage.py runscript reset_index --script-args=<site_id>
+    2. After this, you can try to post items to the server. (check tests/test.py for examples.)

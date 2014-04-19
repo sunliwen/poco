@@ -1,7 +1,7 @@
 Search API
 ==========
 
-路径: /v1.6/search/
+路径: /v1.6/public/search/
 
 HTTP方法: GET/POST
 

@@ -1,7 +1,7 @@
 Suggest API
 ============
 
-路径: /v1.6/suggest/
+路径: /v1.6/public/suggest/
 
 HTTP方法: GET/POST
 
