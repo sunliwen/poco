@@ -23,10 +23,10 @@ api_key          是                                            分配给用户�
 注：
     1. filters:
         1. "categories"字段只接受0或1个值，不接受多个值。
-        2. 实施过程中，需要确定哪些字段用来过滤。测试数据集中，仅price, market_price, categories，item_id和available可用来过滤。
+        2. 实施过程中，需要确定哪些字段用来过滤。目前，price, market_price, categories，item_id、available、item_level、item_comment_num和origin_place可用来过滤。
         3. available 默认为[true]，即如果不在filter中指定available，则仅仅返回有售的产品。
     2. sort_fields:
-        1. 实施过程中，需要确定哪些字段用来排序。测试数据集中，仅price和market_price可用来排序。
+        1. price、market_price、item_level、item_comment_num和origin_place可用来排序。
 
 返回结果
 ---------
@@ -51,7 +51,7 @@ errors             错误信息。正常情况下为{}。
 
 请求::
 
-    curl -X GET 'http://search.tuijianbao.net/api/v1.6/search/' \
+    curl -X GET 'http://search.tuijianbao.net/api/v1.6/public/search/' \
          -H 'Content-Type: application/json' \
          -d '{
             "api_key": "123456",
