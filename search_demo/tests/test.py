@@ -4,9 +4,10 @@ import urllib2
 import urlparse
 import json
 
+import os
 
 API_ROOT = "http://0.0.0.0:2222/api/v1.6/"
-api_key = "api_haoyaoshi"
+api_key = os.getenv('API_KEY', "api_haoyaoshi")
 
 
 def api_access(path, params, body=None):
