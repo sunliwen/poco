@@ -20,7 +20,7 @@ from mongo_client import MongoClient
 from mongo_client import SimpleRecommendationResultFilter
 from mongo_client import SameGroupRecommendationResultFilter
 
-from es_client import es_index_item
+#from es_client import es_index_item
 
 
 #logging.basicConfig(format="%(asctime)s|%(levelname)s|%(name)s|%(message)s",
@@ -373,6 +373,7 @@ class UpdateItemProcessor(ActionProcessor):
     action_name = "UItem"
     ap = ArgumentProcessor(
          (
+            ("type", True),
             ("item_id", True),
             ("item_link", True),
             ("item_name", True),
@@ -382,15 +383,59 @@ class UpdateItemProcessor(ActionProcessor):
             ("price", False),
             ("market_price", False),
             ("categories", False),
-            ("item_group", False)
+            ("item_group", False),
+            # New attributes for haoyaoshi
+            ("brand", False),
+            ("item_level", False),
+            ("item_spec", False),
+            ("item_comment_num", False)
         )
     )
+
+    def _validateCategories(self, args):
+        if not isinstance(args["categories"], list):
+            return {"code": 1, "err_msg": "categories should be of type 'list'"}
+        for category in args["categories"]:
+            if not isinstance(category, dict):
+                return {"code": 1, "err_msg": "categories content should be dicts. "}
+            if category.get("type", None) != "category":
+                return {"code": 1, "err_msg": "categories content should has type 'category'"}
+            for expected_key in ("id", "name", "parent_id"):
+                if not category.has_key(expected_key):
+                    return {"code": 1, "err_msg": "categories content should contains key: '%s'" % expected_key}
+                if (not isinstance(category[expected_key], basestring)) or (len(category[expected_key].strip()) == 0):
+                    return {"code": 1, "err_msg": "'%s' of category should be a non empty string." % expected_key}
+        return None
+
+    def _validateBrand(self, args):
+        args_brand = args.get("brand", None)
+        if args_brand is not None:
+            if not isinstance(args_brand, dict):
+                return {"code": 1, "err_msg": "brand should be of type 'dict'"}
+            if args_brand.get("type", None) != "brand":
+                return {"code": 1, "err_msg": "brand should has type 'brand'"}
+            for expected_key in ("id", "name"):
+                if not args_brand.has_key(expected_key):
+                    return {"code": 1, "err_msg": "brand content should contains key: '%s'" % expected_key}
+        return None
+
+    def construct_category_tree(self, category, category_map):
+        pass
+
+    def preprocess_categories_tree(self, categories):
+        category_map = {}
+        for category in categories:
+            category_map[category["id"]] = category
+        for category in categories:
+            construct_category_tree(category, category_map)
 
     def _process(self, site_id, args):
         err_msg, args = self.ap.processArgs(args)
         if err_msg:
             return {"code": 1, "err_msg": err_msg}
         else:
+            if args["type"] != "product":
+                return {"code": 1, "err_msg": "The type of the item is expected to be 'product'"}
             if args["description"] is None:
                 del args["description"]
             if args["image_link"] is None:
@@ -401,12 +446,24 @@ class UpdateItemProcessor(ActionProcessor):
                 del args["market_price"]
             if args["categories"] is None:
                 args["categories"] = []
-            else:
-                args["categories"] = smart_split(args["categories"], ",")
+            err_response = self._validateCategories(args)
+            if err_response:
+                return err_response
+            err_response = self._validateBrand(args)
+            if err_response:
+                return err_response
             if args["item_group"] is None:
                 del args["item_group"]
             item = mongo_client.updateItem(site_id, args)
-            es_index_item(item)
+            
+            from tasks import es_index_item
+            #from es_client import es_index_item
+            import time
+            t1 = time.time()
+            es_index_item.delay(item)
+            #es_index_item(item)
+            t2 = time.time()
+            #print "BLAH:", t2 - t1
             return {"code": 0}
 
 

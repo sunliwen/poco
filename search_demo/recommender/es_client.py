@@ -38,6 +38,17 @@ def preprocess_query_str(query_str):
         result.append(cutted_keyword)
     return result
 
+
+def construct_category_str(category, category_map):
+    pass
+
+def preprocess_categories(categories):
+    category_map = {}
+    for category in categories:
+        category_map[category["id"]] = category
+    for category in categories:
+        construct_category_str(category, category_map)
+
 def es_index_item(item):
     es = Elasticsearch()
     fill_keywords(item)
@@ -52,6 +63,11 @@ def es_index_item(item):
     del item["_id"]
     del item["created_on"]
     del item["updated_on"]
-    print "ITEM:", item
+
+    # Simple Way:
+    item["categories"] = [category["id"] for category in item["categories"]]
+    item["brand"] = item["brand"]["id"]
+
+    #print "ITEM to INDEX:", item
     res = es.index(index='item-index', doc_type='item', id=item["item_id"], body=item)
 

@@ -9,3 +9,9 @@
 
 == mmseg dict file ==
 elasticsearch/config/mmseg
+
+== Configuration of Celery ==
+    * For development, you may use the Django database backend
+        * In local_settings.py
+            * set BROKER_URL = "django://"
+            * start worker process, run following cmd under search_demo: celery -A search_demo worker -l info
