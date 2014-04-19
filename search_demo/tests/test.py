@@ -45,7 +45,7 @@ def post_items():
     for product in test_products.PRODUCTS:
         body = product
         body["api_key"] = api_key
-        res = api_access("private/items/", None, body=body)
+        res = api_access("private/items/", {"api_key": api_key}, body=body)
     return res
 
 def post_search():
@@ -71,7 +71,7 @@ def recommend(type, params):
     res = api_access("public/recommender/", params)
     return res
 
-#test(post_items, {"code": 0}, 1)
+test(post_items, {"code": 0}, 1)
 #test(post_search, {"code": 0}, 5)
 #test(post_suggest, {"code": 0}, 5)
 

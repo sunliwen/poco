@@ -246,7 +246,7 @@ class ProductsSearch(BaseAPIView):
         return errors
 
 
-    VALID_SORT_FIELDS = ("price", "market_price", "item_level", "item_comment_num")
+    VALID_SORT_FIELDS = ("price", "market_price", "item_level", "item_comment_num", "origin_place")
     #VALID_FILTER_FIELDS = ("price", "market_price", "categories", "item_id", "available")
     FILTER_FIELD_TYPE_VALIDATORS = {
         "price": is_float,
@@ -255,7 +255,8 @@ class ProductsSearch(BaseAPIView):
         "item_id": is_string,
         "available": is_boolean,
         "item_level": is_float,
-        "item_comment_num": is_float
+        "item_comment_num": is_float,
+        "origin_place": is_float
     }
     DEFAULT_FILTERS = {
         "available": [True]

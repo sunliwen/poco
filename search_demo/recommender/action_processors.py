@@ -455,13 +455,7 @@ class UpdateItemProcessor(ActionProcessor):
             if args.get("brand", None):
                 mongo_client.updateProperty(site_id, args["brand"])
             item = mongo_client.updateItem(site_id, args)
-            
-            #import time
-            #t1 = time.time()
             es_index_item.delay(site_id, item)
-            #es_index_item(item)
-            #t2 = time.time()
-            #print t2 - t1
             return {"code": 0}
 
 
@@ -882,11 +876,13 @@ logWriter = LogWriter()
 
 
 EVENT_TYPE2ACTION_PROCESSOR = {
-    "view_item": ViewItemProcessor,
-    "add_favorite": AddFavoriteProcessor,
-    "remove_favorite": RemoveFavoriteProcessor,
-    "unlike": UnlikeProcessor,
-    "rate_item": RateItemProcessor
+    "ViewItem": ViewItemProcessor,
+    "AddFavorite": AddFavoriteProcessor,
+    "RemoveFavorite": RemoveFavoriteProcessor,
+    "Unlike": UnlikeProcessor,
+    "RateItem": RateItemProcessor,
+    "AddOrderItem": AddOrderItemProcessor,
+    "RemoveOrderItem": RemoveOrderItemProcessor
 }
 
 

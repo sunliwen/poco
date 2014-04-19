@@ -45,19 +45,6 @@ class APIRootView(APIView):
         })
 
 
-class ItemsAPIView(APIView):
-    def get(self, request, format=None):
-        pass
-
-    def put(self, request, format=None):
-        pass
-
-
-class ItemsAPIView(APIView):
-    def post(self, request, format=None):
-        pass
-
-
 class BaseAPIView(APIView):
     def process(self, request, response, site_id, args):
         raise NotImplemented
@@ -145,7 +132,6 @@ class ItemsAPIView(BaseAPIView):
 
 class RecommenderAPIView(SingleRequestAPIView):
     def getDebugResponse(self, args, result):
-        # for byEach... do 
         amount = int(args["amount"])
         if args.get("include_item_info", "yes") != "no":
             return {
@@ -159,6 +145,7 @@ class RecommenderAPIView(SingleRequestAPIView):
                      "item_id": "3852023"
                      }
                 ] * amount,
+                "type": args["type"],
                 "code": 0,
                 "req_id": result["req_id"]
             }
@@ -170,6 +157,7 @@ class RecommenderAPIView(SingleRequestAPIView):
                      "item_id": "3852023"
                      }
                 ] * amount,
+                "type": args["type"],
                 "code": 0,
                 "req_id": result["req_id"]
             }
@@ -177,6 +165,8 @@ class RecommenderAPIView(SingleRequestAPIView):
     def process(self, request, response, site_id, args):
         debug = args.get("debug", None) is not None
         result = super(RecommenderAPIView, self).process(request, response, site_id, args)
+        if result["code"] == 0:
+            result["type"] = args["type"]
         if result["code"] == 0 and debug:
             return self.getDebugResponse(args, result)
         else:
