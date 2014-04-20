@@ -4,9 +4,10 @@ import urllib2
 import urlparse
 import json
 
+import os
 
 API_ROOT = "http://0.0.0.0:2222/api/v1.6/"
-api_key = "api_haoyaoshi"
+api_key = os.getenv('API_KEY', "api_haoyaoshi")
 
 +#API_ROOT = "http://search.tuijianbao.net/api/v1.6/"
 +#api_key = "4ad6af048ec"
@@ -41,7 +42,9 @@ def test(function, expected_result, amount=50, *args):
         else:
             assert expected_result(res), "Invalid result: %s" % res
     t2 = time.time()
-    print t2-t1
+    print "%d times: %s" % (amount, t2-t1)
+    if amount>1:
+        print "avarage time: %s" % ((t2-t1)/amount)
 
 def post_items():
     import test_products

@@ -1,4 +1,5 @@
 import re
+import time
 from elasticsearch import Elasticsearch
 
 
@@ -103,17 +104,19 @@ class Suggester:
 
 
     def _tryAutoComplete(self, kw_prefix):
+        t1 = time.time()
         res = self.es.suggest(index=self.getItemIndex(), 
                     body={"kw": {"text": kw_prefix, "completion": {"field": "keyword_completion"}}})
         options = res["kw"][0]["options"]
         suggested_texts = [option["text"] for option in options]
-        return suggested_texts
+        t = time.time() - t1
+        return suggested_texts, t
 
     def getQuerySuggestions(self, query_str):
         split_by_wspace = [kw.strip() for kw in query_str.split(" ") if kw.strip()]
         if len(split_by_wspace) > 0:
             kw_prefix = split_by_wspace[-1]
-            possible_last_keywords = self._tryAutoComplete(kw_prefix)
+            possible_last_keywords, time_elapsed = self._tryAutoComplete(kw_prefix)
             completed_forms = []
             # TODO: use msearch
             for kw in possible_last_keywords:

@@ -54,6 +54,6 @@ def es_index_item(site_id, item):
     item["categories"] = preprocess_categories(item["categories"])
     item["brand"] = item["brand"]["id"]
 
-    print "ITEM to INDEX:", item
+    #print "ITEM to INDEX:", item
     res = es.index(index=es_search_functions.getESItemIndexName(site_id), doc_type='item', id=item["item_id"], body=item)
 

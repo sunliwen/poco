@@ -131,7 +131,6 @@ class ProductsSearch(BaseAPIView):
             cat_id = None
         sub_categories_facets = es_search_functions._getSubCategoriesFacets(cat_id, s)
         if sub_categories_facets:
-            print sub_categories_facets
             s = s.facet_raw(sub_categories=sub_categories_facets,
                             brand={'terms': {'field': 'brand', 'size': 20}})
             facet_sub_categories_list = [{"id": get_last_cat_id(facet["term"]),
