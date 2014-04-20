@@ -8,6 +8,8 @@ import json
 API_ROOT = "http://0.0.0.0:2222/api/v1.6/"
 api_key = "api_haoyaoshi"
 
++#API_ROOT = "http://search.tuijianbao.net/api/v1.6/"
++#api_key = "4ad6af048ec"
 
 def api_access(path, params, body=None):
     full_url = urlparse.urljoin(API_ROOT, path)
