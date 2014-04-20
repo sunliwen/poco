@@ -40,7 +40,9 @@ def test(function, expected_result, amount=50, *args):
         else:
             assert expected_result(res), "Invalid result: %s" % res
     t2 = time.time()
-    print t2-t1
+    print "%d times: %s" % (amount, t2-t1)
+    if amount>1:
+        print "avarage time: %s" % ((t2-t1)/amount)
 
 def post_items():
     import test_products
