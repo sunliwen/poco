@@ -24,6 +24,7 @@ def index_keywords(es, site_id, item):
             first_letters = splitted_token[0]
             full_pinyin = "".join(splitted_token[1:])
             result = {"keyword_completion": {"input": [raw_keyword, full_pinyin, first_letters], "output": raw_keyword}}
+            #print "INDEX:", result
             es.index(index=es_search_functions.getESItemIndexName(site_id), doc_type='keyword', body=result)
 
 
@@ -52,7 +53,9 @@ def es_index_item(site_id, item):
         del item["updated_on"]
 
     item["categories"] = preprocess_categories(item["categories"])
-    item["brand"] = item["brand"]["id"]
+    brand = item.get("brand", None)
+    if brand:
+        item["brand"] = brand["id"]
 
     #print "ITEM to INDEX:", item
     res = es.index(index=es_search_functions.getESItemIndexName(site_id), doc_type='item', id=item["item_id"], body=item)

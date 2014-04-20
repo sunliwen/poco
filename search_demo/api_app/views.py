@@ -105,7 +105,6 @@ class ProductsSearch(BaseAPIView):
         if q.strip():
             query = es_search_functions.construct_query(q)
             s = s.query_raw(query)
-        #s = s.filter(available=True) # TODO: this should be configurable in dashboard
         s = s.order_by(*sort_fields)
 
         for filter_field, filter_details in filters.items():

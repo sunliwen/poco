@@ -1,10 +1,14 @@
 import re
 import time
+from recommender.mongo_client import getMongoClient
 from elasticsearch import Elasticsearch
 
 
 def getESItemIndexName(site_id):
     return "item-index-%s" % site_id
+
+
+mongo_client = getMongoClient()
 
 
 import jieba
@@ -90,7 +94,7 @@ class Suggester:
         facets = {'keywords': {'terms': {'field': 'keywords',
                                           'size': 10},
                                "facet_filter": filter},
-                  'categories': {'terms': {'regex': r'\d{4}', 'field': 'categories', 'size': 5},
+                  'categories': {'terms': {'field': 'categories', 'size': 5},
                                  "facet_filter": filter}
                  }
         res = self.es.search(index=self.getItemIndex(), 
@@ -108,9 +112,24 @@ class Suggester:
         res = self.es.suggest(index=self.getItemIndex(), 
                     body={"kw": {"text": kw_prefix, "completion": {"field": "keyword_completion"}}})
         options = res["kw"][0]["options"]
-        suggested_texts = [option["text"] for option in options]
+        suggested_texts = [option["text"] for option in options if kw_prefix != option["text"]]
         t = time.time() - t1
         return suggested_texts, t
+
+    def getBreadCrumbs(self, category_id):
+        names = []
+        ids = [category_id]
+        prop = mongo_client.getProperty(self.site_id, "category", category_id)
+        while prop:
+            names.append(prop["name"])
+            parent_id = prop["parent_id"]
+            if parent_id != "null" and not (parent_id in ids):
+                ids.append(parent_id)
+                prop = mongo_client.getProperty(self.site_id, "category", parent_id)
+            else:
+                break
+        names.reverse()
+        return names
 
     def getQuerySuggestions(self, query_str):
         split_by_wspace = [kw.strip() for kw in query_str.split(" ") if kw.strip()]
@@ -131,7 +150,6 @@ class Suggester:
                     completed_forms.append({"type": "completion",
                                             "value": u"%s" % completed_form,
                                             "count": count})
-
             # also suggest more keywords
             if re.match(r"[a-zA-Z0-9]{1}", kw_prefix) is None: # not suggest for last keyword with only one letter/digit
                 suggested_keywords, suggested_categories = self._getMoreSuggestions(query_str)
@@ -139,12 +157,9 @@ class Suggester:
                 completed_forms_categories = []
                 for suggested_term in suggested_categories:
                     category_id = suggested_term["term"]
-                    #category = CATEGORY_MAP_BY_ID.get(category_id, None)
-                    # FIXME
-                    category = None
-                    if category:
-                        breadcrumbs = get_breadcrumbs(category)[1:]
-                        breadcrumbs_str = " > ".join([cat["category"]["name"] for cat in breadcrumbs])
+                    breadcrumbs = self.getBreadCrumbs(category_id)
+                    if breadcrumbs:
+                        breadcrumbs_str = " > ".join(breadcrumbs)
                         completed_forms_categories.append({"type": "facet", 
                                                 "field_name": "categories",
                                                 "facet_label": breadcrumbs_str,
@@ -152,7 +167,6 @@ class Suggester:
                                                 "category_id": category_id,
                                                 "count": suggested_term["count"]
                                                 })
-
                 completed_forms = completed_forms_categories + completed_forms
 
                 for suggested_term in suggested_keywords:

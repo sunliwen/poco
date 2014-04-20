@@ -6,3 +6,6 @@ PRINT_RAW_LOG = True
 # For Development
 BROKER_URL = "django://"
 
+API_PREFIX_FOR_SEARCH_DEMO = "http://localhost:2222/api/v1.6/"
+API_KEY_FOR_SEARCH_DEMO = "api_haoyaoshi"
+

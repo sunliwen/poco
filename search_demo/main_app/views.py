@@ -5,9 +5,11 @@ import re
 from django.shortcuts import render, render_to_response, redirect
 from django.template import RequestContext
 from django.http import HttpResponse
+from django.conf import settings
 from elasticsearch import Elasticsearch
 from elasticutils import S, F
 from django.core.paginator import Paginator
+from common.api_client import APIClient
 
 
 import jieba
@@ -62,6 +64,7 @@ def _getSubCategoriesFacets(cat_id, s):
     #result = {'terms': {'field': 'categories', 'size': 20}}
     addFilterToFacets(s, result)
     return result
+
 
 def v_index(request):
     query_str = request.GET.get("q", "")
@@ -122,6 +125,70 @@ def v_index(request):
              "breadcrumbs": breadcrumbs,
              "op": op}, 
             RequestContext(request))
+
+
+def v_index(request):
+    query_str = request.GET.get("q", "")
+    page_num = request.GET.get("p", "1")
+    cat = request.GET.get("cat", None)
+    op = request.GET.get("op", None)
+
+    if cat is not None and cat.strip() == "":
+        cat = None
+
+    try:
+        page_num = int(page_num)
+    except TypeError:
+        page_num = 1
+
+    if op=="u":
+        sort_fields = ["price"]
+    elif op=="d":
+        sort_fields = ["-price"]
+    else:
+        sort_fields = []
+
+    if cat:
+        category = CATEGORY_MAP_BY_ID.get(cat, None)
+    else:
+        category = CATEGORY_TREE
+
+    api_client = APIClient(settings.API_PREFIX_FOR_SEARCH_DEMO)
+    body = {
+       "api_key": settings.API_KEY_FOR_SEARCH_DEMO,
+       "q": query_str,
+       "page": page_num,
+       "sort_fields": sort_fields,
+       "highlight": True
+    }
+
+    if cat is not None:
+        body["filters"] = {"categories": [cat]}
+
+    result = api_client("public/search/", None,
+               body=body)
+
+    breadcrumbs = get_breadcrumbs(category)
+
+    if result["info"]["current_page"] > 1:
+        prev_page = result["info"]["current_page"] - 1
+    else:
+        prev_page = None
+
+    if result["info"]["current_page"] < result["info"]["num_pages"]:
+        next_page = result["info"]["current_page"] + 1
+    else:
+        prev_page = None
+
+    return render_to_response("index.html", 
+            {"result": result,
+             "prev_page": prev_page, "next_page": next_page,
+             "query_str": query_str, "category": category,
+             "breadcrumbs": breadcrumbs,
+             "settings": settings,
+             "op": op}, 
+            RequestContext(request))
+
 
 
 def get_breadcrumbs(category):

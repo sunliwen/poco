@@ -296,6 +296,8 @@ def preprocess_query_str(query_str):
 # TODO: handling elasticsearch.exceptions.ConnectionError
 #f = open("analyzed_words.txt", "w")
 def run(items_path):
+    print "This script is outdated. "
+    return
     count = 0
     print "Begin Loading ..."
     items = load_items(items_path)

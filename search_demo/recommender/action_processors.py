@@ -417,6 +417,21 @@ class UpdateItemProcessor(ActionProcessor):
                     return {"code": 1, "err_msg": "brand content should contains key: '%s'" % expected_key}
         return None
 
+    def _updateItem(self, site_id, args):
+        #import time
+        #t1 = time.time()
+        for category in args["categories"]:
+            mongo_client.updateProperty(site_id, category)
+        #t2 = time.time()
+        if args.get("brand", None):
+            mongo_client.updateProperty(site_id, args["brand"])
+        #t3 = time.time()
+        item = mongo_client.updateItem(site_id, args)
+        #t4 = time.time()
+        es_index_item.delay(site_id, item)
+        #t5 = time.time()
+        #print t1, t2, t3, t4, t5
+
     def _process(self, site_id, args):
         err_msg, args = self.ap.processArgs(args)
         if err_msg:
@@ -450,12 +465,8 @@ class UpdateItemProcessor(ActionProcessor):
                     except (ValueError, TypeError):
                         return {"code": 1, "err_msg": "%s should be an integer." % key}
 
-            for category in args["categories"]:
-                mongo_client.updateProperty(site_id, category)
-            if args.get("brand", None):
-                mongo_client.updateProperty(site_id, args["brand"])
-            item = mongo_client.updateItem(site_id, args)
-            es_index_item.delay(site_id, item)
+            self._updateItem(site_id, args)
+
             return {"code": 0}
 
 

@@ -3,32 +3,18 @@ import urllib
 import urllib2
 import urlparse
 import json
+from common import api_client
 
 import os
 
 API_ROOT = "http://0.0.0.0:2222/api/v1.6/"
 api_key = os.getenv('API_KEY', "api_haoyaoshi")
 
-+#API_ROOT = "http://search.tuijianbao.net/api/v1.6/"
-+#api_key = "4ad6af048ec"
+#API_ROOT = "http://search.tuijianbao.net/api/v1.6/"
+#api_key = "4ad6af048ec"
 
-def api_access(path, params, body=None):
-    full_url = urlparse.urljoin(API_ROOT, path)
-    if params:
-        params_str = "?" + urllib.urlencode(params)
-    else:
-        params_str = ""
-    full_url += params_str
-    if body:
-        req = urllib2.Request(full_url, data=json.dumps(body), 
-                              headers={'Content-type': 'application/json'})
-    else:
-        req = urllib2.Request(full_url,
-                              headers={'Content-type': 'application/json'})
 
-    content = urllib2.urlopen(req).read()
-    result = json.loads(content)
-    return result
+api_access = api_client.APIClient(API_ROOT)
 
 
 def test(function, expected_result, amount=50, *args):
@@ -63,6 +49,16 @@ def post_search():
             })
     return res
 
+
+def post_search2():
+    res = api_access("public/search/", None,
+            body={
+                "api_key": api_key,
+                "q": ""
+            })
+    return res
+
+
 def post_suggest():
     res = api_access("public/suggest/", None,
             body={
@@ -83,6 +79,9 @@ def events(event_type, params):
     res = api_access("public/events/", params)
     return res
 
+
+
+test(post_search2, {}, 1)
 
 test(post_items, {"code": 0}, 1)
 test(post_search, lambda x:x["errors"]=={}, 5)
