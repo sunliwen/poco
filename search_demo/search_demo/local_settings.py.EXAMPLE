@@ -7,5 +7,5 @@ PRINT_RAW_LOG = True
 BROKER_URL = "django://"
 
 API_PREFIX_FOR_SEARCH_DEMO = "http://localhost:2222/api/v1.6/"
-API_KEY_FOR_SEARCH_DEMO = "api_haoyaoshi"
+API_KEY_FOR_SEARCH_DEMO = "fb86b045" # This is the api key of search demo which uses leyou's data, and the site id is testsite001
 

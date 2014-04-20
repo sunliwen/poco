@@ -1,4 +1,6 @@
 #encoding=utf8
+import sys
+sys.path.insert(0, ".")
 import urllib
 import urllib2
 import urlparse
@@ -31,6 +33,7 @@ def test(function, expected_result, amount=50, *args):
     print "%d times: %s" % (amount, t2-t1)
     if amount>1:
         print "avarage time: %s" % ((t2-t1)/amount)
+    return res
 
 def post_items():
     import test_products
@@ -81,11 +84,12 @@ def events(event_type, params):
 
 
 
-test(post_search2, {}, 1)
+#test(post_search2, {}, 1)
 
 test(post_items, {"code": 0}, 1)
-test(post_search, lambda x:x["errors"]=={}, 5)
-test(post_suggest, lambda x:x["errors"]=={}, 5)
+print test(post_search, lambda x:x["errors"]=={}, 5)
+print test(post_suggest, lambda x:x["errors"]=={}, 5)
+import sys; sys.exit(0)
 
 test(recommend, lambda x:x["code"]==0, 1, "AlsoViewed", {"user_id": "U1", "item_id": "I1", "amount": 5})
 test(recommend, lambda x:x["code"]==0, 1, "ByBrowsingHistory", {"user_id": "U1", "amount": 5})

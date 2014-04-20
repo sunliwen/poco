@@ -178,7 +178,7 @@ def v_index(request):
     if result["info"]["current_page"] < result["info"]["num_pages"]:
         next_page = result["info"]["current_page"] + 1
     else:
-        prev_page = None
+        next_page = None
 
     return render_to_response("index.html", 
             {"result": result,
