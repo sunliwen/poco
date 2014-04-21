@@ -133,13 +133,13 @@ class ProductsSearch(BaseAPIView):
             s = s.facet_raw(sub_categories=sub_categories_facets,
                             brand={'terms': {'field': 'brand', 'size': 20}})
             facet_sub_categories_list = [{"id": get_last_cat_id(facet["term"]),
-                                    "count": facet["count"]} 
+                                    "count": facet["count"]}
                                     for facet in s.facet_counts().get("sub_categories", [])]
             for facet_sub_cat in facet_sub_categories_list:
                 facet_sub_cat["label"] = mongo_client.getPropertyName(site_id, "category", facet_sub_cat["id"])
             facet_brand_list = [{"id": facet["term"],
                                  "label": mongo_client.getPropertyName(site_id, "brand", facet["term"]),
-                                 "count": facet["count"]} 
+                                 "count": facet["count"]}
                                  for facet in s.facet_counts().get("brand", [])
             ]
         else:
@@ -153,12 +153,12 @@ class ProductsSearch(BaseAPIView):
         # TODO category only one; facets.
         errors = []
         if not isinstance(request.DATA.get("q", None), basestring):
-            errors.append({"code": "PARAM_REQUIRED", "field_name": "q", 
+            errors.append({"code": "PARAM_REQUIRED", "field_name": "q",
                            "message": u"'q' is required and must be of string type."})
 
         page = request.DATA.get("page", None)
         if page is not None and not str(page).isdigit():
-            errors.append({"code": "INVALID_PARAM", 
+            errors.append({"code": "INVALID_PARAM",
                            "param_name": "page",
                            "message": u"'page' must be a number."})
 
@@ -166,10 +166,10 @@ class ProductsSearch(BaseAPIView):
         sort_fields = request.DATA.get("sort_fields", [])
         if isinstance(sort_fields, list):
             invalid_sort_fields = [sort_field for sort_field in sort_fields
-                                   if (not isinstance(sort_field, basestring)) 
+                                   if (not isinstance(sort_field, basestring))
                                        or (not sort_field.strip("-") in self.VALID_SORT_FIELDS)]
             if invalid_sort_fields:
-                errors.append({"code": "INVALID_PARAM", 
+                errors.append({"code": "INVALID_PARAM",
                                "param_name": "sort_fields",
                                "message": u"'sort_fields' contains invalid field names: %s" % (",".join(invalid_sort_fields))})
         else:
@@ -195,18 +195,18 @@ class ProductsSearch(BaseAPIView):
                     if isinstance(filter_details, list):
                         if filter_key == "categories":
                             if len(filter_details) > 1:
-                                errors.append({"code": "INVALID_PARAM", 
+                                errors.append({"code": "INVALID_PARAM",
                                     "param_name": "filters",
                                     "message": u"'categories' can not contain more than 1 value."})
                         for filter_details_item in filter_details:
                             if not filter_validator(filter_details_item):
-                                errors.append({"code": "INVALID_PARAM", 
+                                errors.append({"code": "INVALID_PARAM",
                                             "param_name": "filters",
                                             "message": u"'%s' should contain %s values." \
                                                        % (filter_key, filter_validator.expected_type)})
                                 break
                     elif isinstance(filter_details, dict):
-                        if not (filter_details.has_key("type") 
+                        if not (filter_details.has_key("type")
                             and filter_details["type"] == "range"
                             and filter_details.has_key("from")
                             and filter_details.has_key("to")):
@@ -217,11 +217,11 @@ class ProductsSearch(BaseAPIView):
                     else:
                         invalid_details_filters.append(filter_key)
             if invalid_name_filters:
-                errors.append({"code": "INVALID_PARAM", 
+                errors.append({"code": "INVALID_PARAM",
                                "param_name": "filters",
                                "message": u"'filters' contains invalid field names: %s" % (",".join(invalid_name_filters))})
             if invalid_details_filters:
-                errors.append({"code": "INVALID_PARAM", 
+                errors.append({"code": "INVALID_PARAM",
                                "param_name": "filters",
                                "message": u"'filters' contains fields with invalid content: %s" % (",".join(invalid_details_filters))})
         else:
@@ -231,14 +231,14 @@ class ProductsSearch(BaseAPIView):
 
         api_key = request.DATA.get("api_key", None)
         if api_key is None:
-            errors.append({"code": "PARAM_REQUIRED", "field_name": "api_key", 
+            errors.append({"code": "PARAM_REQUIRED", "field_name": "api_key",
                            "message": "'api_key' is required."})
         elif not isinstance(api_key, basestring):
-            errors.append({"code": "INVALID_PARAM", 
+            errors.append({"code": "INVALID_PARAM",
                            "param_name": "api_key",
                            "message": u"'api_key' must be a string."})
         elif self.getSiteID(api_key) is None:
-            errors.append({"code": "INVALID_PARAM", "param_name": "api_key", 
+            errors.append({"code": "INVALID_PARAM", "param_name": "api_key",
                            "message": "no such api_key"})
 
         return errors
@@ -325,19 +325,19 @@ class QuerySuggest(BaseAPIView):
     def _validate(self, request):
         errors = []
         if not isinstance(request.DATA.get("q", None), basestring):
-            errors.append({"code": "PARAM_REQUIRED", "field_name": "q", 
+            errors.append({"code": "PARAM_REQUIRED", "field_name": "q",
                            "message": "'q' is required and must be a string."})
 
         api_key = request.DATA.get("api_key", None)
         if api_key is None:
-            errors.append({"code": "PARAM_REQUIRED", "field_name": "api_key", 
+            errors.append({"code": "PARAM_REQUIRED", "field_name": "api_key",
                            "message": "'api_key' is required."})
         elif not isinstance(api_key, basestring):
-            errors.append({"code": "INVALID_PARAM", 
+            errors.append({"code": "INVALID_PARAM",
                            "param_name": "api_key",
                            "message": "'api_key' must be a string."})
         elif self.getSiteID(api_key) is None:
-            errors.append({"code": "INVALID_PARAM", "param_name": "api_key", 
+            errors.append({"code": "INVALID_PARAM", "param_name": "api_key",
                            "message": "no such api_key"})
 
         return errors
@@ -357,5 +357,5 @@ class QuerySuggest(BaseAPIView):
 
         suggester = es_search_functions.Suggester(site_id)
         suggested_texts = suggester.getQuerySuggestions(q)
-        
+
         return Response({"suggestions": suggested_texts, "errors": {}})

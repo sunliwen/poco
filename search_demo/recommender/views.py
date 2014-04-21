@@ -32,7 +32,7 @@ GET /1.6/redirect/
 
 """
 
-# TODO: config 
+# TODO: config
 #logging.basicConfig(format="%(asctime)s|%(levelname)s|%(name)s|%(message)s",
 #                    level=logging.WARNING,
 #                    datefmt="%Y-%m-%d %I:%M:%S")
@@ -90,7 +90,7 @@ class BaseAPIView(APIView):
 
 class SingleRequestAPIView(BaseAPIView):
     MAX_AGE = 109500 * 3600 * 24
-    
+
     def getActionProcessor(self, args):
         raise NotImplemented
 
@@ -138,10 +138,10 @@ class RecommenderAPIView(SingleRequestAPIView):
                 "topn": [
                     {"item_name": "星月--动物音乐敲击琴",
                      "price": "79.00",
-                     "market_price": "118.00", 
+                     "market_price": "118.00",
                      "image_link": "http://image.example.com/blah.jpg", #TODO
-                     "score": 1.0, 
-                     "item_link": "http://example.com/products/3852023/", 
+                     "score": 1.0,
+                     "item_link": "http://example.com/products/3852023/",
                      "item_id": "3852023"
                      }
                 ] * amount,
@@ -153,7 +153,7 @@ class RecommenderAPIView(SingleRequestAPIView):
             return {
                 "topn": [
                     {
-                     "score": 1.0, 
+                     "score": 1.0,
                      "item_id": "3852023"
                      }
                 ] * amount,
@@ -190,7 +190,3 @@ class EventsAPIView(SingleRequestAPIView):
             return False, {"code": 2, "err_msg": "no or invalid event_type"}
         else:
             return True, action_processor
-
-
-
-
