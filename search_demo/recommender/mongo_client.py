@@ -237,7 +237,7 @@ class MongoClient:
 
     def getProperty(self, site_id, property_type, property_id):
         c_properties = getSiteDBCollection(self.connection, site_id, "properties")
-        result = c_properties.find_one({"type": property_type, "id": property_id}, 
+        result = c_properties.find_one({"type": property_type, "id": property_id},
                                         read_preference=ReadPreference.SECONDARY_PREFERRED)
         return result
 
@@ -468,7 +468,7 @@ class MongoClient:
 
     def getLast7DaysAttributeNames(self, prefix, today):
         last_7_days = self.getLastNDays(7, today)
-        attr_names = ["$%s.%d.%d.%d.%s" % (prefix, dt.year, dt.month, dt.day, prefix) 
+        attr_names = ["$%s.%d.%d.%d.%s" % (prefix, dt.year, dt.month, dt.day, prefix)
                     for dt in last_7_days]
         return attr_names
 
@@ -503,7 +503,7 @@ class MongoClient:
             highest_views = 1.0
         result = [(record["item_id"], record["total_views"]/ highest_views) for record in result]
         c_cached_hot_view = getSiteDBCollection(self.connection, site_id, "cached_hot_view")
-        c_cached_hot_view.update({"type": HOT_INDEX_ALL_ITEMS}, 
+        c_cached_hot_view.update({"type": HOT_INDEX_ALL_ITEMS},
                                  {"type": HOT_INDEX_ALL_ITEMS, "result": result}, upsert=True)
 
 
@@ -516,4 +516,3 @@ def getConnection():
 
 def getMongoClient():
     return MongoClient(getConnection())
-

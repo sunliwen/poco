@@ -20,8 +20,8 @@ def tweak_item(item):
     for category_id in item["categories"]:
         category_data = main_views.CATEGORY_MAP_BY_ID.get(category_id, None)
         if category_data:
-            category = {"type": "category", 
-                        "id": category_data["id"], 
+            category = {"type": "category",
+                        "id": category_data["id"],
                         "parent_id": category_data["parent_id"],
                         "name": category_data["name"]}
             if category["parent_id"] is None:
