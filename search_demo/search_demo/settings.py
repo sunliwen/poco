@@ -121,9 +121,14 @@ API_SERVER_PREFIX = None
 #recommendation_deduplicate_item_names_required_set = None
 
 
+# celery
+CELERY_ACCEPT_CONTENT = ['pickle', 'json', 'msgpack', 'yaml']
+
 from local_settings import *
 
 
 assert MONGODB_HOST is not None
 assert API_SERVER_PREFIX is not None
 #assert recommendation_deduplicate_item_names_required_set is not None
+
+
