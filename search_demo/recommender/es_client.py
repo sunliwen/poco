@@ -52,6 +52,9 @@ def es_index_item(site_id, item):
     if item.has_key("updated_on"):
         del item["updated_on"]
 
+    #if item.has_key("origin_place"):
+    #    item["origin_place"] = str(item["origin_place"])
+
     item["categories"] = preprocess_categories(item["categories"])
     brand = item.get("brand", None)
     if brand:

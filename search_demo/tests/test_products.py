@@ -13,6 +13,7 @@ PRODUCTS = [
             },
             "item_level": 5,
             "item_comment_num": 15,
+            "origin_place": 0,
             "categories": [
                 {
                     "type": "category",
@@ -39,6 +40,7 @@ PRODUCTS = [
             },
             "item_level": 3,
             "item_comment_num": 10,
+            "origin_place": 1,
             "categories": [
                 {
                     "type": "category",
@@ -65,6 +67,7 @@ PRODUCTS = [
             },
             "item_level": 3,
             "item_comment_num": 10,
+            "origin_place": 0,
             "categories": [
                 {
                     "type": "category",

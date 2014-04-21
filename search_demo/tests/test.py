@@ -43,12 +43,12 @@ def post_items():
         res = api_access("private/items/", {"api_key": api_key}, body=body)
     return res
 
-def post_search():
+def post_search(q=""):
     res = api_access("public/search/", None,
             body={
                 "api_key": api_key,
-                "q": "",
-                "filters": {"categories": ["123"]}
+                "q": q
+                #"filters": {"categories": ["123"]}
             })
     return res
 
@@ -82,14 +82,15 @@ def events(event_type, params):
     res = api_access("public/events/", params)
     return res
 
-
-
 #test(post_search2, {}, 1)
+
+test(post_items, {"code": 0}, 1)
+test(post_search, {}, 1, "")
+import sys; sys.exit(0)
 
 test(post_items, {"code": 0}, 1)
 print test(post_search, lambda x:x["errors"]=={}, 5)
 print test(post_suggest, lambda x:x["errors"]=={}, 5)
-import sys; sys.exit(0)
 
 test(recommend, lambda x:x["code"]==0, 1, "AlsoViewed", {"user_id": "U1", "item_id": "I1", "amount": 5})
 test(recommend, lambda x:x["code"]==0, 1, "ByBrowsingHistory", {"user_id": "U1", "amount": 5})

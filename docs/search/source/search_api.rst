@@ -92,7 +92,15 @@ errors             错误信息。正常情况下为{}。
                     "categories": [
                         {"label": "饮料", "id": "2255", "count": 15}
                         {"label": "童装", "id": "3721", "count": 8}
-                        ]
+                        ],
+                    "brand": [
+                        {"label": "雀巢", "id": "1000", "count": 25,
+                         "label": "贝亲", "id": "3800", "count": 15}
+                    ],
+                    "origin_place": [
+                        {"label": "", "id": "0", "count": 10,
+                         "label": "", "id": "1", "count": 5}
+                    ]
                 }
             },
         "errors": {}
