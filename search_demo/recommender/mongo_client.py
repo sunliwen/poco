@@ -39,9 +39,9 @@ class SameGroupRecommendationResultFilter:
         item = mongo_client.getItem(site_id, item_id)
         if item is not None:
             for category in item["categories"]:
-                category_group = category_groups.get(category, None)
+                category_group = category_groups.get(category["id"], None)
                 allowed_category_groups.append(category_group)
-            self.allowed_categories = set(item["categories"])
+            self.allowed_categories = set([category["id"] for category in item["categories"]])
             self.allowed_category_groups = set(allowed_category_groups)
         else:
             self.allowed_categories = set([])
@@ -56,10 +56,10 @@ class SameGroupRecommendationResultFilter:
         else:
             for category in item_dict["categories"]:
                 if category_groups is not None:
-                    item_category_group = category_groups.get(category, None)
+                    item_category_group = category_groups.get(category["id"], None)
                     if item_category_group in self.allowed_category_groups:
                         return True
-                elif category in self.allowed_categories:
+                elif category["id"] in self.allowed_categories:
                     return True
             return False
 
