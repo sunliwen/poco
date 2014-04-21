@@ -6,7 +6,7 @@ Recommender JS API
 简明教程
 ----------
 
-Demo页面 <a href="http://search.tuijianbao.net/sdk/demo/">http://search.tuijianbao.net/sdk/demo/</a>
+JsSdk Demo页面 http://search.tuijianbao.net/sdk/demo/
 
 在页面底部包含下面两个js文件::
 

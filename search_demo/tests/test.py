@@ -10,7 +10,8 @@ from common import api_client
 import os
 
 API_ROOT = "http://0.0.0.0:2222/api/v1.6/"
-api_key = os.getenv('API_KEY', "6fad74ab")
+#api_key = os.getenv('API_KEY', "6fad74ab")
+api_key = os.getenv("API_KEY", "fb86b045") # Default to testsite001 which is leyou data
 
 #API_ROOT = "http://search.tuijianbao.net/api/v1.6/"
 #api_key = "4ad6af048ec"
