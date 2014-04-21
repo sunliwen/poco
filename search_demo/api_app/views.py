@@ -131,7 +131,9 @@ class ProductsSearch(BaseAPIView):
         sub_categories_facets = es_search_functions._getSubCategoriesFacets(cat_id, s)
         if sub_categories_facets:
             s = s.facet_raw(sub_categories=sub_categories_facets,
-                            brand={'terms': {'field': 'brand', 'size': 20}})
+                            brand={'terms': {'field': 'brand', 'size': 20}},
+                            origin_place={'terms': {'field': 'origin_place', 
+                                                    'size': 20}})
             facet_sub_categories_list = [{"id": get_last_cat_id(facet["term"]),
                                     "count": facet["count"]}
                                     for facet in s.facet_counts().get("sub_categories", [])]
@@ -140,13 +142,17 @@ class ProductsSearch(BaseAPIView):
             facet_brand_list = [{"id": facet["term"],
                                  "label": mongo_client.getPropertyName(site_id, "brand", facet["term"]),
                                  "count": facet["count"]}
-                                 for facet in s.facet_counts().get("brand", [])
-            ]
+                                 for facet in s.facet_counts().get("brand", [])]
+            facet_origin_place_list = [{"id": facet["term"],
+                                 "label": "",
+                                 "count": facet["count"]}
+                                 for facet in s.facet_counts().get("origin_place", [])]
         else:
             facet_sub_categories_list = []
             facet_brand_list = []
 
-        return s, {"categories": facet_sub_categories_list, "brand": facet_brand_list}
+        return s, {"categories": facet_sub_categories_list, "brand": facet_brand_list, 
+                   "origin_place": facet_origin_place_list}
 
     def _validate(self, request):
         # TODO ignore fields and warn
