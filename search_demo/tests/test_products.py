@@ -3,8 +3,9 @@
 PRODUCTS = [
             {
             "type": "product",
+            "available": True,
             "item_id": "I123",
-            "item_name": "产品123",
+            "item_name": "产品1234",
             "item_link": "",
             "brand": {
                 "type": "brand",

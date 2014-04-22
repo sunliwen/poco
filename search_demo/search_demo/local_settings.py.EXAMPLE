@@ -9,3 +9,17 @@ BROKER_URL = "django://"
 API_PREFIX_FOR_SEARCH_DEMO = "http://localhost:2222/api/v1.6/"
 API_KEY_FOR_SEARCH_DEMO = "fb86b045" # This is the api key of search demo which uses leyou's data, and the site id is testsite001
 
+# For Production you need to configure CACHES settings
+# refs: https://docs.djangoproject.com/en/dev/topics/cache/
+# we use memcached in production.
+# For development, the default local-memory caching is enough.
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-snowflake'
+    }
+}
+
+
+#MEMCACHED_HOSTS = ['127.0.0.1:11211']
+
