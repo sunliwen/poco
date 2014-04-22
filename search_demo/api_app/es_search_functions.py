@@ -211,6 +211,7 @@ class Suggester:
                                                 "count": suggested_term["count"]
                                                 })
             #t2 =time.time()
+            #print t2-t1
             return completed_forms
         else:
             return []
