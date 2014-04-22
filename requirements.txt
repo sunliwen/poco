@@ -34,3 +34,4 @@ simplejson==3.3.3
 six==1.5.2
 urllib3==1.7.1
 wsgiref==0.1.2
+flower==0.6.0
