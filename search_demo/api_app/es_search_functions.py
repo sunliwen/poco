@@ -52,7 +52,7 @@ def addFilterToFacets(s, facets):
     filter = s._build_query().get("filter", None)
     if filter:
         facets["facet_filter"] = filter
-    return filter
+    return facets
 
 def _getSubCategoriesFacets(cat_id, s):
     if cat_id is None:

@@ -131,9 +131,10 @@ class ProductsSearch(BaseAPIView):
         sub_categories_facets = es_search_functions._getSubCategoriesFacets(cat_id, s)
         if sub_categories_facets:
             s = s.facet_raw(sub_categories=sub_categories_facets,
-                            brand={'terms': {'field': 'brand', 'size': 20}},
-                            origin_place={'terms': {'field': 'origin_place', 
-                                                    'size': 20}})
+                            brand=es_search_functions.addFilterToFacets(s, {'terms': {'field': 'brand', 'size': 20}}),
+                            origin_place=es_search_functions.addFilterToFacets(s,
+                                                    {'terms': {'field': 'origin_place', 
+                                                    'size': 20}}))
             facet_sub_categories_list = [{"id": get_last_cat_id(facet["term"]),
                                     "count": facet["count"]}
                                     for facet in s.facet_counts().get("sub_categories", [])]
@@ -251,7 +252,6 @@ class ProductsSearch(BaseAPIView):
 
 
     VALID_SORT_FIELDS = ("price", "market_price", "item_level", "item_comment_num", "origin_place")
-    #VALID_FILTER_FIELDS = ("price", "market_price", "categories", "item_id", "available")
     FILTER_FIELD_TYPE_VALIDATORS = {
         "price": is_float,
         "market_price": is_float,
@@ -260,7 +260,8 @@ class ProductsSearch(BaseAPIView):
         "available": is_boolean,
         "item_level": is_float,
         "item_comment_num": is_float,
-        "origin_place": is_float
+        "origin_place": is_float,
+        "brand": is_string
     }
     DEFAULT_FILTERS = {
         "available": [True]
@@ -274,7 +275,7 @@ class ProductsSearch(BaseAPIView):
     def get(self, request, format=None):
         errors = self._validate(request)
         if errors:
-            return Response({"records": {}, "info": {}, "errors": errors})
+            return Response({"records": [], "info": {}, "errors": errors})
         # TODO: handle the api_key
         q = request.DATA.get("q", "")
         per_page = request.DATA.get("per_page", self.PER_PAGE)
@@ -313,18 +314,10 @@ class ProductsSearch(BaseAPIView):
                      "total_result_count": paginator.count,
                      "facets": facets_result
                   },
-                  "errors": {}
+                  "errors": []
                 }
 
-        # TODO: facets and other info
         return Response(result)
-
-    #def post(self, request, format=None):
-    #    serializer = SnippetSerializer(data=request.DATA)
-    #    if serializer.is_valid():
-    #        serializer.save()
-    #        return Response(serializer.data, status=status.HTTP_201_CREATED)
-    #    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class QuerySuggest(BaseAPIView):
@@ -364,4 +357,4 @@ class QuerySuggest(BaseAPIView):
         suggester = es_search_functions.Suggester(site_id)
         suggested_texts = suggester.getQuerySuggestions(q)
 
-        return Response({"suggestions": suggested_texts, "errors": {}})
+        return Response({"suggestions": suggested_texts, "errors": []})
