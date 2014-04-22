@@ -1,4 +1,5 @@
 # encoding=utf8
+import os.path
 
 # http://pinyin.sogou.com/dict/cell.php?id=6925
 list1 = """摇摆椅 康康电动椅 好孩子 日康浴盆
@@ -43,7 +44,8 @@ def extract_word_list(str):
     return set([word.strip() for word in str.split() if word.strip()])
 
 def load_sorted_unique_words():
-    f = open("./misc/sorted_unique_words1.txt", "r")
+    file_path = os.path.join(os.path.split(__file__)[0], "sorted_unique_words1.txt")
+    f = open(file_path, "r")
     words = []
     for line in f.readlines():
         word = line.split()[0]
