@@ -2,6 +2,7 @@ import hashlib
 import random
 import time
 import datetime
+import copy
 import pymongo
 from django.conf import settings
 from pymongo.read_preferences import ReadPreference
@@ -506,6 +507,21 @@ class MongoClient:
         c_cached_hot_view.update({"type": HOT_INDEX_ALL_ITEMS},
                                  {"type": HOT_INDEX_ALL_ITEMS, "result": result}, upsert=True)
 
+    def updateSearchTermsCache(self, site_id, cache_entry):
+        c_search_terms_cache = getSiteDBCollection(self.connection, site_id, "search_terms_cache")
+        terms_key = "|".join(cache_entry["terms"])
+        cache_entry["terms_key"] = terms_key
+        c_search_terms_cache.update({"terms_key": terms_key},
+                                    cache_entry,
+                                    upsert=True)
+
+    def fetchSearchTermsCacheEntry(self, site_id, terms):
+        c_search_terms_cache = getSiteDBCollection(self.connection, site_id, "search_terms_cache")
+        terms = copy.copy(terms)
+        terms.sort()
+        terms_key = "|".join(terms)
+        cache_entry = c_search_terms_cache.find_one({"terms_key": terms_key})
+        return terms_key, cache_entry
 
 def getConnection():
     if(settings.REPLICA_SET):

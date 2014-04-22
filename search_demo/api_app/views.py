@@ -361,7 +361,7 @@ class QuerySuggest(BaseAPIView):
         api_key = request.DATA.get("api_key", "")
         site_id = self.getSiteID(api_key)
 
-        suggester = es_search_functions.Suggester(site_id)
+        suggester = es_search_functions.Suggester(mongo_client, site_id)
         suggested_texts = suggester.getQuerySuggestions(q)
 
         return Response({"suggestions": suggested_texts, "errors": {}})

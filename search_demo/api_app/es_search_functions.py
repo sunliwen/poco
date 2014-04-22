@@ -1,14 +1,14 @@
 import re
 import time
-from recommender.mongo_client import getMongoClient
+import copy
+import hashlib
 from elasticsearch import Elasticsearch
+from django.conf import settings
+from django.core.cache import get_cache
 
 
 def getESItemIndexName(site_id):
     return "item-index-%s" % site_id
-
-
-mongo_client = getMongoClient()
 
 
 import jieba
@@ -79,10 +79,38 @@ def _extractSuggestedTerms(res, name):
         return []
 
 
+class TermsCache:
+    EXPIRY_TIME = 3600 # 1h
+
+    def __init__(self, mongo_client):
+        self.mongo_client = mongo_client
+        #self.mc = memcache.Client(memcached_hosts)
+
+    def fetch(self, site_id, terms):
+        sorted_terms = copy.copy(terms)
+        sorted_terms.sort()
+        sorted_terms = sorted_terms
+        terms_key = "terms-cache-" + hashlib.md5(u"|".join(sorted_terms).encode("utf8")).hexdigest()
+        cache_entry = get_cache("default").get(terms_key)
+        #print "C:", cache_entry is not None
+        if cache_entry is None:
+            _, cache_entry = self.mongo_client.fetchSearchTermsCacheEntry(site_id, terms)
+            if cache_entry:
+                del cache_entry["_id"]
+                get_cache("default").set(terms_key, cache_entry, timeout=self.EXPIRY_TIME)
+        #terms_hash = hashlib.md5(" ".join(sorted_terms)).hexdigest()
+        #key = "search-api-terms-cache-%s" % terms_hash
+        #obj = self.mc.get(key)
+        return cache_entry
+
+#terms_cache = TermsCache(settings.MEMCACHED_HOSTS)
+
 class Suggester:
-    def __init__(self, site_id):
+    def __init__(self, mongo_client, site_id):
         self.es = Elasticsearch()
+        self.mongo_client = mongo_client
         self.site_id = site_id
+        self.terms_cache = TermsCache(mongo_client)
 
     def getItemIndex(self):
         return getESItemIndexName(self.site_id)
@@ -119,72 +147,71 @@ class Suggester:
     def getBreadCrumbs(self, category_id):
         names = []
         ids = [category_id]
-        prop = mongo_client.getProperty(self.site_id, "category", category_id)
+        prop = self.mongo_client.getProperty(self.site_id, "category", category_id)
         while prop:
             names.append(prop["name"])
             parent_id = prop["parent_id"]
             if parent_id != "null" and not (parent_id in ids):
                 ids.append(parent_id)
-                prop = mongo_client.getProperty(self.site_id, "category", parent_id)
+                prop = self.mongo_client.getProperty(self.site_id, "category", parent_id)
             else:
                 break
         names.reverse()
         return names
 
     def getQuerySuggestions(self, query_str):
+        #import time
+        #t1 = time.time()
         split_by_wspace = [kw.strip() for kw in query_str.split(" ") if kw.strip()]
         if len(split_by_wspace) > 0:
             kw_prefix = split_by_wspace[-1]
             possible_last_keywords, time_elapsed = self._tryAutoComplete(kw_prefix)
             completed_forms = []
-            # TODO: use msearch
-            for kw in possible_last_keywords:
-                completed_form = (" ".join(split_by_wspace[:-1]) + " " + kw).strip()
-                query = construct_query(completed_form, for_filter=True)
-                res = self.es.search(index=self.getItemIndex(),
-                                        search_type="count",
-                                        body={"query": query,
-                                        "filter": {"term": {"available": True}}})
-                count = res["hits"]["total"]
-                if count > 0:
-                    completed_forms.append({"type": "completion",
-                                            "value": u"%s" % completed_form,
-                                            "count": count})
+            for completed_keyword in possible_last_keywords:
+                terms = split_by_wspace[:-1] + [completed_keyword]
+                terms_info = self.terms_cache.fetch(self.site_id, terms)
+                if terms_info:
+                    completed_form = {"type": "completion",
+                                      "value": " ".join(terms),
+                                      "count": terms_info["count"]}
+                    completed_forms.append(completed_form)
+
             # also suggest more keywords
             if re.match(r"[a-zA-Z0-9]{1}", kw_prefix) is None: # not suggest for last keyword with only one letter/digit
-                suggested_keywords, suggested_categories = self._getMoreSuggestions(query_str)
+                terms_info = self.terms_cache.fetch(self.site_id, split_by_wspace)
 
-                completed_forms_categories = []
-                for suggested_term in suggested_categories:
-                    category_id = suggested_term["term"]
-                    breadcrumbs = self.getBreadCrumbs(category_id)
-                    if breadcrumbs:
-                        breadcrumbs_str = " > ".join(breadcrumbs)
-                        completed_forms_categories.append({"type": "facet", 
-                                                "field_name": "categories",
-                                                "facet_label": breadcrumbs_str,
-                                                "value": query_str,
-                                                "category_id": category_id,
+                if terms_info:
+                    completed_forms_categories = []
+
+                    for suggested_category in terms_info["categories"] :
+                        category_id = suggested_category["category_id"]
+                        breadcrumbs = self.getBreadCrumbs(category_id)
+                        if breadcrumbs:
+                            breadcrumbs_str = " > ".join(breadcrumbs)
+                            completed_forms_categories.append({"type": "facet", 
+                                                    "field_name": "categories",
+                                                    "facet_label": breadcrumbs_str,
+                                                    "value": query_str,
+                                                    "category_id": category_id,
+                                                    "count": suggested_category["count"]
+                                                    })
+                    completed_forms = completed_forms_categories + completed_forms
+
+                    for suggested_term in terms_info["more_terms"][:6]:
+                        skip = False
+                        for sk in split_by_wspace:
+                            if sk in suggested_term["term"] or suggested_term["term"] in sk:
+                                skip = True
+                                break
+                        if skip:
+                            continue
+                        query = query_str + " " + suggested_term["term"]
+                        completed_forms.append({"type": "more_keyword",
+                                                "value": u"%s" % query,
                                                 "count": suggested_term["count"]
                                                 })
-                completed_forms = completed_forms_categories + completed_forms
-
-                for suggested_term in suggested_keywords:
-                    skip = False
-                    for sk in split_by_wspace:
-                        if sk in suggested_term["term"] or suggested_term["term"] in sk:
-                            skip = True
-                            break
-                    if skip:
-                        continue
-                    query = query_str + " " + suggested_term["term"]
-                    completed_forms.append({"type": "more_keyword",
-                                            "value": u"%s" % query,
-                                            "count": suggested_term["count"]
-                                            })
+            #t2 =time.time()
             return completed_forms
         else:
             return []
-
-
 

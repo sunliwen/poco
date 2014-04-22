@@ -117,6 +117,8 @@ MONGODB_HOST = None
 REPLICA_SET = None
 PRINT_RAW_LOG = False
 API_SERVER_PREFIX = None
+#MEMCACHED_HOSTS = None
+BROKER_URL = None
 # this should be a dictionary. set([site_id])
 #recommendation_deduplicate_item_names_required_set = None
 
@@ -130,5 +132,5 @@ from local_settings import *
 assert MONGODB_HOST is not None
 assert API_SERVER_PREFIX is not None
 #assert recommendation_deduplicate_item_names_required_set is not None
-
-
+#assert MEMCACHED_HOSTS is not None
+assert BROKER_URL is not None
