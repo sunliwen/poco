@@ -368,6 +368,7 @@ class UpdateItemProcessor(ActionProcessor):
     ap = ArgumentProcessor(
          (
             ("type", True),
+            ("available", False),
             ("item_id", True),
             ("item_link", True),
             ("item_name", True),
@@ -439,6 +440,8 @@ class UpdateItemProcessor(ActionProcessor):
         else:
             if args["type"] != "product":
                 return {"code": 1, "err_msg": "The type of the item is expected to be 'product'"}
+            if args["available"] is None:
+                args["available"] = True
             if args["description"] is None:
                 del args["description"]
             if args["image_link"] is None:

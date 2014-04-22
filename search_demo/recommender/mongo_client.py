@@ -250,7 +250,7 @@ class MongoClient:
             return ""
 
     def updateItem(self, site_id, item):
-        item["available"] = True
+        #item["available"] = True
         c_items = getSiteDBCollection(self.connection, site_id, "items")
         item_in_db = c_items.find_one({"item_id": item["item_id"]})
 

@@ -59,7 +59,7 @@ errors
                      "id": "3721", "count": 25},
             {"type": "more_keyword", "value": "贝亲 奶粉", "count": 38}
         ],
-        "errors": {}
+        "errors": []
     }
 
 说明：
