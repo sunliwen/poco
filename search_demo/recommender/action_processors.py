@@ -16,9 +16,9 @@ import logging
 
 from common.utils import smart_split
 
-from mongo_client import getMongoClient
-from mongo_client import SimpleRecommendationResultFilter
-from mongo_client import SameGroupRecommendationResultFilter
+from common.mongo_client import getMongoClient
+from common.mongo_client import SimpleRecommendationResultFilter
+from common.mongo_client import SameGroupRecommendationResultFilter
 
 #from es_client import es_index_item
 from tasks import es_index_item

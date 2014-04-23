@@ -8,7 +8,7 @@ from django.http import Http404
 from rest_framework.views import APIView
 from rest_framework import status
 import es_search_functions
-from recommender.mongo_client import getMongoClient
+from common.mongo_client import getMongoClient
 
 
 mongo_client = getMongoClient()

@@ -4,6 +4,7 @@ import logging
 import time
 from elasticsearch import Elasticsearch
 import es_search_functions
+from common.mongo_client import getMongoClient
 
 
 class SuggestionCacheBuilder:
@@ -97,7 +98,6 @@ class SuggestionCacheBuilder:
 
 
 def rebuild_suggestion_cache(site_id):
-    from recommender.mongo_client import getMongoClient
     mongo_client = getMongoClient()
     builder = SuggestionCacheBuilder(site_id, mongo_client)
     builder.rebuild()
