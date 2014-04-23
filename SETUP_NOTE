@@ -13,5 +13,5 @@
     6. Also run "celery -A search_demo worker" in the root dir of the search_demo project
 
 == Setup the ElasticSearch Index for the client site ==
-    1. python manage.py runscript reset_index --script-args=<site_id>
+    1. python manage.py runscript reset_items --script-args=<site_id>
     2. After this, you can try to post items to the server. (check tests/test.py for examples.)
