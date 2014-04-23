@@ -282,6 +282,10 @@ class MongoClient:
         c_items = getSiteDBCollection(self.connection, site_id, "items")
         return c_items.find_one({"item_id": item_id}, read_preference=ReadPreference.SECONDARY_PREFERRED)
 
+    def cleanupItems(self, site_id):
+        c_items = getSiteDBCollection(self.connection, site_id, "items")
+        c_items.remove({})
+
     def reloadCategoryGroups(self, site_id):
         now = time.time()
         c_sites = self.connection["tjb-db"]["sites"]
