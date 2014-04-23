@@ -102,7 +102,7 @@ class ProductsSearch(BaseAPIView):
     def _search(self, site_id, q, sort_fields, filters, highlight):
         # TODO: this is just a simplified version of search
         s = S().indexes(es_search_functions.getESItemIndexName(site_id)).doctypes("item")
-        if q.strip():
+        if isinstance(q, basestring) and q.strip() != "":
             query = es_search_functions.construct_query(q)
             s = s.query_raw(query)
         s = s.order_by(*sort_fields)

@@ -33,6 +33,7 @@ def preprocess_categories(categories):
     return [category["id"] for category in categories] + for_facets
 
 def es_index_item(site_id, item):
+    #print "START_TO_INDEX"
     es = Elasticsearch()
     
     fill_keywords(item)
@@ -61,5 +62,4 @@ def es_index_item(site_id, item):
         item["brand"] = brand["id"]
 
     #print "ITEM to INDEX:", item
-    res = es.index(index=es_search_functions.getESItemIndexName(site_id), doc_type='item', id=item["item_id"], body=item)
-
+    res = es.index(index=es_search_functions.getESItemIndexName(site_id), doc_type='item', id=item["item_id"], body=item)    #print "INDEXING DONE"

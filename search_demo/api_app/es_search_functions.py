@@ -11,6 +11,10 @@ def getESItemIndexName(site_id):
     return "item-index-%s" % site_id
 
 
+def getESClient():
+    return Elasticsearch()
+
+
 import jieba
 def preprocess_query_str(query_str):
     result = []

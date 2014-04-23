@@ -6,7 +6,7 @@ import copy
 import pymongo
 from django.conf import settings
 from pymongo.read_preferences import ReadPreference
-from common.utils import getSiteDBCollection
+from common.utils import getSiteDBName, getSiteDB, getSiteDBCollection
 from common.utils import sign
 
 import logging
@@ -68,6 +68,15 @@ class SameGroupRecommendationResultFilter:
 class MongoClient:
     def __init__(self, connection):
         self.connection = connection
+
+    def dropSiteDB(self, site_id):
+        self.connection.drop_database(getSiteDBName(site_id))
+
+    def getSiteDB(self, site_id):
+        return getSiteDB(self.connection, site_id)
+
+    def getSiteDBCollection(self, site_id, coll_name):
+        return getSiteDBCollection(self.connection, site_id, coll_name)
 
     def toggle_black_list(self, site_id, item_id1, item_id2, is_on):
         c_rec_black_lists = getSiteDBCollection(self.connection, site_id, "rec_black_lists")
@@ -188,6 +197,9 @@ class MongoClient:
             self.reloadApiKey2SiteID()
         return self.API_KEY2SITE_ID
 
+    def siteExists(self, site_id):
+        return self.getSiteID2ApiKey().has_key(site_id)
+
     def loadSites(self):
         c_sites = self.connection["tjb-db"]["sites"]
         return [site for site in c_sites.find().sort('site_id')]
@@ -201,6 +213,10 @@ class MongoClient:
             api_key = hashlib.md5("%s:%s:%s" % (site_id, site_name, random.random())).hexdigest()[3:11]
         return api_key
 
+    def dropSiteRecord(self, site_id):
+        c_sites = self.connection["tjb-db"]["sites"]
+        c_sites.remove({"site_id": site_id})
+
     def updateSite(self, site_id, site_name, calc_interval):
         c_sites = self.connection["tjb-db"]["sites"]
         site = c_sites.find_one({"site_id": site_id})
@@ -210,11 +226,12 @@ class MongoClient:
             site = {"site_id": site_id}
         site.setdefault("last_update_ts", None)
         site.setdefault("disabledFlows", [])
-        site.setdefault("api_key", self.generateApiKey())
+        site.setdefault("api_key", self.generateApiKey(site_id, site_name))
         if site_name is not None:
             site["site_name"] = site_name
         site["calc_interval"] = calc_interval
         c_sites.save(site)
+        return site
 
     def updateCategory(self, site_id, category):
         c_categories = getSiteDBCollection(self.connection, site_id, "categories")
