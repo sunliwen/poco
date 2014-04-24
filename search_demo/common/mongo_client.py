@@ -5,6 +5,7 @@ import datetime
 import copy
 import pymongo
 from django.conf import settings
+from django.core.cache import get_cache
 from pymongo.read_preferences import ReadPreference
 from common.utils import getSiteDBName, getSiteDB, getSiteDBCollection
 from common.utils import sign
@@ -65,9 +66,39 @@ class SameGroupRecommendationResultFilter:
             return False
 
 
+class ApiKeyAndSiteIDCache:
+    EXPIRY_TIME = 3600 #1h
+
+    CACHE_KEY_API_KEY_TO_SITE_ID = "api-key-to-site-id-dict"
+    CACHE_KEY_SITE_ID_TO_API_KEY = "site-id-to-api-key-dict"
+
+    def __init__(self, mongo_client):
+        self.mongo_client = mongo_client
+        self.django_cache = get_cache("default")
+
+    def reload(self):
+        api_key2site_id, site_id2api_key = self.mongo_client.fetchApiKeyAndSiteIDMapping()
+        self.django_cache.set(self.CACHE_KEY_API_KEY_TO_SITE_ID, api_key2site_id, self.EXPIRY_TIME)
+        self.django_cache.set(self.CACHE_KEY_SITE_ID_TO_API_KEY, site_id2api_key, self.EXPIRY_TIME)
+        return api_key2site_id, site_id2api_key
+
+    def getApiKey2SiteID(self):
+        api_key2site_id = self.django_cache.get(self.CACHE_KEY_API_KEY_TO_SITE_ID)
+        if api_key2site_id is None:
+            api_key2site_id, site_id2api_key = self.reload()
+        return api_key2site_id
+
+    def getSiteID2ApiKey(self):
+        site_id2api_key = self.django_cache.get(self.CACHE_KEY_SITE_ID_TO_API_KEY)
+        if site_id2api_key is None:
+            api_key2site_id, site_id2api_key = self.reload()
+        return site_id2api_key
+
+
 class MongoClient:
     def __init__(self, connection):
         self.connection = connection
+        self.api_key_n_site_id_cache = ApiKeyAndSiteIDCache(self)
 
     def dropSiteDB(self, site_id):
         self.connection.drop_database(getSiteDBName(site_id))
@@ -175,29 +206,30 @@ class MongoClient:
             result.append(row)
         return result
 
-    API_KEY2SITE_ID = None
-    SITE_ID2API_KEY = None
+    #API_KEY2SITE_ID = None
+    #SITE_ID2API_KEY = None
 
-    def reloadApiKey2SiteID(self):
-        self.API_KEY2SITE_ID = {}
-        self.SITE_ID2API_KEY = {}
+    def fetchApiKeyAndSiteIDMapping(self):
+        api_key2site_id = {}
+        site_id2api_key = {}
         c_sites = self.connection["tjb-db"]["sites"]
         for site in c_sites.find():
-            self.API_KEY2SITE_ID[site["api_key"]] = site["site_id"]
-            self.SITE_ID2API_KEY[site["site_id"]] = site["api_key"]
+            api_key2site_id[site["api_key"]] = site["site_id"]
+            site_id2api_key[site["site_id"]] = site["api_key"]
+        return api_key2site_id, site_id2api_key
+
+    def reloadApiKey2SiteID(self):
+        self.api_key_n_site_id_cache.reload()
 
     def getSiteID2ApiKey(self):
-        if self.SITE_ID2API_KEY is None:
-            self.reloadApiKey2SiteID()
-        return self.SITE_ID2API_KEY
+        return self.api_key_n_site_id_cache.getSiteID2ApiKey()
 
-    # TODO, cache KEY2SITE_ID
     def getApiKey2SiteID(self):
-        if self.API_KEY2SITE_ID is None:
-            self.reloadApiKey2SiteID()
-        return self.API_KEY2SITE_ID
+        return self.api_key_n_site_id_cache.getApiKey2SiteID()
 
-    def siteExists(self, site_id):
+    def siteExists(self, site_id, use_cache=True):
+        if not use_cache:
+            self.reloadApiKey2SiteID()
         return self.getSiteID2ApiKey().has_key(site_id)
 
     def loadSites(self):

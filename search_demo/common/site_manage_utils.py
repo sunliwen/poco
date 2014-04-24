@@ -124,7 +124,7 @@ class SiteAlreadyExistsError(Exception):
 # This function reset both the "items" collection in db and item-index in ES.
 def reset_items(site_id):
     mongo_client = getMongoClient()
-    if mongo_client.siteExists(site_id):
+    if mongo_client.siteExists(site_id, use_cache=False):
         mongo_client.cleanupItems(site_id)
         es = Elasticsearch()
         reset_es_item_index(es, site_id)
@@ -133,14 +133,16 @@ def reset_items(site_id):
 
 
 def create_site(mongo_client, site_id, site_name, calc_interval):
-    if mongo_client.siteExists(site_id):
+    if mongo_client.siteExists(site_id, use_cache=False):
         raise SiteAlreadyExistsError()
     site_record = update_site_in_mongodb(mongo_client, site_id, site_name, calc_interval)
     es = Elasticsearch()
     create_es_item_index(es, site_id)
+    mongo_client.reloadApiKey2SiteID()
     return site_record
 
 def drop_site(mongo_client, site_id):
-    es = Elasticsearch()
     drop_site_in_mongodb(mongo_client, site_id)
+    es = Elasticsearch()
     drop_es_item_index(es, site_id)
+    mongo_client.reloadApiKey2SiteID()

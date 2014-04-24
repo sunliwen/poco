@@ -1,5 +1,6 @@
 #encoding=utf8
 #from django.shortcuts import render
+import copy
 from rest_framework import renderers
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -99,7 +100,7 @@ class BaseAPIView(APIView):
 
 # TODO: http://www.django-rest-framework.org/topics/documenting-your-api
 class ProductsSearch(BaseAPIView):
-    def _search(self, site_id, q, sort_fields, filters, highlight):
+    def _search(self, site_id, q, sort_fields, filters, highlight, facets_selector):
         # TODO: this is just a simplified version of search
         s = S().indexes(es_search_functions.getESItemIndexName(site_id)).doctypes("item")
         if isinstance(q, basestring) and q.strip() != "":
@@ -128,32 +129,50 @@ class ProductsSearch(BaseAPIView):
             cat_id = categories[0]
         else:
             cat_id = None
-        sub_categories_facets = es_search_functions._getSubCategoriesFacets(cat_id, s)
-        if sub_categories_facets:
-            s = s.facet_raw(sub_categories=sub_categories_facets,
-                            brand=es_search_functions.addFilterToFacets(s, {'terms': {'field': 'brand', 'size': 20}}),
-                            origin_place=es_search_functions.addFilterToFacets(s,
+
+        facets_dsl = {}
+        if facets_selector.has_key("categories"):
+            categories_facet_mode = facets_selector["categories"].get("mode", "DIRECT_CHILDREN")
+            if categories_facet_mode == "DIRECT_CHILDREN":
+                facets_dsl["categories"] = es_search_functions._getSubCategoriesFacets(cat_id, s)
+            elif categories_facet_mode == "SUB_TREE":
+                facets_dsl["categories"] = es_search_functions.addFilterToFacets(s,
+                                            {'terms': {'regex': r'[^_]+', 'field': 'categories', 'size': 20}})
+        if facets_selector.has_key("brand"):
+            facets_dsl["brand"] = es_search_functions.addFilterToFacets(s, {'terms': {'field': 'brand', 'size': 20}})
+        if facets_selector.has_key("origin_place"):
+            facets_dsl["origin_place"] = es_search_functions.addFilterToFacets(s,
                                                     {'terms': {'field': 'origin_place', 
-                                                    'size': 20}}))
-            facet_sub_categories_list = [{"id": get_last_cat_id(facet["term"]),
-                                    "count": facet["count"]}
-                                    for facet in s.facet_counts().get("sub_categories", [])]
-            for facet_sub_cat in facet_sub_categories_list:
+                                                    'size': 20}})
+        s = s.facet_raw(**facets_dsl)
+
+        facets_result = {}
+        if facets_selector.has_key("categories"):
+            categories_facet_mode = facets_selector["categories"].get("mode", "DIRECT_CHILDREN")
+            facets_list = s.facet_counts().get("categories", [])
+            if categories_facet_mode == "DIRECT_CHILDREN":
+                for facets in facets_list:
+                    facets["term"] == facets["term"]
+            facet_categories_list = [{"id": get_last_cat_id(facet["term"]),
+                                      "count": facet["count"]}
+                                      for facet in facets_list]
+            for facet_sub_cat in facet_categories_list:
                 facet_sub_cat["label"] = mongo_client.getPropertyName(site_id, "category", facet_sub_cat["id"])
-            facet_brand_list = [{"id": facet["term"],
+            facets_result["categories"] = facet_categories_list
+        
+        if facets_selector.has_key("brand"):
+            facets_result["brand"] = [{"id": facet["term"],
                                  "label": mongo_client.getPropertyName(site_id, "brand", facet["term"]),
                                  "count": facet["count"]}
                                  for facet in s.facet_counts().get("brand", [])]
-            facet_origin_place_list = [{"id": facet["term"],
+        
+        if facets_selector.has_key("origin_place"):
+            facets_result["origin_place"] = [{"id": facet["term"],
                                  "label": "",
                                  "count": facet["count"]}
                                  for facet in s.facet_counts().get("origin_place", [])]
-        else:
-            facet_sub_categories_list = []
-            facet_brand_list = []
 
-        return s, {"categories": facet_sub_categories_list, "brand": facet_brand_list, 
-                   "origin_place": facet_origin_place_list}
+        return s, facets_result
 
     def _validate(self, request):
         # TODO ignore fields and warn
@@ -189,6 +208,30 @@ class ProductsSearch(BaseAPIView):
                            "param_name": "highlight",
                            "message": u"'highlight' must be a boolean value."})
 
+        facets = request.DATA.get("facets", {})
+        if isinstance(facets, dict):
+            for facets_key, facets_detail in facets.items():
+                if facets_key not in self.SUPPORTED_FACETS:
+                    errors.append({"code": "INVALID_PARAM",
+                           "param_name": "facets",
+                           "message": u"'facets' are only supported for %s"  % (",".join(self.SUPPORTED_FACETS))})
+                else:
+                    if not isinstance(facets_detail, dict):
+                        errors.append({"code": "INVALID_PARAM",
+                           "param_name": "facets",
+                            "message": "details in facet '%s' is invalid." % facets_key
+                            })
+            category_facets_mode = facets.get("categories", {}).get("mode", None)
+            if category_facets_mode not in (None, "DIRECT_CHILDREN", "SUB_TREE"):
+                errors.append({"code": "INVALID_PARAM",
+                           "param_name": "facets",
+                            "message": "mode of facet 'categories' is invalid."
+                            })
+        else:
+            errors.append({"code": "INVALID_PARAM",
+                           "param_name": "facets",
+                           "message": u"'facets' must be a dict/hashtable"})
+
         filters = request.DATA.get("filters", {})
         if isinstance(filters, dict):
             invalid_name_filters = []
@@ -201,10 +244,13 @@ class ProductsSearch(BaseAPIView):
                     filter_details = filters[filter_key]
                     if isinstance(filter_details, list):
                         if filter_key == "categories":
-                            if len(filter_details) > 1:
-                                errors.append({"code": "INVALID_PARAM",
-                                    "param_name": "filters",
-                                    "message": u"'categories' can not contain more than 1 value."})
+                            facets_categories = facets.get("categories", None)
+                            if facets_categories is not None \
+                                and facets_categories.get("mode", "DIRECT_CHILDREN") == "DIRECT_CHILDREN":
+                                if len(filter_details) > 1:
+                                    errors.append({"code": "INVALID_PARAM",
+                                        "param_name": "filters",
+                                        "message": u"'categories' can not contain more than 1 value, when facets of categories are in 'DIRECT_CHILDREN' model."})
                         for filter_details_item in filter_details:
                             if not filter_validator(filter_details_item):
                                 errors.append({"code": "INVALID_PARAM",
@@ -250,7 +296,6 @@ class ProductsSearch(BaseAPIView):
 
         return errors
 
-
     VALID_SORT_FIELDS = ("price", "market_price", "item_level", "item_comment_num", "origin_place")
     FILTER_FIELD_TYPE_VALIDATORS = {
         "price": is_float,
@@ -263,6 +308,15 @@ class ProductsSearch(BaseAPIView):
         "origin_place": is_float,
         "brand": is_string
     }
+
+    DEFAULT_FACETS = {
+        "brand": {},
+        "origin_place": {},
+        "categories": {"mode": "DIRECT_CHILDREN"}
+    }
+
+    SUPPORTED_FACETS = ["brand", "categories", "origin_place"]
+
     DEFAULT_FILTERS = {
         "available": [True]
     }
@@ -283,15 +337,28 @@ class ProductsSearch(BaseAPIView):
         page = request.DATA.get("page", 1)
         filters = request.DATA.get("filters", {})
         highlight = request.DATA.get("highlight", False)
+        facets_selector = request.DATA.get("facets", None)
         api_key = request.DATA["api_key"]
+
+        try:
+            per_page = int(per_page)
+        except ValueError:
+            return Response({"records": [], "info": {}, 
+                             "errors": [{"code": "INVALID_PARAM", 
+                                        "param_name": "per_page",
+                                        "message": "per_page must be a digit value."}]})
 
         # Apply default filters
         for filter_key , filter_content in self.DEFAULT_FILTERS.items():
             if not filters.has_key(filter_key):
                 filters[filter_key] = filter_content
 
+        # Apply default facets
+        if facets_selector is None:
+            facets_selector = copy.deepcopy(self.DEFAULT_FACETS)
+
         site_id = self.getSiteID(api_key)
-        result_set, facets_result = self._search(site_id, q, sort_fields, filters, highlight)
+        result_set, facets_result = self._search(site_id, q, sort_fields, filters, highlight, facets_selector)
         paginator = Paginator(result_set, per_page)
 
         try:

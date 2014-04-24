@@ -102,12 +102,8 @@ class TermsCache:
             if cache_entry:
                 del cache_entry["_id"]
                 get_cache("default").set(terms_key, cache_entry, timeout=self.EXPIRY_TIME)
-        #terms_hash = hashlib.md5(" ".join(sorted_terms)).hexdigest()
-        #key = "search-api-terms-cache-%s" % terms_hash
-        #obj = self.mc.get(key)
         return cache_entry
 
-#terms_cache = TermsCache(settings.MEMCACHED_HOSTS)
 
 class Suggester:
     def __init__(self, mongo_client, site_id):
