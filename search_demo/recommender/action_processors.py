@@ -847,6 +847,9 @@ class GetByBrowsingHistoryProcessor(BaseSimpleResultRecommendationProcessor):
         browsing_history = browsing_history_cache.get(site_id, ptm_id)
         args["browsing_history"] = browsing_history
         topn = mongo_client.recommend_based_on_some_items(site_id, "V", browsing_history)
+        if len(topn) == 0:
+            topn = hot_view_list_cache.getHotViewList(site_id, 
+                            hot_index_type="by_viewed")
         return topn
 
 
