@@ -14,6 +14,7 @@ import getopt
 import urllib
 import logging
 from django.core.cache import get_cache
+from browsing_history_cache import BrowsingHistoryCache
 
 from common.utils import smart_split
 
@@ -23,6 +24,7 @@ from common.mongo_client import SameGroupRecommendationResultFilter
 
 #from es_client import es_index_item
 from tasks import es_index_item
+from tasks import write_log
 
 
 #logging.basicConfig(format="%(asctime)s|%(levelname)s|%(name)s|%(message)s",
@@ -39,25 +41,22 @@ class HotViewListCache:
 
     def __init__(self, mongo_client):
         self.mongo_client = mongo_client
-        self.django_cache = get_cache("default")
 
-    def getHotViewList(self, site_id, event_type, category_id=None, brand=None):
-        cache_key = "hot-view-list-%s-%s-%s-%s" % (site_id, event_type, category_id, brand)
-        cache_entry = self.django_cache.get(cache_key)
+    def getHotViewList(self, site_id, hot_index_type, category_id=None, brand=None):
+        cache_key = "hot-view-list-%s-%s-%s-%s" % (site_id, hot_index_type, category_id, brand)
+        django_cache = get_cache("default")
+        cache_entry = django_cache.get(cache_key)
         if cache_entry:
-            #print "IN_CACHE:"
             return cache_entry
         else:
-            cache_entry = self.mongo_client.getHotViewList(site_id, event_type, category_id, brand)
-            #print "CE0:", cache_entry
+            cache_entry = self.mongo_client.getHotViewList(site_id, hot_index_type, category_id, brand)
             if cache_entry is None:
                 cache_entry = []
-            #print "CE:", cache_entry
-            self.django_cache.set(cache_key, cache_entry, self.EXPIRY_TIME)
+            django_cache.set(cache_key, cache_entry, self.EXPIRY_TIME)
         return cache_entry
-
-
 hot_view_list_cache = HotViewListCache(mongo_client)
+
+browsing_history_cache = BrowsingHistoryCache(mongo_client)
 
 
 # jquery serialize()  http://api.jquery.com/serialize/
@@ -92,7 +91,8 @@ class LogWriter:
         if settings.PRINT_RAW_LOG:
             print "RAW LOG: site_id: %s, %s" % (site_id, content)
         #self.writeToLocalLog(site_id, content)
-        mongo_client.writeLogToMongo(site_id, content)
+        #mongo_client.writeLogToMongo(site_id, content)
+        write_log.delay(site_id, content)
 
 
 def extractArguments(request):
@@ -172,7 +172,7 @@ class ActionProcessor:
             assert self.action_name != None
             if tjb_id_required:
                 assert "ptm_id" in args
-                action_content["tjbid"] = args["ptm_id"]
+                action_content["ptm_id"] = args["ptm_id"]
             action_content["referer"] = args.get("referer", None)
             action_content["behavior"] = self.action_name
             logWriter.writeEntry(site_id, action_content)
@@ -213,7 +213,7 @@ class ViewItemProcessor(ActionProcessor):
                 {"behavior": "ERROR",
                  "content": {"behavior": "V",
                   "user_id": args["user_id"],
-                  "tjbid": args["ptm_id"],
+                  "ptm_id": args["ptm_id"],
                   "item_id": args["item_id"],
                   "referer": args.get("referer", None)}
                 })
@@ -549,7 +549,7 @@ class BaseByEachItemProcessor(BaseRecommendationProcessor):
     def getRecommendationLog(self, args, req_id, recommended_items):
         return {"req_id": req_id,
                 "user_id": args["user_id"],
-                "tjbid": args["ptm_id"],
+                "ptm_id": args["ptm_id"],
                 "is_empty_result": len(recommended_items) == 0,
                 "amount_for_each_item": self.getAmountForEachItem(args)
                 }
@@ -631,7 +631,7 @@ class BaseSimpleResultRecommendationProcessor(BaseRecommendationProcessor):
     def getRecommendationLog(self, args, req_id, recommended_items):
         return {"req_id": req_id,
                 "user_id": args["user_id"],
-                "tjbid": args["ptm_id"],
+                "ptm_id": args["ptm_id"],
                 "recommended_items": recommended_items,
                 "is_empty_result": len(recommended_items) == 0,
                 "amount": args["amount"]}
@@ -828,20 +828,24 @@ class GetByBrowsingHistoryProcessor(BaseSimpleResultRecommendationProcessor):
 
     def getRecommendationLog(self, args, req_id, recommended_items):
         log = BaseSimpleResultRecommendationProcessor.getRecommendationLog(self, args, req_id, recommended_items)
-        browsing_history = args["browsing_history"]
-        if browsing_history == None:
-            browsing_history = []
-        else:
-            browsing_history = browsing_history.split(",")
-        log["browsing_history"] = browsing_history
+        #browsing_history = args["browsing_history"]
+        #if browsing_history == None:
+        #    browsing_history = []
+        #else:
+        #    browsing_history = browsing_history.split(",")
+        #log["browsing_history"] = browsing_history
+        log["browsing_history"] = args["browsing_history"]
         return log
 
     def getTopN(self, site_id, args):
-        browsing_history = args["browsing_history"]
-        if browsing_history == None:
-            browsing_history = []
-        else:
-            browsing_history = browsing_history.split(",")
+        #browsing_history = args["browsing_history"]
+        #if browsing_history == None:
+        #    browsing_history = []
+        #else:
+        #    browsing_history = browsing_history.split(",")
+        ptm_id = args["ptm_id"]
+        browsing_history = browsing_history_cache.get(site_id, ptm_id)
+        args["browsing_history"] = browsing_history
         topn = mongo_client.recommend_based_on_some_items(site_id, "V", browsing_history)
         return topn
 
@@ -869,19 +873,17 @@ class GetByHotIndexProcessor(BaseSimpleResultRecommendationProcessor):
         log["brand"] = args["brand"]
         return log
 
-    HOT_INDEX_TYPE2EVENT_TYPE = {"bought": "PlaceOrder", "viewed": "ViewItem"}
-
     def getTopN(self, site_id, args):
         hot_index_type = args.get("hot_index_type", None)
-        event_type = self.HOT_INDEX_TYPE2EVENT_TYPE.get(hot_index_type, None)
-        if event_type is not None:
+        is_valid_hot_index_type = mongo_client.HOT_INDEX_TYPE2INDEX_PREFIX.has_key(hot_index_type)
+        if is_valid_hot_index_type:
             topn = hot_view_list_cache.getHotViewList(site_id, 
-                            event_type=event_type,
+                            hot_index_type=hot_index_type,
                             category_id=args.get("category_id", None), 
                             brand=args.get("brand", None))
             return topn
         else:
-            raise ArgumentError("hot_index_type should be one of these values: %s" % (",".join(HOT_INDEX_TYPE2EVENT_TYPE.keys())))
+            raise ArgumentError("hot_index_type should be one of these values: %s" % (",".join(mongo_client.HOT_INDEX_TYPE2INDEX_PREFIX.keys())))
 
 
 class GetByShoppingCartProcessor(BaseSimpleResultRecommendationProcessor):

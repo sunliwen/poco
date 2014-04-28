@@ -3,6 +3,9 @@
     2. Install  elasticsearch-analysis-pinyin
         * simple way is to down load this directory https://github.com/medcl/elasticsearch-rtf/tree/master/plugins/analysis-pinyin and put it under the <elastic search root>/plugins/analysis-pinyin
 
+== MONGODB ==
+    * 2.6.0 is required.
+
 == Setup of the Django server ==
     0. install packages in requirements.txt
     1. copy local_config.py.EXAMPLE as local_config.py and modify if it is necessary.

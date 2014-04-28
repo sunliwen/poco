@@ -74,22 +74,22 @@ class ApiKeyAndSiteIDCache:
 
     def __init__(self, mongo_client):
         self.mongo_client = mongo_client
-        self.django_cache = get_cache("default")
 
     def reload(self):
         api_key2site_id, site_id2api_key = self.mongo_client.fetchApiKeyAndSiteIDMapping()
-        self.django_cache.set(self.CACHE_KEY_API_KEY_TO_SITE_ID, api_key2site_id, self.EXPIRY_TIME)
-        self.django_cache.set(self.CACHE_KEY_SITE_ID_TO_API_KEY, site_id2api_key, self.EXPIRY_TIME)
+        django_cache = get_cache("default")
+        django_cache.set(self.CACHE_KEY_API_KEY_TO_SITE_ID, api_key2site_id, self.EXPIRY_TIME)
+        django_cache.set(self.CACHE_KEY_SITE_ID_TO_API_KEY, site_id2api_key, self.EXPIRY_TIME)
         return api_key2site_id, site_id2api_key
 
     def getApiKey2SiteID(self):
-        api_key2site_id = self.django_cache.get(self.CACHE_KEY_API_KEY_TO_SITE_ID)
+        api_key2site_id = get_cache("default").get(self.CACHE_KEY_API_KEY_TO_SITE_ID)
         if api_key2site_id is None:
             api_key2site_id, site_id2api_key = self.reload()
         return api_key2site_id
 
     def getSiteID2ApiKey(self):
-        site_id2api_key = self.django_cache.get(self.CACHE_KEY_SITE_ID_TO_API_KEY)
+        site_id2api_key = get_cache("default").get(self.CACHE_KEY_SITE_ID_TO_API_KEY)
         if site_id2api_key is None:
             api_key2site_id, site_id2api_key = self.reload()
         return site_id2api_key
@@ -478,6 +478,32 @@ class MongoClient:
         c_raw_logs.insert(content)
         self.updateTrafficMetricsFromLog(site_id, content)
 
+    # TODO: should use pub/sub to handle this
+    def updateVisitorsFromLog(self, site_id, raw_log):
+        c_visitors = getSiteDBCollection(self.connection, site_id, "visitors")
+        behavior = raw_log.get("behavior", None)
+        if behavior == "V":
+            # refs: http://docs.mongodb.org/manual/reference/operator/update/slice/
+            ptm_id = raw_log["ptm_id"]
+            c_visitors.update({"ptm_id": ptm_id},
+                           {"$set": {"updated_on": datetime.datetime.now()},
+                            "$push" :{
+                                "browsing_history": {
+                                    "$each": [raw_log["item_id"]],
+                                    "$slice": -settings.VISITOR_BROWSING_HISTORY_LENGTH
+                                }
+                            }
+                            },
+                           upsert=True)
+
+    def getBrowsingHistory(self, site_id, ptm_id):
+        c_visitors = getSiteDBCollection(self.connection, site_id, "visitors")
+        visitor = c_visitors.find_one({"ptm_id": ptm_id})
+        if visitor:
+            return visitor["browsing_history"]
+        else:
+            return []
+
     def updateTrafficMetricsFromItem(self, site_id, item):
         c_traffic_metrics = getSiteDBCollection(self.connection, site_id, "traffic_metrics")
         categories = [category["id"] for category in item["categories"]]
@@ -489,6 +515,7 @@ class MongoClient:
                                   upsert=True
                                  )
 
+    # TODO: should use pub/sub to handle this
     def updateTrafficMetricsFromLog(self, site_id, raw_log):
         c_traffic_metrics = getSiteDBCollection(self.connection, site_id, "traffic_metrics")
         behavior = raw_log.get("behavior", None)
@@ -512,12 +539,23 @@ class MongoClient:
                     amount = int(order_row["amount"])
                 except ValueError:
                     continue
+
                 c_traffic_metrics.update({"item_id": item_id},
                     {"$inc": {
-                        ("p.%d.p" % year): amount,
-                        ("p.%d.%d.p" % (year, month)): amount,
-                        ("p.%d.%d.%d.p" % (year, month, day)): amount,
-                         "p.%d.%d.%d.%d.p" % (year, month, day, hour): amount,
+                        ("po.%d.po" % year): 1,
+                        ("po.%d.%d.po" % (year, month)): 1,
+                        ("po.%d.%d.%d.po" % (year, month, day)): 1,
+                         "po.%d.%d.%d.%d.po" % (year, month, day, hour): 1,
+                    }
+                    },
+                    upsert=True)
+
+                c_traffic_metrics.update({"item_id": item_id},
+                    {"$inc": {
+                        ("pq.%d.pq" % year): amount,
+                        ("pq.%d.%d.pq" % (year, month)): amount,
+                        ("pq.%d.%d.%d.pq" % (year, month, day)): amount,
+                         "pq.%d.%d.%d.%d.pq" % (year, month, day, hour): amount,
                     }
                     },
                     upsert=True)
@@ -532,24 +570,24 @@ class MongoClient:
 
     def getLast7DaysAttributeNames(self, prefix, today):
         last_7_days = self.getLastNDays(7, today)
-        attr_names = ["$%s.%d.%d.%d.%s" % (prefix, dt.year, dt.month, dt.day, prefix)
+        attr_names = [{"$ifNull": ["$%s.%d.%d.%d.%s" % (prefix, dt.year, dt.month, dt.day, prefix), 0]}
                     for dt in last_7_days]
         return attr_names
 
-    def getHotViewList(self, site_id, event_type, category_id=None, brand=None):
+    def getHotViewList(self, site_id, hot_index_type, category_id=None, brand=None):
         c_cached_hot_view = getSiteDBCollection(self.connection, site_id, "cached_hot_view")
-        cached = c_cached_hot_view.find_one({"event_type": event_type, "category_id": category_id, "brand": brand})
+        cached = c_cached_hot_view.find_one({"hot_index_type": hot_index_type, "category_id": category_id, "brand": brand})
         if cached:
             return cached["result"]
         else:
             return []
 
-    EVENT_TYPE2HOT_INDEX_PREFIX = {"ViewItem": "v", "PlaceOrder": "p"}
-
-    def updateHotViewList(self, site_id, event_type, today=None):
+    #EVENT_TYPE2HOT_INDEX_PREFIX = {"ViewItem": "v", "PlaceOrder": "p"}
+    HOT_INDEX_TYPE2INDEX_PREFIX = {"by_viewed": "v", "by_order": "po", "by_quantity": "pq"}
+    def updateHotViewList(self, site_id, hot_index_type, today=None):
         if today is None:
             today = datetime.date.today()
-        prefix = self.EVENT_TYPE2HOT_INDEX_PREFIX[event_type]
+        prefix = self.HOT_INDEX_TYPE2INDEX_PREFIX[hot_index_type]
         last_7_days_attr_names = self.getLast7DaysAttributeNames(prefix, today)
         c_traffic_metrics = getSiteDBCollection(self.connection, site_id, "traffic_metrics")
         res = c_traffic_metrics.aggregate(
@@ -590,16 +628,16 @@ class MongoClient:
 
         c_cached_hot_view = getSiteDBCollection(self.connection, site_id, "cached_hot_view")
 
-        c_cached_hot_view.update({"event_type": event_type, "category_id": None, "brand": None},
-                                 {"event_type": event_type, "category_id": None, "brand": None, "result": topn_overall},
+        c_cached_hot_view.update({"hot_index_type": hot_index_type, "category_id": None, "brand": None},
+                                 {"hot_index_type": hot_index_type, "category_id": None, "brand": None, "result": topn_overall},
                                  upsert=True)
         for category_id, topn in topn_by_categories.items():
-            c_cached_hot_view.update({"event_type": event_type, "category_id": category_id, "brand": None},
-                                     {"event_type": event_type, "category_id": category_id, "brand": None, "result": topn},
+            c_cached_hot_view.update({"hot_index_type": hot_index_type, "category_id": category_id, "brand": None},
+                                     {"hot_index_type": hot_index_type, "category_id": category_id, "brand": None, "result": topn},
                                      upsert=True)
         for brand, topn in topn_by_brands.items():
-            c_cached_hot_view.update({"event_type": event_type, "category_id": None, "brand": brand},
-                                     {"event_type": event_type, "category_id": None, "brand": brand, "result": topn},
+            c_cached_hot_view.update({"hot_index_type": hot_index_type, "category_id": None, "brand": brand},
+                                     {"hot_index_type": hot_index_type, "category_id": None, "brand": brand, "result": topn},
                                      upsert=True)
         
     def updateSearchTermsCache(self, site_id, cache_entry):
