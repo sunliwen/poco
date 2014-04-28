@@ -88,7 +88,6 @@ class TermsCache:
 
     def __init__(self, mongo_client):
         self.mongo_client = mongo_client
-        #self.mc = memcache.Client(memcached_hosts)
 
     def fetch(self, site_id, terms):
         sorted_terms = copy.copy(terms)

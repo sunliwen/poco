@@ -90,10 +90,10 @@ def events(event_type, params):
     res = api_access("public/events/", params)
     return res
 
-test(post_search2, {}, 1)
+#test(post_search2, {}, 1)
 
 #test(post_items, {"code": 0}, 1)
-#test(post_search, lambda x:x["errors"]==[], 1, "", {"brand": ["22"]})
+test(post_search, lambda x:x["errors"]==[""], 1, "", {"origin_place": ["0"]})
 import sys; sys.exit(0)
 
 #test(post_items, {"code": 0}, 1)

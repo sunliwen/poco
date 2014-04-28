@@ -13,6 +13,7 @@ from django.conf import settings
 import getopt
 import urllib
 import logging
+from django.core.cache import get_cache
 
 from common.utils import smart_split
 
@@ -34,12 +35,28 @@ mongo_client = getMongoClient()
 mongo_client.reloadApiKey2SiteID()
 
 class HotViewListCache:
+    EXPIRY_TIME = 3600
+
     def __init__(self, mongo_client):
         self.mongo_client = mongo_client
+        self.django_cache = get_cache("default")
 
-    def getHotViewList(self, site_id):
-        # NOTE: disabled memcached cache currently
-        return self.mongo_client.getHotViewList(site_id)
+    def getHotViewList(self, site_id, event_type, category_id=None, brand=None):
+        cache_key = "hot-view-list-%s-%s-%s-%s" % (site_id, event_type, category_id, brand)
+        cache_entry = self.django_cache.get(cache_key)
+        if cache_entry:
+            #print "IN_CACHE:"
+            return cache_entry
+        else:
+            cache_entry = self.mongo_client.getHotViewList(site_id, event_type, category_id, brand)
+            #print "CE0:", cache_entry
+            if cache_entry is None:
+                cache_entry = []
+            #print "CE:", cache_entry
+            self.django_cache.set(cache_key, cache_entry, self.EXPIRY_TIME)
+        return cache_entry
+
+
 hot_view_list_cache = HotViewListCache(mongo_client)
 
 
@@ -800,7 +817,7 @@ class GetByBrowsingHistoryProcessor(BaseSimpleResultRecommendationProcessor):
             (
                 ("user_id", True),
                 ("ref", False),
-                ("browsing_history", False),
+                #("browsing_history", False),
                 ("include_item_info", False),  # no, not include; yes, include
                 ("amount", True),
             )
@@ -826,9 +843,45 @@ class GetByBrowsingHistoryProcessor(BaseSimpleResultRecommendationProcessor):
         else:
             browsing_history = browsing_history.split(",")
         topn = mongo_client.recommend_based_on_some_items(site_id, "V", browsing_history)
-        if len(topn) == 0:
-            topn = hot_view_list_cache.getHotViewList(site_id)
         return topn
+
+
+class GetByHotIndexProcessor(BaseSimpleResultRecommendationProcessor):
+    action_name = "RecBHI"
+    ap = ArgumentProcessor(
+            (
+                ("user_id", True),
+                ("ref", False),
+                ("hot_index_type", True), 
+                ("category_id", False),
+                ("brand", False),
+                ("include_item_info", False),  # no, not include; yes, include
+                ("amount", True),
+            )
+        )
+
+    def getRecommendationResultFilter(self, site_id, args):
+        return SimpleRecommendationResultFilter()
+
+    def getRecommendationLog(self, args, req_id, recommended_items):
+        log = BaseSimpleResultRecommendationProcessor.getRecommendationLog(self, args, req_id, recommended_items)
+        log["category_id"] = args["category_id"]
+        log["brand"] = args["brand"]
+        return log
+
+    HOT_INDEX_TYPE2EVENT_TYPE = {"bought": "PlaceOrder", "viewed": "ViewItem"}
+
+    def getTopN(self, site_id, args):
+        hot_index_type = args.get("hot_index_type", None)
+        event_type = self.HOT_INDEX_TYPE2EVENT_TYPE.get(hot_index_type, None)
+        if event_type is not None:
+            topn = hot_view_list_cache.getHotViewList(site_id, 
+                            event_type=event_type,
+                            category_id=args.get("category_id", None), 
+                            brand=args.get("brand", None))
+            return topn
+        else:
+            raise ArgumentError("hot_index_type should be one of these values: %s" % (",".join(HOT_INDEX_TYPE2EVENT_TYPE.keys())))
 
 
 class GetByShoppingCartProcessor(BaseSimpleResultRecommendationProcessor):
@@ -896,7 +949,8 @@ EVENT_TYPE2ACTION_PROCESSOR = {
     "Unlike": UnlikeProcessor,
     "RateItem": RateItemProcessor,
     "AddOrderItem": AddOrderItemProcessor,
-    "RemoveOrderItem": RemoveOrderItemProcessor
+    "RemoveOrderItem": RemoveOrderItemProcessor,
+    "PlaceOrder": PlaceOrderProcessor
 }
 
 
@@ -908,6 +962,7 @@ RECOMMEND_TYPE2ACTION_PROCESSOR = {
     "UltimatelyBought": GetUltimatelyBoughtProcessor,
     "ByPurchasingHistory": GetByPurchasingHistoryProcessor,
     "ByShoppingCart": GetByShoppingCartProcessor,
+    "ByHotIndex": GetByHotIndexProcessor
     #"ByEachBrowsedItem": GetByEachBrowsedItemProcessor,
     #"ByEachPurchasedItem": GetByEachPurchasedItemProcessor
 }
