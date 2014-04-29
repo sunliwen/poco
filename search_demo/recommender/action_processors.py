@@ -14,6 +14,7 @@ import getopt
 import urllib
 import logging
 from django.core.cache import get_cache
+from django.core.urlresolvers import reverse
 from browsing_history_cache import BrowsingHistoryCache
 
 from common.utils import smart_split
@@ -68,30 +69,13 @@ browsing_history_cache = BrowsingHistoryCache(mongo_client)
 
 
 class LogWriter:
-    #def __init__(self):
-    #    self.local_file = open(settings.local_raw_log_file, "a")
-
-    #def closeLocalLog(self):
-    #    self.local_file.close()
-
     def writeLineToLocalLog(self, site_id, line):
-        #full_line = "%s:%s\n" % (site_id, line)
-        #self.local_file.write(full_line)
-        #self.local_file.flush()
         pass
-
-    #def writeToLocalLog(self, site_id, content):
-    #    local_content = copy.copy(content)
-    #    local_content["created_on"] = repr(local_content["created_on"])
-    #    line = json.dumps(local_content)
-    #    self.writeLineToLocalLog(site_id, line)
 
     def writeEntry(self, site_id, content):
         content["created_on"] = datetime.datetime.now()
         if settings.PRINT_RAW_LOG:
             print "RAW LOG: site_id: %s, %s" % (site_id, content)
-        #self.writeToLocalLog(site_id, content)
-        #mongo_client.writeLogToMongo(site_id, content)
         write_log.delay(site_id, content)
 
 
@@ -506,7 +490,6 @@ class RemoveItemProcessor(ActionProcessor):
 
 
 class BaseRecommendationProcessor(ActionProcessor):
-
     def generateReqId(self):
         return str(uuid.uuid4())
 
@@ -521,7 +504,8 @@ class BaseRecommendationProcessor(ActionProcessor):
                                   "api_key": api_key,
                                   "item_id": item_id,
                                    "req_id": req_id})
-        full_url = settings.API_SERVER_PREFIX + "/1.6/redirect?" + param_str
+        REDIRECT_PATH = reverse("recommender-redirect")
+        full_url = settings.API_SERVER_PREFIX + REDIRECT_PATH + "?" + param_str
         return full_url
 
     def getRecommendationResultFilter(self, site_id, args):

@@ -1,8 +1,11 @@
+import cgi
+import urlparse
 from django.test import TestCase
 from django.test.utils import override_settings
 from django.core.urlresolvers import reverse
 from django.core.cache import get_cache
 from django.conf import settings
+from django.http import HttpResponseRedirect, HttpResponseBadRequest
 from common.test_utils import BaseAPITest
 from common import site_manage_utils
 from common import test_data1
@@ -10,6 +13,16 @@ from recommender import tasks
 
 
 class BaseRecommenderTest(BaseAPITest):
+
+    def get_ptm_id(self, response):
+        ptm_id_morsel = response.client.cookies.get("__ptmid", None)
+        if ptm_id_morsel:
+            ptm_id = ptm_id_morsel.value
+            return ptm_id
+
+    def get_item(self, item_id):
+        c_items = self.mongo_client.getSiteDBCollection(self.TEST_SITE_ID, "items")
+        return c_items.find_one({"item_id": item_id})
 
     def get_browsing_history_cache(self):
         from browsing_history_cache import BrowsingHistoryCache
@@ -40,6 +53,62 @@ class BaseRecommenderTest(BaseAPITest):
                       "user_id": user_id,
                       "order_content": order_content
                       })
+
+
+#@override_settings(CELERY_EAGER_PROPAGATES_EXCEPTIONS=True,
+#                   CELERY_ALWAYS_EAGER=True,
+#                   BROKER_BACKEND='memory')
+#class BenchmarkUpdateHotViewListTest(BaseRecommenderTest):
+#    def test_hot_index_calculation_with_5000_items(self):
+#        for i in range(5000):
+#            self._viewItem("U1", "ID%s" % i)
+#        import time
+#        start_time = time.time()
+#        tasks.update_hotview_list.delay(self.TEST_SITE_ID)
+#        print time.time() - start_time
+
+@override_settings(CELERY_EAGER_PROPAGATES_EXCEPTIONS=True,
+                   CELERY_ALWAYS_EAGER=True,
+                   BROKER_BACKEND='memory')
+class RecommenderRedirectTest(BaseRecommenderTest):
+    def test_recommender_redirect(self):
+        c_raw_logs = self.mongo_client.getSiteDBCollection(self.TEST_SITE_ID, "raw_logs")
+        redirect_path = reverse("recommender-redirect")
+        self.assertEqual(c_raw_logs.count(), 0)
+        # Test invalid requests
+        invalid_request_data_list = [
+            {"url": "http://example.com/blah",
+                  "api_key": "INVALID_API_KEY",
+                  "req_id": "REQ1100",
+                  "item_id": "I123"},
+            {"api_key": self.api_key,
+                  "req_id": "REQ1100",
+                  "item_id": "I123"},
+        ]
+        for invalid_request_data in invalid_request_data_list:
+            response = self.client.get(redirect_path, 
+                            data=invalid_request_data)
+            self.assertIsInstance(response, HttpResponseBadRequest)
+            self.assertEqual(c_raw_logs.count(), 0)
+
+        # valid request
+        response = self.client.get(
+                  redirect_path, 
+                  data={"url": "http://example.com/blah",
+                  "api_key": self.api_key,
+                  "req_id": "REQ1100",
+                  "item_id": "I123"})
+
+        self.assertIsInstance(response, HttpResponseRedirect)
+        self.assertEqual(c_raw_logs.count(), 1)
+        self.assertSeveralKeys(c_raw_logs.find_one(),
+                               {"behavior": "ClickRec",
+                                "url": "http://example.com/blah",
+                                "req_id": "REQ1100",
+                                "item_id": "I123",
+                                "site_id": self.TEST_SITE_ID,
+                                "ptm_id": self.get_ptm_id(response)})
+
 
 
 @override_settings(CELERY_EAGER_PROPAGATES_EXCEPTIONS=True,
@@ -96,11 +165,6 @@ class GetByBrowsingHistoryTest(BaseRecommenderTest):
                   "mostSimilarItems": mostSimilarItems}
         c_item_similarities.insert(record)
 
-    def get_ptm_id(self, response):
-        ptm_id_morsel = response.cookies.get("__ptmid", None)
-        self.assertNotEqual(ptm_id_morsel, None)
-        ptm_id = ptm_id_morsel.value
-        return ptm_id
 
     def test_by_browsing_history_return_topn(self):
         # We have no browsing history and no hot index
@@ -439,6 +503,18 @@ class HotIndexTest(BaseRecommenderTest):
         self.assertEqual(response.data["code"], 0)
         self.assertEqual([item["item_id"] for item in response.data["topn"]],
                          ["I126", "I123", "I124", "I125"])
+        # Check item_link redirect url
+        for recommended_item in response.data["topn"]:
+            item_link = recommended_item["item_link"]
+            parsed_item_link = urlparse.urlparse(item_link)
+            original_item_link = self.get_item(recommended_item["item_id"])["item_link"]
+            self.assertEqual(parsed_item_link.path, reverse("recommender-redirect"))
+            parsed_query = cgi.parse_qs(parsed_item_link.query)
+            self.assertEqual(parsed_query.has_key("req_id"), True)
+            self.assertSeveralKeys(parsed_query,
+                             {"url": [original_item_link],
+                              "item_id": [recommended_item["item_id"]],
+                              "api_key": [self.api_key]})
 
         # TOPN of a certain toplevel category
         response = self.api_get(reverse("recommender-recommender"),

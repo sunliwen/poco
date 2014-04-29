@@ -631,13 +631,14 @@ class MongoClient:
             topn_entry = (record["item_id"], record["total_views"]/ highest_views)
             if len(topn_overall) < 10:
                 topn_overall.append(topn_entry)
-            for category_id in record["categories"]:
+            for category_id in record.get("categories", []):
                 topn_of_category = topn_by_categories.setdefault(category_id, [])
                 if len(topn_of_category) < 10:
                     topn_of_category.append(topn_entry)
-            topn_of_brand = topn_by_brands.setdefault(record["brand"], [])
-            if len(topn_of_brand) < 10:
-                topn_of_brand.append(topn_entry)
+            if record.has_key("brand"):
+                topn_of_brand = topn_by_brands.setdefault(record["brand"], [])
+                if len(topn_of_brand) < 10:
+                    topn_of_brand.append(topn_entry)
 
         c_cached_hot_view = getSiteDBCollection(self.connection, site_id, "cached_hot_view")
 
