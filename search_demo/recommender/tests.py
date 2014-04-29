@@ -137,7 +137,7 @@ class ItemsAPITest(BaseRecommenderTest):
         item_wrong_brand["api_key"] = self.api_key
         response = self.api_post(reverse("recommender-items"), data=item_wrong_brand,
                                   expected_status_code=200,
-                                  **{"Authorization": "Token %s" % self.site_token})
+                                  **{"HTTP_AUTHORIZATION": "Token %s" % self.site_token})
         self.assertEqual(response.data["code"], 1)
         self.assertEqual(c_items.count(), 0)
 
@@ -153,21 +153,21 @@ class ItemsAPITest(BaseRecommenderTest):
         sample_item["api_key"] = self.api_key
         response = self.api_post(reverse("recommender-items"), data=sample_item,
                                   expected_status_code=403,
-                                  **{"Authorization": "Token WRONG_TOKEN"})
+                                  **{"HTTP_AUTHORIZATION": "Token WRONG_TOKEN"})
         self.assertEqual(c_items.count(), 0)
 
         # If we post with a correct site_token but wrong api_key
         sample_item["api_key"] = other_site_record["api_key"]
         response = self.api_post(reverse("recommender-items"), data=sample_item,
                                   expected_status_code=403,
-                                  **{"Authorization": "Token %s" % self.site_token})
+                                  **{"HTTP_AUTHORIZATION": "Token %s" % self.site_token})
         self.assertEqual(c_items.count(), 0)
 
         # Then with correct site_token
         sample_item["api_key"] = self.api_key
         response = self.api_post(reverse("recommender-items"), data=sample_item,
                                   expected_status_code=200,
-                                  **{"Authorization": "Token %s" % self.site_token}
+                                  **{"HTTP_AUTHORIZATION": "Token %s" % self.site_token}
                                   )
         self.assertEqual(c_items.count(), 1)
 

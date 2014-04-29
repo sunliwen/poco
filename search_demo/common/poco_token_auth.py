@@ -8,7 +8,7 @@ from rest_framework import exceptions
 class PocoTokenAuthentication(authentication.BaseAuthentication):
     def authenticate(self, request):
         mongo_client = getMongoClient()
-        authorization_line = request.META.get('Authorization')
+        authorization_line = request.META.get('HTTP_AUTHORIZATION')
         splitted_line = authorization_line.split()
         if not (len(splitted_line) == 2 and splitted_line[0] == "Token"):
             return None
