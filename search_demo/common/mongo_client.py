@@ -245,12 +245,25 @@ class MongoClient:
             api_key = hashlib.md5("%s:%s:%s" % (site_id, site_name, random.random())).hexdigest()[3:11]
         return api_key
 
+    def getTjbDb(self):
+        return self.connection["tjb-db"]
+
     def dropSiteRecord(self, site_id):
-        c_sites = self.connection["tjb-db"]["sites"]
+        c_sites = self.getTjbDb()["sites"]
         c_sites.remove({"site_id": site_id})
 
+    def getSite(self, site_id):
+        c_sites = self.getTjbDb()["sites"]
+        site = c_sites.find_one({"site_id": site_id})
+        return site
+
+    def getSiteFromToken(self, site_token):
+        c_sites = self.getTjbDb()["sites"]
+        site = c_sites.find_one({"site_token": site_token})
+        return site
+
     def updateSite(self, site_id, site_name, calc_interval):
-        c_sites = self.connection["tjb-db"]["sites"]
+        c_sites = self.getTjbDb()["sites"]
         site = c_sites.find_one({"site_id": site_id})
         if site is None:
             if site_name is None:

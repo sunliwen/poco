@@ -4,15 +4,17 @@ from django.core.urlresolvers import reverse
 from django.core.cache import get_cache
 from django.conf import settings
 from common.test_utils import BaseAPITest
+from common import site_manage_utils
 from common import test_data1
 from recommender import tasks
 
 
 class BaseRecommenderTest(BaseAPITest):
-    def setUp(self):
-        super(BaseRecommenderTest, self).setUp()
-        self.postItems(test_data1, None)
-        
+
+    def get_browsing_history_cache(self):
+        from browsing_history_cache import BrowsingHistoryCache
+        return BrowsingHistoryCache(self.mongo_client)
+
     def _viewItem(self, user_id, item_id, times=1):
         for i in range(times):
             response = self.api_get(reverse("recommender-events"),
@@ -40,11 +42,48 @@ class BaseRecommenderTest(BaseAPITest):
                       })
 
 
+@override_settings(CELERY_EAGER_PROPAGATES_EXCEPTIONS=True,
+                   CELERY_ALWAYS_EAGER=True,
+                   BROKER_BACKEND='memory')
+class ItemsAPITest(BaseRecommenderTest):
+    def test_authentication_and_permission(self):
+        # let's create another site
+        other_site_record = self.initSite("site_for_other_purpose")
+
+        c_items = self.mongo_client.getSiteDBCollection(self.TEST_SITE_ID, "items")
+        self.assertEqual(c_items.count(), 0)
+        # Let's post an item with wrong site_token
+        sample_item = test_data1.getItems(None)[0]
+        sample_item["api_key"] = self.api_key
+        response = self.api_post(reverse("recommender-items"), data=sample_item,
+                                  expected_status_code=403,
+                                  **{"Authorization": "Token WRONG_TOKEN"})
+        self.assertEqual(c_items.count(), 0)
+
+        # If we post with a correct site_token but wrong api_key
+        sample_item["api_key"] = other_site_record["api_key"]
+        response = self.api_post(reverse("recommender-items"), data=sample_item,
+                                  expected_status_code=403,
+                                  **{"Authorization": "Token %s" % self.site_token})
+        self.assertEqual(c_items.count(), 0)
+
+        # Then with correct site_token
+        sample_item["api_key"] = self.api_key
+        response = self.api_post(reverse("recommender-items"), data=sample_item,
+                                  expected_status_code=200,
+                                  **{"Authorization": "Token %s" % self.site_token}
+                                  )
+        self.assertEqual(c_items.count(), 1)
+
 
 @override_settings(CELERY_EAGER_PROPAGATES_EXCEPTIONS=True,
                    CELERY_ALWAYS_EAGER=True,
                    BROKER_BACKEND='memory')
 class GetByBrowsingHistoryTest(BaseRecommenderTest):
+    def setUp(self):
+        super(GetByBrowsingHistoryTest, self).setUp()
+        self.postItems(test_data1, None)
+
     def get_last_n_raw_logs(self, n=1):
         c_raw_logs = self.mongo_client.getSiteDBCollection(self.TEST_SITE_ID, "raw_logs")
         raw_logs = [raw_log for raw_log in c_raw_logs.find().sort([("$natural", -1)]).limit(n)]
@@ -62,10 +101,6 @@ class GetByBrowsingHistoryTest(BaseRecommenderTest):
         self.assertNotEqual(ptm_id_morsel, None)
         ptm_id = ptm_id_morsel.value
         return ptm_id
-
-    def get_browsing_history_cache(self):
-        from browsing_history_cache import BrowsingHistoryCache
-        return BrowsingHistoryCache(self.mongo_client)
 
     def test_by_browsing_history_return_topn(self):
         # We have no browsing history and no hot index
@@ -185,7 +220,9 @@ class GetByBrowsingHistoryTest(BaseRecommenderTest):
                    CELERY_ALWAYS_EAGER=True,
                    BROKER_BACKEND='memory')
 class HotIndexTest(BaseRecommenderTest):
-
+    def setUp(self):
+        super(HotIndexTest, self).setUp()
+        self.postItems(test_data1, None)
 
     def test_hotindex_place_order(self):
         for hot_index_type in ("by_quantity", "by_order", "by_viewed"):

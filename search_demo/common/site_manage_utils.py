@@ -1,3 +1,4 @@
+import uuid
 from elasticsearch import Elasticsearch
 from elasticsearch.exceptions import NotFoundError
 from api_app import es_search_functions
@@ -131,18 +132,32 @@ def reset_items(site_id):
     else:
         raise SiteNotExistsError()
 
-
 def create_site(mongo_client, site_id, site_name, calc_interval):
     if mongo_client.siteExists(site_id, use_cache=False):
         raise SiteAlreadyExistsError()
     site_record = update_site_in_mongodb(mongo_client, site_id, site_name, calc_interval)
+    regenerate_site_token(mongo_client, site_id)
     es = Elasticsearch()
     create_es_item_index(es, site_id)
     mongo_client.reloadApiKey2SiteID()
-    return site_record
+    return mongo_client.getSite(site_id)
 
 def drop_site(mongo_client, site_id):
     drop_site_in_mongodb(mongo_client, site_id)
     es = Elasticsearch()
     drop_es_item_index(es, site_id)
     mongo_client.reloadApiKey2SiteID()
+
+class SiteUserAlreadyExistsError:
+    pass
+
+def regenerate_site_token(mongo_client, site_id):
+    site = mongo_client.getSite(site_id)
+    if site:
+        token = str(uuid.uuid4())
+        site["site_token"] = token
+        c_sites = mongo_client.getTjbDb()["sites"]
+        c_sites.save(site)
+        return token
+    else:
+        raise SiteNotExistsError()

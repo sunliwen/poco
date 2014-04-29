@@ -6,6 +6,8 @@ import uuid
 from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from common.poco_token_auth import PocoTokenAuthentication
+from common.poco_token_auth import TokenMatchAPIKeyPermission
 
 from action_processors import mongo_client
 import action_processors
@@ -120,10 +122,14 @@ class SingleRequestAPIView(BaseAPIView):
 
 
 class ItemsAPIView(BaseAPIView):
+    authentication_classes = (PocoTokenAuthentication, )
+    permission_classes = (TokenMatchAPIKeyPermission,)
+
     def getActionProcessor(self, args):
         return True, action_processors.UpdateItemProcessor
 
     def process_post(self, request, response, site_id, args):
+        print "THE USER:", request.user, request.auth
         _, processor_class = self.getActionProcessor(args)
         action_processor = processor_class()
 
