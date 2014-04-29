@@ -108,7 +108,6 @@ class ItemsAPIView(BaseAPIView):
         return True, action_processors.UpdateItemProcessor
 
     def process_post(self, request, response, site_id, args):
-        print "THE USER:", request.user, request.auth
         _, processor_class = self.getActionProcessor(args)
         action_processor = processor_class()
 

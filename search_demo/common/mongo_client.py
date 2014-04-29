@@ -520,7 +520,11 @@ class MongoClient:
     def updateTrafficMetricsFromItem(self, site_id, item):
         c_traffic_metrics = getSiteDBCollection(self.connection, site_id, "traffic_metrics")
         categories = [category["id"] for category in item["categories"]]
-        brand = item.get("brand", {}).get("id", None)
+        brand = item.get("brand", None)
+        if brand is None:
+            brand = None
+        else:
+            brand = brand.get("id", None)
         c_traffic_metrics.update({"item_id": item["item_id"]},
                                  {"item_id": item["item_id"],
                                   "categories": categories,

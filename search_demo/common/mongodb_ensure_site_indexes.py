@@ -79,8 +79,8 @@ class SiteIndexesEnsurer:
     def fix_properties(self):
         c_properties = self.getSiteDBCollection("properties")
         c_properties.drop_indexes()
-        c_properties.ensure_index([("id", 1)], background=True, unique=True)
-        c_properties.ensure_index([("type", 1)], background=True, unique=True)
+        c_properties.ensure_index([("id", 1)], background=True, unique=False)
+        c_properties.ensure_index([("type", 1)], background=True, unique=False)
 
     def fix_visitors(self):
         c_visitors = self.getSiteDBCollection("visitors")

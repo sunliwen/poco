@@ -369,6 +369,7 @@ class UpdateItemProcessor(ActionProcessor):
     def _validateCategories(self, args):
         if not isinstance(args["categories"], list):
             return {"code": 1, "err_msg": "categories should be of type 'list'"}
+        null_parent_id_found = False
         for category in args["categories"]:
             if not isinstance(category, dict):
                 return {"code": 1, "err_msg": "categories content should be dicts. "}
@@ -382,6 +383,9 @@ class UpdateItemProcessor(ActionProcessor):
             for expected_key in ("id", "parent_id"):
                 if re.match(r"[A-Za-z0-9]+", category[expected_key]) is None:
                     return {"code": 1, "err_msg": "category ids can only contains digits and letters."}
+            null_parent_id_found = null_parent_id_found or category["parent_id"] == "null"
+        if not null_parent_id_found:
+            return {"code": 1, "err_msg": "At least one category should be at the top level"}
         return None
 
     def _validateBrand(self, args):

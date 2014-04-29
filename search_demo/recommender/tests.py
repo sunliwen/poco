@@ -115,6 +115,33 @@ class RecommenderRedirectTest(BaseRecommenderTest):
                    CELERY_ALWAYS_EAGER=True,
                    BROKER_BACKEND='memory')
 class ItemsAPITest(BaseRecommenderTest):
+    def test_invalid_properties_format_in_posted_items(self):
+        # TODO full test of properties type
+        c_items = self.mongo_client.getSiteDBCollection(self.TEST_SITE_ID, "items")
+        self.assertEqual(c_items.count(), 0)
+        # an item with wrong category format
+        item_wrong_brand = {
+            "type": "product",
+            "available": True,
+            "item_id": "I200",
+            "item_name": "Milk",
+            "item_link": "http://example.com/I123/",
+            "categories": [
+                {"type": "category",
+                 "id": "2",
+                 "name": "cat1",
+                 "parent_id": "3"
+                }
+            ]
+        }
+        item_wrong_brand["api_key"] = self.api_key
+        response = self.api_post(reverse("recommender-items"), data=item_wrong_brand,
+                                  expected_status_code=200,
+                                  **{"Authorization": "Token %s" % self.site_token})
+        self.assertEqual(response.data["code"], 1)
+        self.assertEqual(c_items.count(), 0)
+
+
     def test_authentication_and_permission(self):
         # let's create another site
         other_site_record = self.initSite("site_for_other_purpose")

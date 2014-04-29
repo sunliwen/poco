@@ -38,6 +38,7 @@ class ItemsSearchViewTest(BaseAPITest):
                 "q": ""
                 }
         response = self.api_post(reverse("products-search"), data=body)
+        #import pprint; pprint.pprint(response.data)
         self.assertEqual(response.data["info"]["total_result_count"], 4)
         self.assertEqual(self.sortDictList(response.data["info"]["facets"]["brand"], by_key="id"), 
                         [{"count": 1, "id": "22", "label": u"雀巢"},
