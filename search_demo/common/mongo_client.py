@@ -31,6 +31,13 @@ HOT_INDEX_ALL_ITEMS = 0
 
 # Now we intepret items which do not belong to any group in a default group.
 class SameGroupRecommendationResultFilter:
+    def getCatId(self, category):
+        if isinstance(category, basestring):
+            cat_id = category
+        else:
+            cat_id = category["id"]
+        return cat_id
+
     def __init__(self, mongo_client, site_id, item_id):
         self.mongo_client = mongo_client
         self.site_id = site_id
@@ -41,9 +48,9 @@ class SameGroupRecommendationResultFilter:
         item = mongo_client.getItem(site_id, item_id)
         if item is not None:
             for category in item["categories"]:
-                category_group = category_groups.get(category["id"], None)
+                category_group = category_groups.get(self.getCatId(category), None)
                 allowed_category_groups.append(category_group)
-            self.allowed_categories = set([category["id"] for category in item["categories"]])
+            self.allowed_categories = set([self.getCatId(category) for category in item["categories"]])
             self.allowed_category_groups = set(allowed_category_groups)
         else:
             self.allowed_categories = set([])
@@ -58,10 +65,10 @@ class SameGroupRecommendationResultFilter:
         else:
             for category in item_dict["categories"]:
                 if category_groups is not None:
-                    item_category_group = category_groups.get(category["id"], None)
+                    item_category_group = category_groups.get(self.getCatId(category), None)
                     if item_category_group in self.allowed_category_groups:
                         return True
-                elif category["id"] in self.allowed_categories:
+                elif self.getCatId(category) in self.allowed_categories:
                     return True
             return False
 
