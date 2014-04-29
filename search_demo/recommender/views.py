@@ -3,34 +3,15 @@ import sys
 import logging
 import uuid
 
-from django.shortcuts import render
+from django.shortcuts import render, redirect
+from django.http import HttpResponse, HttpResponseBadRequest
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from common.poco_token_auth import PocoTokenAuthentication
+from common.poco_token_auth import TokenMatchAPIKeyPermission
 
 from action_processors import mongo_client
 import action_processors
-
-"""
-PUT /1.6/items/<item_id>/
-GET /1.6/items/<item_id>/
-PUT /1.6/categories/
-
-POST /1.6/events/view_item/
-POST /1.6/events/add_favorite/
-POST /1.6/events/remove_favorite/
-POST /1.6/events/unlike/ (??)
-POST /1.6/events/rate_item/
-POST /1.6/events/add_order_item/
-POST /1.6/events/remove_order_item/
-POST /1.6/events/place_order/
-
-GET /1.6/items/recommend/alsoViewed
-GET /1.6/items/recommend/byBrowsingHistory
-GET /1.6/items/recommend/AlsoBought
-...
-GET /1.6/redirect/
-
-"""
 
 # TODO: config
 #logging.basicConfig(format="%(asctime)s|%(levelname)s|%(name)s|%(message)s",
@@ -88,18 +69,18 @@ class BaseAPIView(APIView):
                 return Response({"code": 1, "err_msg": e.message})
 
 
-class SingleRequestAPIView(BaseAPIView):
-    MAX_AGE = 109500 * 3600 * 24
+MAX_AGE = 109500 * 3600 * 24
+def get_ptm_id(request, response):
+    ptm_id = request.COOKIES.get("__ptmid", None)
+    if not ptm_id:
+        ptm_id = str(uuid.uuid4())
+        response.set_cookie("__ptmid", value=ptm_id, max_age=MAX_AGE)
+    return ptm_id
 
+
+class SingleRequestAPIView(BaseAPIView):
     def getActionProcessor(self, args):
         raise NotImplemented
-
-    def get_ptm_id(self, request, response):
-        ptm_id = request.COOKIES.get("__ptmid", None)
-        if not ptm_id:
-            ptm_id = str(uuid.uuid4())
-            response.set_cookie("__ptmid", value=ptm_id, max_age=self.MAX_AGE)
-        return ptm_id
 
     def process(self, request, response, site_id, args):
         not_log_action = "not_log_action" in args
@@ -113,13 +94,16 @@ class SingleRequestAPIView(BaseAPIView):
             if err_msg:
                 return {"code": 1, "err_msg": err_msg}
             else:
-                args["ptm_id"] = self.get_ptm_id(request, response)
+                args["ptm_id"] = get_ptm_id(request, response)
                 referer = request.META.get("HTTP_REFERER", "")
                 args["referer"] = referer
                 return action_processor.process(site_id, args)
 
 
 class ItemsAPIView(BaseAPIView):
+    authentication_classes = (PocoTokenAuthentication, )
+    permission_classes = (TokenMatchAPIKeyPermission,)
+
     def getActionProcessor(self, args):
         return True, action_processors.UpdateItemProcessor
 
@@ -190,3 +174,29 @@ class EventsAPIView(SingleRequestAPIView):
             return False, {"code": 2, "err_msg": "no or invalid event_type"}
         else:
             return True, action_processor
+
+
+def recommended_item_redirect(request):
+    if request.method == "GET":
+        url = request.GET.get("url", None)
+        api_key = request.GET.get("api_key", None)
+        req_id = request.GET.get("req_id", None)
+        item_id = request.GET.get("item_id", None)
+
+        api_key2site_id = mongo_client.getApiKey2SiteID()
+        if url is None or api_key not in api_key2site_id:
+            response = HttpResponseBadRequest("wrong url")
+        else:
+            response = redirect(url)
+            ptm_id = get_ptm_id(request, response)
+            site_id = api_key2site_id[api_key]
+            log_content = {
+                "behavior": "ClickRec",
+                "url": url,
+                "req_id": req_id,
+                "item_id": item_id,
+                "site_id": site_id,
+                "ptm_id": ptm_id
+                }
+            action_processors.logWriter.writeEntry(site_id, log_content)
+        return response

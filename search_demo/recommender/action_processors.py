@@ -13,6 +13,9 @@ from django.conf import settings
 import getopt
 import urllib
 import logging
+from django.core.cache import get_cache
+from django.core.urlresolvers import reverse
+from browsing_history_cache import BrowsingHistoryCache
 
 from common.utils import smart_split
 
@@ -22,6 +25,7 @@ from common.mongo_client import SameGroupRecommendationResultFilter
 
 #from es_client import es_index_item
 from tasks import es_index_item
+from tasks import write_log
 
 
 #logging.basicConfig(format="%(asctime)s|%(levelname)s|%(name)s|%(message)s",
@@ -34,13 +38,26 @@ mongo_client = getMongoClient()
 mongo_client.reloadApiKey2SiteID()
 
 class HotViewListCache:
+    EXPIRY_TIME = 3600
+
     def __init__(self, mongo_client):
         self.mongo_client = mongo_client
 
-    def getHotViewList(self, site_id):
-        # NOTE: disabled memcached cache currently
-        return self.mongo_client.getHotViewList(site_id)
+    def getHotViewList(self, site_id, hot_index_type, category_id=None, brand=None):
+        cache_key = "hot-view-list-%s-%s-%s-%s" % (site_id, hot_index_type, category_id, brand)
+        django_cache = get_cache("default")
+        cache_entry = django_cache.get(cache_key)
+        if cache_entry:
+            return cache_entry
+        else:
+            cache_entry = self.mongo_client.getHotViewList(site_id, hot_index_type, category_id, brand)
+            if cache_entry is None:
+                cache_entry = []
+            django_cache.set(cache_key, cache_entry, self.EXPIRY_TIME)
+        return cache_entry
 hot_view_list_cache = HotViewListCache(mongo_client)
+
+browsing_history_cache = BrowsingHistoryCache(mongo_client)
 
 
 # jquery serialize()  http://api.jquery.com/serialize/
@@ -52,30 +69,14 @@ hot_view_list_cache = HotViewListCache(mongo_client)
 
 
 class LogWriter:
-    #def __init__(self):
-    #    self.local_file = open(settings.local_raw_log_file, "a")
-
-    #def closeLocalLog(self):
-    #    self.local_file.close()
-
     def writeLineToLocalLog(self, site_id, line):
-        #full_line = "%s:%s\n" % (site_id, line)
-        #self.local_file.write(full_line)
-        #self.local_file.flush()
         pass
-
-    #def writeToLocalLog(self, site_id, content):
-    #    local_content = copy.copy(content)
-    #    local_content["created_on"] = repr(local_content["created_on"])
-    #    line = json.dumps(local_content)
-    #    self.writeLineToLocalLog(site_id, line)
 
     def writeEntry(self, site_id, content):
         content["created_on"] = datetime.datetime.now()
         if settings.PRINT_RAW_LOG:
             print "RAW LOG: site_id: %s, %s" % (site_id, content)
-        #self.writeToLocalLog(site_id, content)
-        mongo_client.writeLogToMongo(site_id, content)
+        write_log.delay(site_id, content)
 
 
 def extractArguments(request):
@@ -155,7 +156,7 @@ class ActionProcessor:
             assert self.action_name != None
             if tjb_id_required:
                 assert "ptm_id" in args
-                action_content["tjbid"] = args["ptm_id"]
+                action_content["ptm_id"] = args["ptm_id"]
             action_content["referer"] = args.get("referer", None)
             action_content["behavior"] = self.action_name
             logWriter.writeEntry(site_id, action_content)
@@ -196,7 +197,7 @@ class ViewItemProcessor(ActionProcessor):
                 {"behavior": "ERROR",
                  "content": {"behavior": "V",
                   "user_id": args["user_id"],
-                  "tjbid": args["ptm_id"],
+                  "ptm_id": args["ptm_id"],
                   "item_id": args["item_id"],
                   "referer": args.get("referer", None)}
                 })
@@ -340,29 +341,6 @@ class PlaceOrderProcessor(ActionProcessor):
         return {"code": 0}
 
 
-class UpdateCategoryProcessor(ActionProcessor):
-    action_name = "UCat"
-    ap = ArgumentProcessor(
-         (("category_id", True),
-         ("category_link", False),
-         ("category_name", True),
-         ("parent_categories", False)
-        )
-    )
-
-    def _process(self, site_id, args):
-        err_msg, args = self.ap.processArgs(args)
-        if err_msg:
-            return {"code": 1, "err_msg": err_msg}
-        else:
-            if args["parent_categories"] is None:
-                args["parent_categories"] = []
-            else:
-                args["parent_categories"] = smart_split(args["parent_categories"], ",")
-        mongo_client.updateCategory(site_id, args)
-        return {"code": 0}
-
-
 class UpdateItemProcessor(ActionProcessor):
     action_name = "UItem"
     ap = ArgumentProcessor(
@@ -391,6 +369,7 @@ class UpdateItemProcessor(ActionProcessor):
     def _validateCategories(self, args):
         if not isinstance(args["categories"], list):
             return {"code": 1, "err_msg": "categories should be of type 'list'"}
+        null_parent_id_found = False
         for category in args["categories"]:
             if not isinstance(category, dict):
                 return {"code": 1, "err_msg": "categories content should be dicts. "}
@@ -404,6 +383,9 @@ class UpdateItemProcessor(ActionProcessor):
             for expected_key in ("id", "parent_id"):
                 if re.match(r"[A-Za-z0-9]+", category[expected_key]) is None:
                     return {"code": 1, "err_msg": "category ids can only contains digits and letters."}
+            null_parent_id_found = null_parent_id_found or category["parent_id"] == "null"
+        if not null_parent_id_found:
+            return {"code": 1, "err_msg": "At least one category should be at the top level"}
         return None
 
     def _validateBrand(self, args):
@@ -489,7 +471,6 @@ class RemoveItemProcessor(ActionProcessor):
 
 
 class BaseRecommendationProcessor(ActionProcessor):
-
     def generateReqId(self):
         return str(uuid.uuid4())
 
@@ -504,7 +485,8 @@ class BaseRecommendationProcessor(ActionProcessor):
                                   "api_key": api_key,
                                   "item_id": item_id,
                                    "req_id": req_id})
-        full_url = settings.API_SERVER_PREFIX + "/1.6/redirect?" + param_str
+        REDIRECT_PATH = reverse("recommender-redirect")
+        full_url = settings.API_SERVER_PREFIX + REDIRECT_PATH + "?" + param_str
         return full_url
 
     def getRecommendationResultFilter(self, site_id, args):
@@ -532,7 +514,7 @@ class BaseByEachItemProcessor(BaseRecommendationProcessor):
     def getRecommendationLog(self, args, req_id, recommended_items):
         return {"req_id": req_id,
                 "user_id": args["user_id"],
-                "tjbid": args["ptm_id"],
+                "ptm_id": args["ptm_id"],
                 "is_empty_result": len(recommended_items) == 0,
                 "amount_for_each_item": self.getAmountForEachItem(args)
                 }
@@ -614,7 +596,7 @@ class BaseSimpleResultRecommendationProcessor(BaseRecommendationProcessor):
     def getRecommendationLog(self, args, req_id, recommended_items):
         return {"req_id": req_id,
                 "user_id": args["user_id"],
-                "tjbid": args["ptm_id"],
+                "ptm_id": args["ptm_id"],
                 "recommended_items": recommended_items,
                 "is_empty_result": len(recommended_items) == 0,
                 "amount": args["amount"]}
@@ -800,7 +782,7 @@ class GetByBrowsingHistoryProcessor(BaseSimpleResultRecommendationProcessor):
             (
                 ("user_id", True),
                 ("ref", False),
-                ("browsing_history", False),
+                #("browsing_history", False),
                 ("include_item_info", False),  # no, not include; yes, include
                 ("amount", True),
             )
@@ -811,24 +793,65 @@ class GetByBrowsingHistoryProcessor(BaseSimpleResultRecommendationProcessor):
 
     def getRecommendationLog(self, args, req_id, recommended_items):
         log = BaseSimpleResultRecommendationProcessor.getRecommendationLog(self, args, req_id, recommended_items)
-        browsing_history = args["browsing_history"]
-        if browsing_history == None:
-            browsing_history = []
-        else:
-            browsing_history = browsing_history.split(",")
-        log["browsing_history"] = browsing_history
+        #browsing_history = args["browsing_history"]
+        #if browsing_history == None:
+        #    browsing_history = []
+        #else:
+        #    browsing_history = browsing_history.split(",")
+        #log["browsing_history"] = browsing_history
+        log["browsing_history"] = args["browsing_history"]
         return log
 
     def getTopN(self, site_id, args):
-        browsing_history = args["browsing_history"]
-        if browsing_history == None:
-            browsing_history = []
-        else:
-            browsing_history = browsing_history.split(",")
+        #browsing_history = args["browsing_history"]
+        #if browsing_history == None:
+        #    browsing_history = []
+        #else:
+        #    browsing_history = browsing_history.split(",")
+        ptm_id = args["ptm_id"]
+        browsing_history = browsing_history_cache.get(site_id, ptm_id)
+        args["browsing_history"] = browsing_history
         topn = mongo_client.recommend_based_on_some_items(site_id, "V", browsing_history)
         if len(topn) == 0:
-            topn = hot_view_list_cache.getHotViewList(site_id)
+            topn = hot_view_list_cache.getHotViewList(site_id, 
+                            hot_index_type="by_viewed")
         return topn
+
+
+class GetByHotIndexProcessor(BaseSimpleResultRecommendationProcessor):
+    action_name = "RecBHI"
+    ap = ArgumentProcessor(
+            (
+                ("user_id", True),
+                ("ref", False),
+                ("hot_index_type", True), 
+                ("category_id", False),
+                ("brand", False),
+                ("include_item_info", False),  # no, not include; yes, include
+                ("amount", True),
+            )
+        )
+
+    def getRecommendationResultFilter(self, site_id, args):
+        return SimpleRecommendationResultFilter()
+
+    def getRecommendationLog(self, args, req_id, recommended_items):
+        log = BaseSimpleResultRecommendationProcessor.getRecommendationLog(self, args, req_id, recommended_items)
+        log["category_id"] = args["category_id"]
+        log["brand"] = args["brand"]
+        return log
+
+    def getTopN(self, site_id, args):
+        hot_index_type = args.get("hot_index_type", None)
+        is_valid_hot_index_type = mongo_client.HOT_INDEX_TYPE2INDEX_PREFIX.has_key(hot_index_type)
+        if is_valid_hot_index_type:
+            topn = hot_view_list_cache.getHotViewList(site_id, 
+                            hot_index_type=hot_index_type,
+                            category_id=args.get("category_id", None), 
+                            brand=args.get("brand", None))
+            return topn
+        else:
+            raise ArgumentError("hot_index_type should be one of these values: %s" % (",".join(mongo_client.HOT_INDEX_TYPE2INDEX_PREFIX.keys())))
 
 
 class GetByShoppingCartProcessor(BaseSimpleResultRecommendationProcessor):
@@ -896,7 +919,8 @@ EVENT_TYPE2ACTION_PROCESSOR = {
     "Unlike": UnlikeProcessor,
     "RateItem": RateItemProcessor,
     "AddOrderItem": AddOrderItemProcessor,
-    "RemoveOrderItem": RemoveOrderItemProcessor
+    "RemoveOrderItem": RemoveOrderItemProcessor,
+    "PlaceOrder": PlaceOrderProcessor
 }
 
 
@@ -908,6 +932,7 @@ RECOMMEND_TYPE2ACTION_PROCESSOR = {
     "UltimatelyBought": GetUltimatelyBoughtProcessor,
     "ByPurchasingHistory": GetByPurchasingHistoryProcessor,
     "ByShoppingCart": GetByShoppingCartProcessor,
+    "ByHotIndex": GetByHotIndexProcessor
     #"ByEachBrowsedItem": GetByEachBrowsedItemProcessor,
     #"ByEachPurchasedItem": GetByEachPurchasedItemProcessor
 }

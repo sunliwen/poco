@@ -8,6 +8,18 @@ HTTP方法: POST
 功能：
     用来推送/更新商品信息。
 
+Authentication
+---------------
+Items API为非公开api，需要authentication之后才能使用。
+
+认证包括api_key和site_token两个部分。
+    1. api_key为公开部分，需要在所有api中作为参数传入；
+    2. site_token仅用于通过内网调用private api。
+
+认证方法：添加Http Header "Authorization"，内容为::
+
+    Authorization: Token <site_token>
+
 传入参数
 ---------
 

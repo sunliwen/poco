@@ -1,6 +1,7 @@
 #encoding=utf8
 #from django.shortcuts import render
 import copy
+import logging
 from rest_framework import renderers
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -338,7 +339,14 @@ class ProductsSearch(BaseAPIView):
         filters = request.DATA.get("filters", {})
         highlight = request.DATA.get("highlight", False)
         facets_selector = request.DATA.get("facets", None)
+        #result_mode = request.DATA.get("result_mode", "WITH_RECORDS")
         api_key = request.DATA["api_key"]
+
+        #if result_mode not in ("WITHOUT_RECORDS", "WITH_RECORDS"):
+        #    return Response({"records": [], "info": {}, 
+        #                     "errors": [{"code": "INVALID_PARAM", 
+        #                                "param_name": "result_mode",
+        #                                "message": "invalid result_mode"}]})
 
         try:
             per_page = int(per_page)
@@ -347,6 +355,12 @@ class ProductsSearch(BaseAPIView):
                              "errors": [{"code": "INVALID_PARAM", 
                                         "param_name": "per_page",
                                         "message": "per_page must be a digit value."}]})
+
+        if per_page <= 0:
+            return Response({"records": [], "info": {}, 
+                             "errors": [{"code": "INVALID_PARAM", 
+                                        "param_name": "per_page",
+                                        "message": "per_page must be greater than 0."}]})
 
         # Apply default filters
         for filter_key , filter_content in self.DEFAULT_FILTERS.items():
@@ -358,7 +372,14 @@ class ProductsSearch(BaseAPIView):
             facets_selector = copy.deepcopy(self.DEFAULT_FACETS)
 
         site_id = self.getSiteID(api_key)
-        result_set, facets_result = self._search(site_id, q, sort_fields, filters, highlight, facets_selector)
+        try:
+            result_set, facets_result = self._search(site_id, q, sort_fields, filters, highlight, facets_selector)
+        except:
+            logging.critical("Unknown exception raised!", exc_info=True)
+            return Response({"records": [], "info": {}, 
+                             "errors": [{"code": "UNKNOWN_ERROR", 
+                                        "message": "Unknown error, please try later."}]})
+
         paginator = Paginator(result_set, per_page)
 
         try:
@@ -408,7 +429,6 @@ class QuerySuggest(BaseAPIView):
 
         return errors
 
-
     def post(self, request, format=None):
         return self.get(request, format=None)
 
@@ -421,7 +441,13 @@ class QuerySuggest(BaseAPIView):
         api_key = request.DATA.get("api_key", "")
         site_id = self.getSiteID(api_key)
 
-        suggester = es_search_functions.Suggester(mongo_client, site_id)
-        suggested_texts = suggester.getQuerySuggestions(q)
+        try:
+            suggester = es_search_functions.Suggester(mongo_client, site_id)
+            suggested_texts = suggester.getQuerySuggestions(q)
+        except:
+            logging.critical("Unknown exception raised!", exc_info=True)
+            return Response({"records": [], "info": {}, 
+                             "errors": [{"code": "UNKNOWN_ERROR", 
+                                        "message": "Unknown error, please try later."}]})
 
         return Response({"suggestions": suggested_texts, "errors": []})

@@ -14,6 +14,8 @@ urlpatterns = patterns('main_app.views',
         name="recommender-events"),
     url(r'^v1.6/private/items/$', views.ItemsAPIView.as_view(),
         name="recommender-items"),
+    url(r'^v1.6/public/recommender/redirect/$', views.recommended_item_redirect,
+        name="recommender-redirect"),
     )
 
 
