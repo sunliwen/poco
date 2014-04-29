@@ -139,6 +139,41 @@ class ItemsSearchViewTest(BaseAPITest):
         self.assertEqual(len(response.data["records"]), 1)
         self.assertNotEqual(response.data["records"], page1_records)
 
+        # per_page should be greater than zero
+        body = {"api_key": self.api_key,
+            "q": "",
+            "per_page": "0"
+        }
+        response = self.api_post(reverse("products-search"), data=body)
+        self.assertEqual(len(response.data["errors"]), 1)
+        self.assertSeveralKeys(response.data["errors"][0], 
+                                {"code": "INVALID_PARAM",
+                                 "param_name": "per_page"})
+
+        body = {"api_key": self.api_key,
+            "q": "",
+            "per_page": "-1"
+        }
+        response = self.api_post(reverse("products-search"), data=body)
+        self.assertEqual(len(response.data["errors"]), 1)
+        self.assertSeveralKeys(response.data["errors"][0], 
+                                {"code": "INVALID_PARAM",
+                                 "param_name": "per_page"})
+
+    #def _test_result_mode(self):
+    #    body = {"api_key": self.api_key,
+    #        "q": "",
+    #        "per_page": "1",
+    #        "result_mode": "without_records"
+    #    }
+    #    response = self.api_post(reverse("products-search"), data=body)
+    #    self.assertEqual(response.data["errors"], [])
+    #    self.assertEqual(response.data["records"], [])
+    #    self.assertEqual(response.data["info"]["per_page"], 1)
+    #    self.assertEqual(response.data["info"]["total_result_count"], 4)
+    #    self.assertEqual(response.data["info"]["num_pages"], 0)
+    #    self.assertEqual(response.data["info"]["current_page"], 1)
+
     def _test_search_facets_selection(self):
         body = {"api_key": self.api_key,
             "q": "",
@@ -306,8 +341,6 @@ class ItemsSearchViewTest(BaseAPITest):
                         ],
                 })
 
-
-
     def test_search(self):
         # TODO: highlight; sort_fields
         self._test_no_such_api_key()
@@ -317,6 +350,7 @@ class ItemsSearchViewTest(BaseAPITest):
         self._test_search1()
         self._test_search2()
         self._test_search_pagination()
+        #self._test_result_mode()
         self._test_search_facets_selection()
         #self._test_search_facets_of_whole_sub_tree()
 

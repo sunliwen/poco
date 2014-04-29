@@ -338,7 +338,14 @@ class ProductsSearch(BaseAPIView):
         filters = request.DATA.get("filters", {})
         highlight = request.DATA.get("highlight", False)
         facets_selector = request.DATA.get("facets", None)
+        #result_mode = request.DATA.get("result_mode", "WITH_RECORDS")
         api_key = request.DATA["api_key"]
+
+        #if result_mode not in ("WITHOUT_RECORDS", "WITH_RECORDS"):
+        #    return Response({"records": [], "info": {}, 
+        #                     "errors": [{"code": "INVALID_PARAM", 
+        #                                "param_name": "result_mode",
+        #                                "message": "invalid result_mode"}]})
 
         try:
             per_page = int(per_page)
@@ -347,6 +354,12 @@ class ProductsSearch(BaseAPIView):
                              "errors": [{"code": "INVALID_PARAM", 
                                         "param_name": "per_page",
                                         "message": "per_page must be a digit value."}]})
+
+        if per_page <= 0:
+            return Response({"records": [], "info": {}, 
+                             "errors": [{"code": "INVALID_PARAM", 
+                                        "param_name": "per_page",
+                                        "message": "per_page must be greater than 0."}]})
 
         # Apply default filters
         for filter_key , filter_content in self.DEFAULT_FILTERS.items():
