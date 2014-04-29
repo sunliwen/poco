@@ -21,7 +21,6 @@ class PocoTokenAuthentication(authentication.BaseAuthentication):
         return (site, None)
 
 
-
 class TokenMatchAPIKeyPermission(permissions.BasePermission):
     def has_permission(self, request, view):
         site = request.user
