@@ -2,7 +2,7 @@ import uuid
 from elasticsearch import Elasticsearch
 from elasticsearch.exceptions import NotFoundError
 from api_app import es_search_functions
-#from common import utils
+from common import mongodb_ensure_site_indexes
 from common.mongo_client import getMongoClient
 
 
@@ -137,6 +137,9 @@ def create_site(mongo_client, site_id, site_name, calc_interval):
         raise SiteAlreadyExistsError()
     site_record = update_site_in_mongodb(mongo_client, site_id, site_name, calc_interval)
     regenerate_site_token(mongo_client, site_id)
+    # ensure mongodb indexes of site collections
+    site_indexes_ensurer = mongodb_ensure_site_indexes.SiteIndexesEnsurer(mongo_client, site_id)
+    site_indexes_ensurer.fix_all()
     es = Elasticsearch()
     create_es_item_index(es, site_id)
     mongo_client.reloadApiKey2SiteID()
