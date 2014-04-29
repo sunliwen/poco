@@ -1,6 +1,7 @@
 #encoding=utf8
 #from django.shortcuts import render
 import copy
+import logging
 from rest_framework import renderers
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -371,7 +372,14 @@ class ProductsSearch(BaseAPIView):
             facets_selector = copy.deepcopy(self.DEFAULT_FACETS)
 
         site_id = self.getSiteID(api_key)
-        result_set, facets_result = self._search(site_id, q, sort_fields, filters, highlight, facets_selector)
+        try:
+            result_set, facets_result = self._search(site_id, q, sort_fields, filters, highlight, facets_selector)
+        except:
+            logging.critical("Unknown exception raised!", exc_info=True)
+            return Response({"records": [], "info": {}, 
+                             "errors": [{"code": "UNKNOWN_ERROR", 
+                                        "message": "Unknown error, please try later."}]})
+
         paginator = Paginator(result_set, per_page)
 
         try:
@@ -421,7 +429,6 @@ class QuerySuggest(BaseAPIView):
 
         return errors
 
-
     def post(self, request, format=None):
         return self.get(request, format=None)
 
@@ -434,7 +441,13 @@ class QuerySuggest(BaseAPIView):
         api_key = request.DATA.get("api_key", "")
         site_id = self.getSiteID(api_key)
 
-        suggester = es_search_functions.Suggester(mongo_client, site_id)
-        suggested_texts = suggester.getQuerySuggestions(q)
+        try:
+            suggester = es_search_functions.Suggester(mongo_client, site_id)
+            suggested_texts = suggester.getQuerySuggestions(q)
+        except:
+            logging.critical("Unknown exception raised!", exc_info=True)
+            return Response({"records": [], "info": {}, 
+                             "errors": [{"code": "UNKNOWN_ERROR", 
+                                        "message": "Unknown error, please try later."}]})
 
         return Response({"suggestions": suggested_texts, "errors": []})
