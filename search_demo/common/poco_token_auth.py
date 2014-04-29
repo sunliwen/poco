@@ -9,8 +9,7 @@ class PocoTokenAuthentication(authentication.BaseAuthentication):
     def authenticate(self, request):
         try:
             mongo_client = getMongoClient()
-            authorization_line = request.META.get('Authorization')
-            print "AL:", authorization_line
+            authorization_line = request.META.get('HTTP_AUTHORIZATION')
             if authorization_line:
                 splitted_line = authorization_line.split()
                 if not (len(splitted_line) == 2 and splitted_line[0] == "Token"):

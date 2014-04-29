@@ -67,7 +67,7 @@ class BaseAPITest(TestCase):
         for item in items:
             item["api_key"] = self.api_key
             response = self.api_post(reverse("recommender-items"), data=item,
-                                        **{"Authorization": "Token %s" % site_token})
+                                        **{"HTTP_AUTHORIZATION": "Token %s" % site_token})
             self.assertEqual(response.status_code, 200)
             self.assertEqual(response.data["code"], 0, "Invalid res: %s" % response.data)
         self.refreshSiteItemIndex(self.TEST_SITE_ID)
