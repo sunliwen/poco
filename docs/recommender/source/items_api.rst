@@ -16,9 +16,11 @@ Items API为非公开api，需要authentication之后才能使用。
     1. api_key为公开部分，需要在所有api中作为参数传入；
     2. site_token仅用于通过内网调用private api。
 
-认证方法：添加Http Header "Authorization"，内容为::
+认证方法：添加Http Header "Authorization" ::
 
-    Authorization: Token <site_token>
+    例如site_token为3693cbdc-358c-41e1-a81e-8279d5b28847，则该Header内容为
+    Token 3693cbdc-358c-41e1-a81e-8279d5b28847
+
 
 传入参数
 ---------
@@ -102,6 +104,7 @@ err_msg           code非0时，错误信息
 
     curl -X POST 'http://search.tuijianbao.net/api/v1.6/private/items/' \
          -H 'Content-Type: application/json' \
+         -H 'Authorization: Token <site_token>' \
          -d '{
             "api_key": "<THE API KEY>",
             "type": "product",
