@@ -1,5 +1,6 @@
 import cgi
 import urlparse
+import copy
 from django.test import TestCase
 from django.test.utils import override_settings
 from django.core.urlresolvers import reverse
@@ -54,6 +55,30 @@ class BaseRecommenderTest(BaseAPITest):
                       "order_content": order_content
                       })
 
+    def get_last_n_raw_logs(self, n=1):
+        c_raw_logs = self.mongo_client.getSiteDBCollection(self.TEST_SITE_ID, "raw_logs")
+        rset = c_raw_logs.find().sort([("$natural", -1)])
+        if n is not None:
+            rset = rset.limit(n)
+        raw_logs = [raw_log for raw_log in rset]
+        return raw_logs
+
+    def insert_viewed_ultimately_buys(self, item_id, total_views, viewedUltimatelyBuys):
+        c_viewed_ultimately_buys = self.mongo_client.getSiteDBCollection(
+                    self.TEST_SITE_ID, "viewed_ultimately_buys")
+        for entry in viewedUltimatelyBuys:
+            entry["percentage"] = entry["count"] / float(total_views)
+        record = {"item_id": item_id, "total_views": total_views,
+                  "viewedUltimatelyBuys": viewedUltimatelyBuys}
+        c_viewed_ultimately_buys.insert(record)
+
+    def insert_item_similarities(self, similarity_type, item_id, mostSimilarItems):
+        c_item_similarities =  self.mongo_client.getSiteDBCollection(
+                    self.TEST_SITE_ID, "item_similarities_%s" % similarity_type)
+        record = {"item_id": item_id,
+                  "mostSimilarItems": mostSimilarItems}
+        c_item_similarities.insert(record)
+
 
 #@override_settings(CELERY_EAGER_PROPAGATES_EXCEPTIONS=True,
 #                   CELERY_ALWAYS_EAGER=True,
@@ -66,6 +91,119 @@ class BaseRecommenderTest(BaseAPITest):
 #        start_time = time.time()
 #        tasks.update_hotview_list.delay(self.TEST_SITE_ID)
 #        print time.time() - start_time
+
+
+@override_settings(CELERY_EAGER_PROPAGATES_EXCEPTIONS=True,
+                   CELERY_ALWAYS_EAGER=True,
+                   BROKER_BACKEND='memory')
+class EventsAPITest(BaseRecommenderTest):
+    def _test_event(self, data, expected):
+        initial_raw_log_num = len(self.get_last_n_raw_logs(n=None))
+        data["api_key"] = self.api_key
+        response = self.api_get(reverse("recommender-events"),
+                    data=data)
+        raw_logs = self.get_last_n_raw_logs(n=None)
+        self.assertEqual(response.data["code"], 0)
+        self.assertEqual(len(raw_logs), initial_raw_log_num + 1)
+        print raw_logs[0]
+        self.assertSeveralKeys(raw_logs[0],
+                expected)
+
+    def test_events(self):
+        data = {
+                          "event_type": "ViewItem",
+                          "user_id": "U1",
+                          "item_id": "I1"
+                          }
+        expected = {
+                    "behavior": "V",
+                    "user_id": "U1",
+                    "item_id": "I1"
+                }
+        self._test_event(data, expected)
+
+        data = {"event_type": "AddFavorite",
+                  "user_id": "U1",
+                  "item_id": "I1"
+                }
+        expected = {
+                    "behavior": "AF",
+                    "user_id": "U1",
+                    "item_id": "I1"
+                }
+        self._test_event(data, expected)
+
+        data = {"event_type": "RemoveFavorite",
+                  "user_id": "U1",
+                  "item_id": "I1"
+                }
+        expected = {
+                    "behavior": "RF",
+                    "user_id": "U1",
+                    "item_id": "I1"
+                }
+        self._test_event(data, expected)
+
+        data = {"event_type": "Unlike",
+                  "user_id": "U1",
+                  "item_id": "I1"
+                }
+        expected = {
+                    "behavior": "UNLIKE",
+                    "user_id": "U1",
+                    "item_id": "I1"
+                }
+        self._test_event(data, expected)
+
+        data = {"event_type": "RateItem",
+                  "user_id": "U1",
+                  "item_id": "I1",
+                  "score": 3
+                }
+        expected = {
+                    "behavior": "RI",
+                    "user_id": "U1",
+                    "item_id": "I1",
+                    "score": '3' 
+                }
+        self._test_event(data, expected)
+
+        data = {"event_type": "AddOrderItem",
+                  "user_id": "U1",
+                  "item_id": "I1",
+                }
+        expected = {
+                    "behavior": "ASC",
+                    "user_id": "U1",
+                    "item_id": "I1",
+                }
+        self._test_event(data, expected)
+
+        data = {"event_type": "RemoveOrderItem",
+                  "user_id": "U1",
+                  "item_id": "I1",
+                }
+        expected = {
+                    "behavior": "RSC",
+                    "user_id": "U1",
+                    "item_id": "I1",
+                }
+        self._test_event(data, expected)
+
+        data = {"event_type": "PlaceOrder",
+                  "user_id": "U1",
+                  "order_content": "I1,3.5,2|I2,5.5,1",
+                  "order_id": "357755"
+                }
+        expected = {
+                    "behavior": "PLO",
+                    "user_id": "U1",
+                    "order_id": "357755",
+                    "order_content": [{u'item_id': u'I1', u'price': u'3.5', u'amount': u'2'}, 
+                                    {u'item_id': u'I2', u'price': u'5.5', u'amount': u'1'}]
+                }
+        self._test_event(data, expected)
+
 
 @override_settings(CELERY_EAGER_PROPAGATES_EXCEPTIONS=True,
                    CELERY_ALWAYS_EAGER=True,
@@ -115,6 +253,9 @@ class RecommenderRedirectTest(BaseRecommenderTest):
                    CELERY_ALWAYS_EAGER=True,
                    BROKER_BACKEND='memory')
 class ItemsAPITest(BaseRecommenderTest):
+    #def test_items_with_tags(self):
+    #    raise NotImplemented
+
     def test_invalid_properties_format_in_posted_items(self):
         # TODO full test of properties type
         c_items = self.mongo_client.getSiteDBCollection(self.TEST_SITE_ID, "items")
@@ -141,7 +282,6 @@ class ItemsAPITest(BaseRecommenderTest):
         self.assertEqual(response.data["code"], 1)
         self.assertEqual(c_items.count(), 0)
 
-
     def test_authentication_and_permission(self):
         # let's create another site
         other_site_record = self.initSite("site_for_other_purpose")
@@ -163,13 +303,147 @@ class ItemsAPITest(BaseRecommenderTest):
                                   **{"HTTP_AUTHORIZATION": "Token %s" % self.site_token})
         self.assertEqual(c_items.count(), 0)
 
-        # Then with correct site_token
+        # The correct posting of items
         sample_item["api_key"] = self.api_key
         response = self.api_post(reverse("recommender-items"), data=sample_item,
                                   expected_status_code=200,
                                   **{"HTTP_AUTHORIZATION": "Token %s" % self.site_token}
                                   )
         self.assertEqual(c_items.count(), 1)
+
+
+    def _test_multiple_products_posting_invalid_items(self, c_items, items_to_post):
+        # Invalid items should be rejected wholely
+        invalid_items1 = copy.deepcopy(items_to_post)
+        del invalid_items1[0]["item_name"]
+        invalid_items1[1]["brand"] = "blah"
+        data = {"type": "multiple_products",
+                "api_key": self.api_key,
+                "items": invalid_items1}
+        response = self.api_post(reverse("recommender-items"), data=data,
+                                  expected_status_code=200,
+                                  **{"HTTP_AUTHORIZATION": "Token %s" % self.site_token}
+                                  )
+        self.assertEqual(response.data["code"], 4)
+        self.assertEqual(len(response.data["errors"]), 2)
+        self.assertEqual(c_items.count(), 0)
+
+    def _test_multiple_products_posting_valid_items(self, c_items, items_to_post):
+        # Valid Items
+        data = {"type": "multiple_products",
+                "api_key": self.api_key,
+                "items": items_to_post}
+
+        response = self.api_post(reverse("recommender-items"), data=data,
+                                  expected_status_code=200,
+                                  **{"HTTP_AUTHORIZATION": "Token %s" % self.site_token}
+                                  )
+        self.assertEqual(response.data["code"], 0)
+        self.assertEqual(c_items.count(), len(items_to_post))
+
+    def test_multiple_products_posting(self):
+        c_items = self.mongo_client.getSiteDBCollection(self.TEST_SITE_ID, "items")
+        self.assertEqual(c_items.count(), 0)
+
+        items_to_post = test_data1.getItems(None)
+        self.assertGreater(len(items_to_post), 1)
+
+        self._test_multiple_products_posting_invalid_items(c_items, items_to_post)
+        self._test_multiple_products_posting_valid_items(c_items, items_to_post)
+
+
+@override_settings(CELERY_EAGER_PROPAGATES_EXCEPTIONS=True,
+                   CELERY_ALWAYS_EAGER=True,
+                   BROKER_BACKEND='memory')
+class RecommenderTest(BaseRecommenderTest):
+    def setUp(self):
+        super(RecommenderTest, self).setUp()
+        self.postItems(test_data1, None)
+
+    def _test_recommenders_with_one_item_id_as_input(self, action_name, recommend_type):
+        self.insert_item_similarities(action_name, "I123",
+                    [["I124", 0.9725],
+                     ["I125", 0.8023]])
+        self.insert_item_similarities(action_name, "I124",
+                    [["I125", 0.9725],
+                     ["I126", 0.7050]])
+        
+        # Missing item_id
+        response = self._recommender("U1", type=recommend_type, amount=5)
+        self.assertEqual(response.data["code"], 1)
+        # items without similarities
+        response = self._recommender("U1", type=recommend_type, item_id="I5000", amount=5)
+        self.assertEqual([item["item_id"] for item in response.data["topn"]], [])
+        # item I123
+        response = self._recommender("U1", type=recommend_type, item_id="I123", amount=5)
+        self.assertEqual([item["item_id"] for item in response.data["topn"]], ["I124", "I125"])
+
+    def test_also_viewed(self):
+        self._test_recommenders_with_one_item_id_as_input("V", "AlsoViewed")
+
+    def test_also_bought(self):
+        self._test_recommenders_with_one_item_id_as_input("PLO", "AlsoBought")
+
+    def test_bought_together(self):
+        self._test_recommenders_with_one_item_id_as_input("BuyTogether", "BoughtTogether")
+
+    def test_ultimately_bought(self):
+        self.insert_viewed_ultimately_buys("I123", 100,
+                    [{"item_id": "I126", "count": 5},
+                     {"item_id": "I125", "count": 3}])
+        self.insert_viewed_ultimately_buys("I124", 150,
+                    [{"item_id": "I125", "count": 8},
+                     {"item_id": "I124", "count": 3}])
+        
+        # Missing item_id
+        response = self._recommender("U1", type="UltimatelyBought", amount=5)
+        self.assertEqual(response.data["code"], 1)
+        # items without similarities
+        response = self._recommender("U1", type="UltimatelyBought", item_id="I5000", amount=5)
+        self.assertEqual([item["item_id"] for item in response.data["topn"]], [])
+        # item I123
+        response = self._recommender("U1", type="UltimatelyBought", item_id="I123", amount=5)
+        self.assertEqual([item["item_id"] for item in response.data["topn"]], ["I126", "I125"])
+
+    def test_by_purchasing_history(self):
+        self.insert_item_similarities("PLO", "I123",
+                    [["I124", 0.9725],
+                     ["I125", 0.8023]])
+        self.insert_item_similarities("PLO", "I124",
+                    [["I125", 0.9720],
+                     ["I126", 0.7050]])
+
+        # No purchasing history, should return []
+        response = self._recommender("U1", type="ByPurchasingHistory", amount=5)
+        self.assertEqual([item["item_id"] for item in response.data["topn"]], [])
+
+        # Buy something
+        self._placeOrder("U1", "I123,3.50,2")
+        self._placeOrder("U1", "I124,15.50,1")
+        
+        # should recommend something
+        response = self._recommender("U1", type="ByPurchasingHistory", amount=5)
+        self.assertEqual([item["item_id"] for item in response.data["topn"]], ["I125", "I126"])
+
+    def test_by_shopping_cart(self):
+        response = self._recommender("U1", type="ByShoppingCart", shopping_cart="I123,I124", amount=5)
+        self.assertEqual(response.data["topn"], [])
+
+        self.insert_item_similarities("BuyTogether", "I123",
+                    [["I124", 0.9725],
+                     ["I125", 0.8023]])
+        self.insert_item_similarities("BuyTogether", "I124",
+                    [["I125", 0.9720]])
+
+        self.insert_item_similarities("PLO", "I123",
+                    [["I124", 0.8725],
+                     ["I126", 0.7023]])
+        
+        response = self._recommender("U1", type="ByShoppingCart", amount=5)
+        self.assertEqual(response.data["topn"], [])
+
+        response = self._recommender("U1", type="ByShoppingCart", shopping_cart="I123,I124", amount=5)
+        self.assertEqual([item["item_id"] for item in response.data["topn"]], ["I125", "I126"])
 
 
 @override_settings(CELERY_EAGER_PROPAGATES_EXCEPTIONS=True,
@@ -179,19 +453,6 @@ class GetByBrowsingHistoryTest(BaseRecommenderTest):
     def setUp(self):
         super(GetByBrowsingHistoryTest, self).setUp()
         self.postItems(test_data1, None)
-
-    def get_last_n_raw_logs(self, n=1):
-        c_raw_logs = self.mongo_client.getSiteDBCollection(self.TEST_SITE_ID, "raw_logs")
-        raw_logs = [raw_log for raw_log in c_raw_logs.find().sort([("$natural", -1)]).limit(n)]
-        return raw_logs
-
-    def insert_item_similarities(self, similarity_type, item_id, mostSimilarItems):
-        c_item_similarities =  self.mongo_client.getSiteDBCollection(
-                    self.TEST_SITE_ID, "item_similarities_%s" % similarity_type)
-        record = {"item_id": item_id,
-                  "mostSimilarItems": mostSimilarItems}
-        c_item_similarities.insert(record)
-
 
     def test_by_browsing_history_return_topn(self):
         # We have no browsing history and no hot index

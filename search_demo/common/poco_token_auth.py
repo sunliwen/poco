@@ -23,6 +23,8 @@ class PocoTokenAuthentication(authentication.BaseAuthentication):
                 raise exceptions.AuthenticationFailed('No such user')
             
             return (site, None)
+        except exceptions.AuthenticationFailed:
+            raise
         except:
             import logging
             logging.critical("PocoTokenAuthentication unexpect error", exc_info=True)

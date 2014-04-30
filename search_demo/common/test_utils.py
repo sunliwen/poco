@@ -40,9 +40,8 @@ class BaseAPITest(TestCase):
         return site_record
 
     def assertSeveralKeys(self, dict1, dict2):
-        new_dict2 = copy.deepcopy(dict1)
-        new_dict2.update(copy.deepcopy(dict2))
-        self.assertEqual(dict1, new_dict2)
+        for key in dict2.keys():
+            self.assertEqual(dict1[key], dict2[key], "key: '%s' is different, dict1:%s, dict2: %s" % (key, dict1, dict2))
 
     def sortDictList(self, dictList, by_key):
         dictList.sort(lambda a,b: cmp(a[by_key], b[by_key]))

@@ -21,6 +21,110 @@ class ItemsSearchViewTest(BaseAPITest):
         super(ItemsSearchViewTest, self).setUp()
         self.postItems(test_data1, None)
 
+    def _test_by_tags(self):
+        # match mode: MATCH_ALL, match all tags; MATCH_MORE_BETTER, match more tags better, but not necessarily all of them
+        # MATCH_ALL for one tag
+        self._test_template_for_tags("老人", "MATCH_ALL", ["I123", "I125"])
+
+        #MATCH_ALL for two tags
+        self._test_template_for_tags("小孩 老人", "MATCH_ALL", ["I125"])
+
+        #MATCH_ALL for impossible combination
+        self._test_template_for_tags("老人 小孩 妇女", "MATCH_ALL", [])
+
+        # MATCH_MORE_BETTER for one tag
+        self._test_template_for_tags("老人", "MATCH_MORE_BETTER", ["I123", "I125"])
+        # MATCH_MORE_BETTER for 2 tags
+        self._test_template_for_tags("老人 小孩", "MATCH_MORE_BETTER", ["I125", "I123", "I126", "I124"])
+        self._test_template_for_tags("妇女 小孩", "MATCH_MORE_BETTER", ["I124", "I126", "I125"])
+        # MATCH_MORE_BETTER for 3 tags
+        self._test_template_for_tags("老人 小孩 妇女", "MATCH_MORE_BETTER", ["I124", "I125", "I123", "I126"])
+
+        # Invalid match_mode
+        data = {
+            "q": "老人",
+            "search_config": {"type": "SEARCH_TERMS",
+                            "match_mode": "INVALID_MATCH_MODE",
+                            "term_field": "tags"
+                            },
+            "api_key": self.api_key
+        }
+        response = self.client.post(reverse("products-search"),
+                            content_type="application/json",
+                            data=json.dumps(data))
+        self.assertEqual(len(response.data["errors"]), 1)
+
+        # No term field
+        data = {
+            "q": "老人",
+            "search_config": {"type": "SEARCH_TERMS",
+                            "match_mode": "MATCH_ALL",
+                            },
+            "api_key": self.api_key
+        }
+        response = self.client.post(reverse("products-search"),
+                            content_type="application/json",
+                            data=json.dumps(data))
+        self.assertEqual(len(response.data["errors"]), 1)
+
+        # Invalid Term field
+        data = {
+            "q": "老人",
+            "search_config": {"type": "SEARCH_TERMS",
+                            "match_mode": "MATCH_ALL",
+                            "term_field": "invalid_field"
+                            },
+            "api_key": self.api_key
+        }
+        response = self.client.post(reverse("products-search"),
+                            content_type="application/json",
+                            data=json.dumps(data))
+        self.assertEqual(len(response.data["errors"]), 1)
+
+        # invalid type
+        data = {
+            "q": "老人",
+            "search_config": {"type": "INVALID_TYPE",
+                            "match_mode": "MATCH_ALL",
+                            "term_field": "tags"
+                            },
+            "api_key": self.api_key
+        }
+        response = self.client.post(reverse("products-search"),
+                            content_type="application/json",
+                            data=json.dumps(data))
+        self.assertEqual(len(response.data["errors"]), 1)
+
+        # SEARCH_TEXT should just behavior like before
+        data = {
+            "q": "能恩",
+            "search_config": {"type": "SEARCH_TEXT"},
+            "api_key": self.api_key
+        }
+        response = self.client.post(reverse("products-search"),
+                            content_type="application/json",
+                            data=json.dumps(data))
+        self.assertEqual(len(response.data["errors"]), 0)
+        self.assertEqual([record["item_id"] for record in response.data["records"]],
+                         ["I124", "I125"])
+
+    def _test_template_for_tags(self, q, match_mode, expected_item_ids):
+        data = {
+            "q": q,
+            "search_config": {"type": "SEARCH_TERMS",
+                            "match_mode": match_mode,
+                            "term_field": "tags"
+                            },
+            "api_key": self.api_key
+        }
+        response = self.client.post(reverse("products-search"),
+                            content_type="application/json",
+                            data=json.dumps(data))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["errors"], [])
+        self.assertEqual([record["item_id"] for record in response.data["records"]],
+                         expected_item_ids)
+
     def _test_no_such_api_key(self):
         data = {
             "q": "",
@@ -345,6 +449,7 @@ class ItemsSearchViewTest(BaseAPITest):
     def test_search(self):
         # TODO: highlight; sort_fields
         self._test_no_such_api_key()
+        self._test_by_tags()
         self._test_search_empty_string()
         self._test_search_facets_under_a_category()
         self._test_search_filt_by_brand()
