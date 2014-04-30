@@ -12,6 +12,18 @@ def es_index_item(site_id, item):
 
 
 @shared_task
+def process_item_update_queue(item_update_queue):
+    mongo_client = getMongoClient()
+    for site_id, item in item_update_queue:
+        for category in item["categories"]:
+            mongo_client.updateProperty(site_id, category)
+        if item.get("brand", None):
+            mongo_client.updateProperty(site_id, item["brand"])
+        item = mongo_client.updateItem(site_id, item)
+        es_client.es_index_item(site_id, item)
+
+
+@shared_task
 def update_hotview_list(site_id):
     mongo_client = getMongoClient()
     for hot_index_type, prefix in mongo_client.HOT_INDEX_TYPE2INDEX_PREFIX.items():

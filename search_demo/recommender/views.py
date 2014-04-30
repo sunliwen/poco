@@ -111,8 +111,30 @@ class ItemsAPIView(BaseAPIView):
         _, processor_class = self.getActionProcessor(args)
         action_processor = processor_class()
 
-        return action_processor.process(site_id, args)
+        type = args.get("type", None)
+        if not (type in ("product", "multiple_products")):
+            return {"code": 1, "err_msg": "'type' can only be 'product' or 'multiple_products'."}
 
+        if type == "product":
+            result = action_processor.process(site_id, args)
+            action_processor.sendQueueProcessingTask()
+            return result
+        elif type == "multiple_products":
+            items = args.get("items", [])
+            if isinstance(items, list) and len(items) > 0:
+                errors = []
+                for item in items:
+                    result = action_processor.process(site_id, item)
+                    if result["code"] != 0:
+                        result["item_id"] = item.get("item_id", None)
+                        errors.append(result)
+                if errors:
+                    return {"code": "4", "errors": errors}
+                else:
+                    action_processor.sendQueueProcessingTask()
+                    return {"code": "0"}
+            else:
+                return {"code": 1, "err_msg": "'items' is expected to be a non empty list."}
 
 class RecommenderAPIView(SingleRequestAPIView):
     def getDebugResponse(self, args, result):

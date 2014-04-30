@@ -23,8 +23,7 @@ from common.mongo_client import getMongoClient
 from common.mongo_client import SimpleRecommendationResultFilter
 from common.mongo_client import SameGroupRecommendationResultFilter
 
-#from es_client import es_index_item
-from tasks import es_index_item
+from tasks import process_item_update_queue
 from tasks import write_log
 
 
@@ -145,7 +144,7 @@ class ArgumentError(Exception):
 #            return processor.process(site_id, args)
 
 
-class ActionProcessor:
+class ActionProcessor(object):
     action_name = None
 
     def __init__(self, not_log_action=False):
@@ -366,6 +365,10 @@ class UpdateItemProcessor(ActionProcessor):
         )
     )
 
+    def __init__(self, not_log_action=False):
+        super(UpdateItemProcessor, self).__init__(not_log_action)
+        self.item_update_queue = []
+
     def _validateCategories(self, args):
         if not isinstance(args["categories"], list):
             return {"code": 1, "err_msg": "categories should be of type 'list'"}
@@ -400,20 +403,11 @@ class UpdateItemProcessor(ActionProcessor):
                     return {"code": 1, "err_msg": "brand content should contains key: '%s'" % expected_key}
         return None
 
-    def _updateItem(self, site_id, args):
-        #import time
-        #t1 = time.time()
-        for category in args["categories"]:
-            mongo_client.updateProperty(site_id, category)
-        #t2 = time.time()
-        if args.get("brand", None):
-            mongo_client.updateProperty(site_id, args["brand"])
-        #t3 = time.time()
-        item = mongo_client.updateItem(site_id, args)
-        #t4 = time.time()
-        es_index_item.delay(site_id, item)
-        #t5 = time.time()
-        #print t1, t2, t3, t4, t5
+    def _queueItem(self, site_id, args):
+        self.item_update_queue.append((site_id, args))
+
+    def sendQueueProcessingTask(self):
+        process_item_update_queue.delay(self.item_update_queue)
 
     def _process(self, site_id, args):
         err_msg, args = self.ap.processArgs(args)
@@ -450,7 +444,8 @@ class UpdateItemProcessor(ActionProcessor):
                     except (ValueError, TypeError):
                         return {"code": 1, "err_msg": "%s should be an integer." % key}
 
-            self._updateItem(site_id, args)
+            #self._updateItem(site_id, args)
+            self._queueItem(site_id, args)
 
             return {"code": 0}
 

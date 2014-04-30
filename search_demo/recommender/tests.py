@@ -1,5 +1,6 @@
 import cgi
 import urlparse
+import copy
 from django.test import TestCase
 from django.test.utils import override_settings
 from django.core.urlresolvers import reverse
@@ -141,7 +142,6 @@ class ItemsAPITest(BaseRecommenderTest):
         self.assertEqual(response.data["code"], 1)
         self.assertEqual(c_items.count(), 0)
 
-
     def test_authentication_and_permission(self):
         # let's create another site
         other_site_record = self.initSite("site_for_other_purpose")
@@ -163,13 +163,53 @@ class ItemsAPITest(BaseRecommenderTest):
                                   **{"HTTP_AUTHORIZATION": "Token %s" % self.site_token})
         self.assertEqual(c_items.count(), 0)
 
-        # Then with correct site_token
+        # The correct posting of items
         sample_item["api_key"] = self.api_key
         response = self.api_post(reverse("recommender-items"), data=sample_item,
                                   expected_status_code=200,
                                   **{"HTTP_AUTHORIZATION": "Token %s" % self.site_token}
                                   )
         self.assertEqual(c_items.count(), 1)
+
+
+    def _test_multiple_products_posting_invalid_items(self, c_items, items_to_post):
+        # Invalid items should be rejected wholely
+        invalid_items1 = copy.deepcopy(items_to_post)
+        del invalid_items1[0]["item_name"]
+        invalid_items1[1]["brand"] = "blah"
+        data = {"type": "multiple_products",
+                "api_key": self.api_key,
+                "items": invalid_items1}
+        response = self.api_post(reverse("recommender-items"), data=data,
+                                  expected_status_code=200,
+                                  **{"HTTP_AUTHORIZATION": "Token %s" % self.site_token}
+                                  )
+        self.assertEqual(response.data["code"], '4')
+        self.assertEqual(len(response.data["errors"]), 2)
+        self.assertEqual(c_items.count(), 0)
+
+    def _test_multiple_products_posting_valid_items(self, c_items, items_to_post):
+        # Valid Items
+        data = {"type": "multiple_products",
+                "api_key": self.api_key,
+                "items": items_to_post}
+
+        response = self.api_post(reverse("recommender-items"), data=data,
+                                  expected_status_code=200,
+                                  **{"HTTP_AUTHORIZATION": "Token %s" % self.site_token}
+                                  )
+        self.assertEqual(response.data["code"], '0')
+        self.assertEqual(c_items.count(), len(items_to_post))
+
+    def test_multiple_products_posting(self):
+        c_items = self.mongo_client.getSiteDBCollection(self.TEST_SITE_ID, "items")
+        self.assertEqual(c_items.count(), 0)
+
+        items_to_post = test_data1.getItems(None)
+        self.assertGreater(len(items_to_post), 1)
+
+        self._test_multiple_products_posting_invalid_items(c_items, items_to_post)
+        self._test_multiple_products_posting_valid_items(c_items, items_to_post)
 
 
 @override_settings(CELERY_EAGER_PROPAGATES_EXCEPTIONS=True,
