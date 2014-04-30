@@ -12,14 +12,15 @@ Authentication
 ---------------
 Items API为非公开api，需要authentication之后才能使用。
 
-认证包括api_key和site_token两个部分。
+认证包括api_key和api_token两个部分。
     1. api_key为公开部分，需要在所有api中作为参数传入；
-    2. site_token仅用于通过内网调用private api。
+    2. api_token仅在通过内网调用private api时作为header传入。
+    3. api_key和api_token必须相符合才能调用private api。
 
 认证方法：添加Http Header "Authorization" ::
 
     例如site_token为3693cbdc-358c-41e1-a81e-8279d5b28847，则该Header内容为
-    Token 3693cbdc-358c-41e1-a81e-8279d5b28847
+    "Token 3693cbdc-358c-41e1-a81e-8279d5b28847"
 
 
 传入参数
