@@ -129,10 +129,10 @@ class ItemsAPIView(BaseAPIView):
                         result["item_id"] = item.get("item_id", None)
                         errors.append(result)
                 if errors:
-                    return {"code": "4", "errors": errors}
+                    return {"code": 4, "errors": errors}
                 else:
                     action_processor.sendQueueProcessingTask()
-                    return {"code": "0"}
+                    return {"code": 0}
             else:
                 return {"code": 1, "err_msg": "'items' is expected to be a non empty list."}
 
