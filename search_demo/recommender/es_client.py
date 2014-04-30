@@ -18,13 +18,11 @@ def index_keywords(es, site_id, item):
         token = res["tokens"][token_idx]
         raw_keyword = raw_keywords[token_idx]
         if not INDEXED_KEYWORDS.has_key(raw_keyword):
-            #print "RKK:", raw_keyword
             INDEXED_KEYWORDS[raw_keyword] = True
             splitted_token = token["token"].split("||")
             first_letters = splitted_token[0]
             full_pinyin = "".join(splitted_token[1:])
             result = {"keyword_completion": {"input": [raw_keyword, full_pinyin, first_letters], "output": raw_keyword}}
-            #print "INDEX:", result
             es.index(index=es_search_functions.getESItemIndexName(site_id), doc_type='keyword', body=result)
 
 
@@ -33,7 +31,6 @@ def preprocess_categories(categories):
     return [category["id"] for category in categories] + for_facets
 
 def es_index_item(site_id, item):
-    #print "START_TO_INDEX"
     es = Elasticsearch()
     
     fill_keywords(item)
@@ -61,5 +58,4 @@ def es_index_item(site_id, item):
     if brand:
         item["brand"] = brand["id"]
 
-    #print "ITEM to INDEX:", item
     res = es.index(index=es_search_functions.getESItemIndexName(site_id), doc_type='item', id=item["item_id"], body=item)    #print "INDEXING DONE"

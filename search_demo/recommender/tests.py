@@ -253,6 +253,9 @@ class RecommenderRedirectTest(BaseRecommenderTest):
                    CELERY_ALWAYS_EAGER=True,
                    BROKER_BACKEND='memory')
 class ItemsAPITest(BaseRecommenderTest):
+    #def test_items_with_tags(self):
+    #    raise NotImplemented
+
     def test_invalid_properties_format_in_posted_items(self):
         # TODO full test of properties type
         c_items = self.mongo_client.getSiteDBCollection(self.TEST_SITE_ID, "items")

@@ -41,7 +41,8 @@ ITEMS =    [{
             "item_level": 5,
             "item_comment_num": 15,
             "origin_place": 0,
-            "categories": ["12", "1202"]
+            "categories": ["12", "1202"],
+            "tags": ["老人"]
             },
             {
             "type": "product",
@@ -52,7 +53,8 @@ ITEMS =    [{
             "item_level": 3,
             "item_comment_num": 10,
             "origin_place": 1,
-            "categories": ["12", "1201", "120101"]},
+            "categories": ["12", "1201", "120101"],
+            "tags": ["小孩", "妇女"]},
             {
             "type": "product",
             "item_id": "I125",
@@ -62,7 +64,8 @@ ITEMS =    [{
             "item_level": 3,
             "item_comment_num": 10,
             "origin_place": 0,
-            "categories":["12", "1201", "120102"]},
+            "categories":["12", "1201", "120102"],
+            "tags": ["老人", "小孩"]},
             {
             "type": "product",
             "item_id": "I126",
@@ -72,7 +75,8 @@ ITEMS =    [{
             "item_level": 3,
             "item_comment_num": 10,
             "origin_place": 0,
-            "categories":["15", "1501"]}
+            "categories":["15", "1501"],
+            "tags": ["小孩"]}
             ]
 
 def getItems(item_ids=None):

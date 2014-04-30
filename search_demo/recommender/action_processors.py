@@ -361,7 +361,8 @@ class UpdateItemProcessor(ActionProcessor):
             ("item_level", False),
             ("item_spec", False),
             ("item_comment_num", False),
-            ("origin_place", False)
+            ("origin_place", False),
+            ("tags", False)
         )
     )
 
@@ -436,6 +437,14 @@ class UpdateItemProcessor(ActionProcessor):
                 return err_response
             if args["item_group"] is None:
                 del args["item_group"]
+            if args["tags"] is None:
+                args["tags"] = []
+            else:
+                if not isinstance(args["tags"], list):
+                    return {"code": 1, "err_msg": "'tags' should be a list of strings."}
+                for tag in args["tags"]:
+                    if not isinstance(tag, basestring):
+                        return {"code": 1, "err_msg": "'tags' should be a list of strings."}
 
             for key in ("item_level", "item_comment_num", "origin_place"):
                 if args.get(key, None) is not None:
