@@ -52,7 +52,8 @@ def load_sorted_unique_words():
         words.append(word)
     return set(words)
 
-KEYWORD_WHITELIST = extract_word_list(list1) | extract_word_list(list2) | load_sorted_unique_words()
+#KEYWORD_WHITELIST = extract_word_list(list1) | extract_word_list(list2) | load_sorted_unique_words()
+KEYWORD_WHITELIST = set([])
 
 if __name__ == "__main__":
     print u"伊威" in KEYWORD_WHITELIST
