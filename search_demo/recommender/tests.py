@@ -57,7 +57,10 @@ class BaseRecommenderTest(BaseAPITest):
 
     def get_last_n_raw_logs(self, n=1):
         c_raw_logs = self.mongo_client.getSiteDBCollection(self.TEST_SITE_ID, "raw_logs")
-        raw_logs = [raw_log for raw_log in c_raw_logs.find().sort([("$natural", -1)]).limit(n)]
+        rset = c_raw_logs.find().sort([("$natural", -1)])
+        if n is not None:
+            rset = rset.limit(n)
+        raw_logs = [raw_log for raw_log in rset]
         return raw_logs
 
     def insert_viewed_ultimately_buys(self, item_id, total_views, viewedUltimatelyBuys):
@@ -88,6 +91,119 @@ class BaseRecommenderTest(BaseAPITest):
 #        start_time = time.time()
 #        tasks.update_hotview_list.delay(self.TEST_SITE_ID)
 #        print time.time() - start_time
+
+
+@override_settings(CELERY_EAGER_PROPAGATES_EXCEPTIONS=True,
+                   CELERY_ALWAYS_EAGER=True,
+                   BROKER_BACKEND='memory')
+class EventsAPITest(BaseRecommenderTest):
+    def _test_event(self, data, expected):
+        initial_raw_log_num = len(self.get_last_n_raw_logs(n=None))
+        data["api_key"] = self.api_key
+        response = self.api_get(reverse("recommender-events"),
+                    data=data)
+        raw_logs = self.get_last_n_raw_logs(n=None)
+        self.assertEqual(response.data["code"], 0)
+        self.assertEqual(len(raw_logs), initial_raw_log_num + 1)
+        print raw_logs[0]
+        self.assertSeveralKeys(raw_logs[0],
+                expected)
+
+    def test_events(self):
+        data = {
+                          "event_type": "ViewItem",
+                          "user_id": "U1",
+                          "item_id": "I1"
+                          }
+        expected = {
+                    "behavior": "V",
+                    "user_id": "U1",
+                    "item_id": "I1"
+                }
+        self._test_event(data, expected)
+
+        data = {"event_type": "AddFavorite",
+                  "user_id": "U1",
+                  "item_id": "I1"
+                }
+        expected = {
+                    "behavior": "AF",
+                    "user_id": "U1",
+                    "item_id": "I1"
+                }
+        self._test_event(data, expected)
+
+        data = {"event_type": "RemoveFavorite",
+                  "user_id": "U1",
+                  "item_id": "I1"
+                }
+        expected = {
+                    "behavior": "RF",
+                    "user_id": "U1",
+                    "item_id": "I1"
+                }
+        self._test_event(data, expected)
+
+        data = {"event_type": "Unlike",
+                  "user_id": "U1",
+                  "item_id": "I1"
+                }
+        expected = {
+                    "behavior": "UNLIKE",
+                    "user_id": "U1",
+                    "item_id": "I1"
+                }
+        self._test_event(data, expected)
+
+        data = {"event_type": "RateItem",
+                  "user_id": "U1",
+                  "item_id": "I1",
+                  "score": 3
+                }
+        expected = {
+                    "behavior": "RI",
+                    "user_id": "U1",
+                    "item_id": "I1",
+                    "score": '3' 
+                }
+        self._test_event(data, expected)
+
+        data = {"event_type": "AddOrderItem",
+                  "user_id": "U1",
+                  "item_id": "I1",
+                }
+        expected = {
+                    "behavior": "ASC",
+                    "user_id": "U1",
+                    "item_id": "I1",
+                }
+        self._test_event(data, expected)
+
+        data = {"event_type": "RemoveOrderItem",
+                  "user_id": "U1",
+                  "item_id": "I1",
+                }
+        expected = {
+                    "behavior": "RSC",
+                    "user_id": "U1",
+                    "item_id": "I1",
+                }
+        self._test_event(data, expected)
+
+        data = {"event_type": "PlaceOrder",
+                  "user_id": "U1",
+                  "order_content": "I1,3.5,2|I2,5.5,1",
+                  "order_id": "357755"
+                }
+        expected = {
+                    "behavior": "PLO",
+                    "user_id": "U1",
+                    "order_id": "357755",
+                    "order_content": [{u'item_id': u'I1', u'price': u'3.5', u'amount': u'2'}, 
+                                    {u'item_id': u'I2', u'price': u'5.5', u'amount': u'1'}]
+                }
+        self._test_event(data, expected)
+
 
 @override_settings(CELERY_EAGER_PROPAGATES_EXCEPTIONS=True,
                    CELERY_ALWAYS_EAGER=True,
@@ -231,10 +347,6 @@ class ItemsAPITest(BaseRecommenderTest):
 
         self._test_multiple_products_posting_invalid_items(c_items, items_to_post)
         self._test_multiple_products_posting_valid_items(c_items, items_to_post)
-
-
-class EventsAPITest:
-    pass
 
 
 @override_settings(CELERY_EAGER_PROPAGATES_EXCEPTIONS=True,
