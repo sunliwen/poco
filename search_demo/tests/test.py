@@ -54,6 +54,12 @@ def post_items():
                             headers={"Authorization": "Token %s" % site_token})
     return res
 
+def post_items2(item):
+    item["api_key"] = api_key
+    res = api_access("private/items/", {"api_key": api_key}, body=item, 
+                            headers={"Authorization": "Token %s" % site_token})
+    return res
+
 def post_search(q="", filters=None):
     body = {
                 "api_key": api_key,
