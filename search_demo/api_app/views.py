@@ -150,7 +150,7 @@ class ProductsSearch(BaseAPIView):
 
         facets_dsl = {}
         if facets_selector.has_key("categories"):
-            categories_facet_mode = facets_selector["categories"].get("mode", "DIRECT_CHILDREN")
+            categories_facet_mode = facets_selector["categories"]["mode"]
             if categories_facet_mode == "DIRECT_CHILDREN":
                 facets_dsl["categories"] = es_search_functions._getSubCategoriesFacets(cat_id, s)
             elif categories_facet_mode == "SUB_TREE":
@@ -162,33 +162,34 @@ class ProductsSearch(BaseAPIView):
             facets_dsl["origin_place"] = es_search_functions.addFilterToFacets(s,
                                                     {'terms': {'field': 'origin_place', 
                                                     'size': 20}})
-        s = s.facet_raw(**facets_dsl)
-
         facets_result = {}
-        if facets_selector.has_key("categories"):
-            categories_facet_mode = facets_selector["categories"].get("mode", "DIRECT_CHILDREN")
-            facets_list = s.facet_counts().get("categories", [])
-            if categories_facet_mode == "DIRECT_CHILDREN":
-                for facets in facets_list:
-                    facets["term"] == facets["term"]
-            facet_categories_list = [{"id": get_last_cat_id(facet["term"]),
-                                      "count": facet["count"]}
-                                      for facet in facets_list]
-            for facet_sub_cat in facet_categories_list:
-                facet_sub_cat["label"] = mongo_client.getPropertyName(site_id, "category", facet_sub_cat["id"])
-            facets_result["categories"] = facet_categories_list
-        
-        if facets_selector.has_key("brand"):
-            facets_result["brand"] = [{"id": facet["term"],
-                                 "label": mongo_client.getPropertyName(site_id, "brand", facet["term"]),
-                                 "count": facet["count"]}
-                                 for facet in s.facet_counts().get("brand", [])]
-        
-        if facets_selector.has_key("origin_place"):
-            facets_result["origin_place"] = [{"id": facet["term"],
-                                 "label": "",
-                                 "count": facet["count"]}
-                                 for facet in s.facet_counts().get("origin_place", [])]
+        if len(facets_dsl.keys()) > 0:
+            s = s.facet_raw(**facets_dsl)
+
+            if facets_selector.has_key("categories"):
+                categories_facet_mode = facets_selector["categories"]["mode"]
+                facets_list = s.facet_counts().get("categories", [])
+                if categories_facet_mode == "DIRECT_CHILDREN":
+                    for facets in facets_list:
+                        facets["term"] == facets["term"]
+                facet_categories_list = [{"id": get_last_cat_id(facet["term"]),
+                                          "count": facet["count"]}
+                                          for facet in facets_list]
+                for facet_sub_cat in facet_categories_list:
+                    facet_sub_cat["label"] = mongo_client.getPropertyName(site_id, "category", facet_sub_cat["id"])
+                facets_result["categories"] = facet_categories_list
+            
+            if facets_selector.has_key("brand"):
+                facets_result["brand"] = [{"id": facet["term"],
+                                     "label": mongo_client.getPropertyName(site_id, "brand", facet["term"]),
+                                     "count": facet["count"]}
+                                     for facet in s.facet_counts().get("brand", [])]
+            
+            if facets_selector.has_key("origin_place"):
+                facets_result["origin_place"] = [{"id": facet["term"],
+                                     "label": "",
+                                     "count": facet["count"]}
+                                     for facet in s.facet_counts().get("origin_place", [])]
 
         return s, facets_result
 
@@ -239,12 +240,14 @@ class ProductsSearch(BaseAPIView):
                            "param_name": "facets",
                             "message": "details in facet '%s' is invalid." % facets_key
                             })
-            category_facets_mode = facets.get("categories", {}).get("mode", None)
-            if category_facets_mode not in (None, "DIRECT_CHILDREN", "SUB_TREE"):
-                errors.append({"code": "INVALID_PARAM",
-                           "param_name": "facets",
-                            "message": "mode of facet 'categories' is invalid."
-                            })
+            #category_facets_mode = facets.get("categories", {}).get("mode", None)
+            if facets.has_key("categories"):
+                facets["categories"].setdefault("mode", self.DEFAULT_FACET_CATEGORY_MODE)
+                if category_facets_mode not in ("DIRECT_CHILDREN", "SUB_TREE"):
+                    errors.append({"code": "INVALID_PARAM",
+                               "param_name": "facets",
+                                "message": "mode of facet 'categories' is invalid."
+                                })
         else:
             errors.append({"code": "INVALID_PARAM",
                            "param_name": "facets",
@@ -314,6 +317,7 @@ class ProductsSearch(BaseAPIView):
 
         return errors
 
+    DEFAULT_FACET_CATEGORY_MODE = "SUB_TREE"
     VALID_SORT_FIELDS = ("price", "market_price", "item_level", "item_comment_num", "origin_place")
     FILTER_FIELD_TYPE_VALIDATORS = {
         "price": is_float,
@@ -450,11 +454,12 @@ class ProductsSearch(BaseAPIView):
                      "current_page": page,
                      "num_pages": paginator.num_pages,
                      "per_page": per_page,
-                     "total_result_count": paginator.count,
-                     "facets": facets_result
+                     "total_result_count": paginator.count
                   },
                   "errors": []
                 }
+        if len(facets_result) > 0:
+            result["facets"] = facets_result
 
         return Response(result)
 
