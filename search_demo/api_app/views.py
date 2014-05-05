@@ -242,7 +242,7 @@ class ProductsSearch(BaseAPIView):
                             })
             #category_facets_mode = facets.get("categories", {}).get("mode", None)
             if facets.has_key("categories"):
-                facets["categories"].setdefault("mode", self.DEFAULT_FACET_CATEGORY_MODE)
+                category_facets_mode = facets["categories"].setdefault("mode", self.DEFAULT_FACET_CATEGORY_MODE)
                 if category_facets_mode not in ("DIRECT_CHILDREN", "SUB_TREE"):
                     errors.append({"code": "INVALID_PARAM",
                                "param_name": "facets",
@@ -391,6 +391,15 @@ class ProductsSearch(BaseAPIView):
         #result_mode = request.DATA.get("result_mode", "WITH_RECORDS")
         api_key = request.DATA["api_key"]
 
+        # Apply default filters
+        for filter_key , filter_content in self.DEFAULT_FILTERS.items():
+            if not filters.has_key(filter_key):
+                filters[filter_key] = filter_content
+
+        # Apply default facets
+        if facets_selector is None:
+            facets_selector = copy.deepcopy(self.DEFAULT_FACETS)
+
         #if result_mode not in ("WITHOUT_RECORDS", "WITH_RECORDS"):
         #    return Response({"records": [], "info": {}, 
         #                     "errors": [{"code": "INVALID_PARAM", 
@@ -416,15 +425,6 @@ class ProductsSearch(BaseAPIView):
                              "errors": [{"code": "INVALID_PARAM", 
                                         "param_name": "per_page",
                                         "message": "per_page must be greater than 0."}]})
-
-        # Apply default filters
-        for filter_key , filter_content in self.DEFAULT_FILTERS.items():
-            if not filters.has_key(filter_key):
-                filters[filter_key] = filter_content
-
-        # Apply default facets
-        if facets_selector is None:
-            facets_selector = copy.deepcopy(self.DEFAULT_FACETS)
 
         site_id = self.getSiteID(api_key)
         try:
@@ -454,12 +454,11 @@ class ProductsSearch(BaseAPIView):
                      "current_page": page,
                      "num_pages": paginator.num_pages,
                      "per_page": per_page,
-                     "total_result_count": paginator.count
+                     "total_result_count": paginator.count,
+                     "facets": facets_result
                   },
                   "errors": []
                 }
-        if len(facets_result) > 0:
-            result["facets"] = facets_result
 
         return Response(result)
 
