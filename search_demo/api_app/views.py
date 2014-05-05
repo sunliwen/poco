@@ -334,7 +334,7 @@ class ProductsSearch(BaseAPIView):
     DEFAULT_FACETS = {
         "brand": {},
         "origin_place": {},
-        "categories": {"mode": "DIRECT_CHILDREN"}
+        "categories": {"mode": DEFAULT_FACET_CATEGORY_MODE}
     }
 
     SUPPORTED_FACETS = ["brand", "categories", "origin_place"]
