@@ -31,7 +31,7 @@ api_key          是                                                            
     2. sort_fields:
         1. price、market_price、item_level、item_comment_num和origin_place可用来排序。
     3. facets (聚类)
-        1. 如果在传参中没有此参数，则为默认状态。默认状态所有支持的facets都选中,categories为"DIRECT_CHILDREN"模式
+        1. 如果在传参中没有此参数，则为默认状态。默认状态所有支持的facets都选中,categories为"SUB_TREE"模式
         2. 如果在传参中指定"facets"，则仅返回制定的聚类::
            {"brand": {}}  # 这样仅返回brand的聚类
            {"brand": {}, "origin_place": {}} # 这样仅聚合brand和origin_place
