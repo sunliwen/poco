@@ -104,7 +104,7 @@ class EventsAPITest(BaseRecommenderTest):
                     data=data,
                     **{"HTTP_REFERER": referer})
         raw_logs = self.get_last_n_raw_logs(n=None)
-        self.assertEqual(response.data["code"], 0)
+        self.assertEqual(response.data["code"], 0, "Invalid response: %s" % response.data)
         self.assertEqual(len(raw_logs), initial_raw_log_num + 1)
         #print raw_logs[0]
         self.assertSeveralKeys(raw_logs[0],
@@ -248,6 +248,28 @@ class EventsAPITest(BaseRecommenderTest):
         self._test_event(data, expected)
         self._test_invalid_event(data, missing_keys=["user_id", "item_id"])
 
+    def _test_ClickLink(self):
+        data = {"event_type": "$ClickLink",
+                  "user_id": "U1",
+                  "link_type": "$SearchResult",
+                  "link_url": "http://example.com/blahblah/"
+                }
+        expected = {
+                    "behavior": "Event",
+                    "user_id": "U1",
+                    "event_type": "$ClickLink",
+                    "link_type": "$SearchResult",
+                    "link_url": "http://example.com/blahblah/",
+                    "is_reserved": True
+                }
+        self._test_event(data, expected)
+        self._test_event(self._change_key(data, "item_id", "I5"),
+                         self._change_key(expected, "item_id", "I5"))
+        self._test_event(self._change_key(data, "custom_field2", "abc"),
+                         self._change_key(expected, "custom_field2", "abc"))
+        self._test_invalid_event(data, missing_keys=["user_id", "link_type", "link_url"],
+                                       invalid_keys=[("link_type", "$BLAHBLAH")])
+
     def _test_PlaceOrder(self):
         data = {"event_type": "$PlaceOrder",
                   "user_id": "U1",
@@ -274,10 +296,8 @@ class EventsAPITest(BaseRecommenderTest):
         self._test_RateItem()
         self._test_AddOrderItem()
         self._test_RemoveOrderItem()
+        self._test_ClickLink()
         self._test_PlaceOrder()
-
-    def test_ClickLink(self):
-        raise NotImplemented
 
     def test_custom_events(self):
         # TODO user_id is expected.
@@ -297,8 +317,8 @@ class EventsAPITest(BaseRecommenderTest):
                   "is_reserved": False
                 }
         self._test_event(data, expected)
-        self._test_event(self._change_key(data, "event_type", "ViewItem"),
-                         self._change_key(data, "event_type", "ViewItem"))
+        #self._test_event(self._change_key(data, "event_type", "ViewItem"),
+        #                 self._change_key(data, "event_type", "ViewItem"))
 
         self._test_invalid_event(data, missing_keys=["user_id"],
                                        invalid_keys=[

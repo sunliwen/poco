@@ -102,20 +102,32 @@ class BaseArgumentProcessor:
 
 
 class ArgumentProcessor(BaseArgumentProcessor):
-    def __init__(self, definitions):
+    def __init__(self, definitions, accept_extra_fields=False):
         self.definitions = definitions
+        self.accept_extra_fields = accept_extra_fields
 
     def processArgs(self, args):
         err_msg = None
         result = {}
-        for argument_name, is_required in self.definitions:
-            if argument_name not in args:
-                if is_required:
+
+        if self.accept_extra_fields:
+            for argument_name, is_required in self.definitions:
+                if not args.has_key(argument_name) and is_required:
                     err_msg = "%s is required." % argument_name
+                    break
+            if err_msg is None:
+                for argument_name in args.keys():
+                    result[argument_name] = self._convertArg(argument_name, args)
+        else:
+            for argument_name, is_required in self.definitions:
+                if argument_name not in args:
+                    if is_required:
+                        err_msg = "%s is required." % argument_name
+                        break
+                    else:
+                        result[argument_name] = None
                 else:
-                    result[argument_name] = None
-            else:
-                result[argument_name] = self._convertArg(argument_name, args)
+                    result[argument_name] = self._convertArg(argument_name, args)
 
         return err_msg, result
 
@@ -208,6 +220,26 @@ class CustomEventProcessor(BaseEventProcessor):
     ap = CustomEventArgumentProcessor()
 
     def _process(self, site_id, args):
+        self.logAction(site_id, args, args)
+        return {"code": 0}
+
+
+class ClickLinkProcessor(BaseEventProcessor):
+    action_name = "Event"
+    ap = ArgumentProcessor(
+            (("event_type", True),
+             ("user_id", True),
+             ("link_type", True),
+             ("link_url", True)),
+            accept_extra_fields=True
+    )
+
+    RESERVED_LINK_TYPES = set(["$SearchResult"])
+
+    def _process(self, site_id, args):
+        link_type = args["link_type"]
+        if link_type.startswith("$") and (link_type not in self.RESERVED_LINK_TYPES):
+            return {"code": 1, "err_msg": "'%s' is not a reserved link_type." % link_type}
         self.logAction(site_id, args, args)
         return {"code": 0}
 
@@ -959,7 +991,8 @@ EVENT_TYPE2ACTION_PROCESSOR = {
     "$RateItem": RateItemProcessor,
     "$AddOrderItem": AddOrderItemProcessor,
     "$RemoveOrderItem": RemoveOrderItemProcessor,
-    "$PlaceOrder": PlaceOrderProcessor
+    "$PlaceOrder": PlaceOrderProcessor,
+    "$ClickLink": ClickLinkProcessor
 }
 
 

@@ -21,6 +21,10 @@ def pprint_data(data):
     return printer.pprint(data)
 
 
+class Missing:
+    pass
+
+
 class BaseAPITest(TestCase):
     TEST_SITE_ID = "site_for_tests"
 
@@ -41,7 +45,7 @@ class BaseAPITest(TestCase):
 
     def assertSeveralKeys(self, dict1, dict2):
         for key in dict2.keys():
-            self.assertEqual(dict1[key], dict2[key], "key: '%s' is different, dict1:%s, dict2: %s" % (key, dict1, dict2))
+            self.assertEqual(dict1.get(key, Missing), dict2.get(key, Missing), "key: '%s' is different, dict1:%s, dict2: %s" % (key, dict1, dict2))
 
     def sortDictList(self, dictList, by_key):
         dictList.sort(lambda a,b: cmp(a[by_key], b[by_key]))
@@ -56,6 +60,7 @@ class BaseAPITest(TestCase):
         res = self.client.post(reverse("products-search"),
                          content_type="application/json",
                          data=json.dumps({"q": "", "api_key": self.api_key}))
+        self.assertEqual(res.data["errors"], [], "Invalid response: %s" % res.data)
         self.assertEqual(res.data["info"]["total_result_count"], expected_count)
 
     def postItems(self, test_data_module, item_ids, site_token=None):
