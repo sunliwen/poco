@@ -154,8 +154,14 @@ class ItemsSearchViewTest(BaseAPITest):
                          {"count": 1, "id": 1, "label": ""}
                         ])
         self.assertEqual(self.sortDictList(response.data["info"]["facets"]["categories"], by_key="id"), 
-                        [{"count": 3, "id": "12", "label": u"分类12"},
+                        [
+                        {"count": 3, "id": "12", "label": u"分类12"},
+                         {"count": 2, "id": "1201", "label": u"分类12-01"},
+                            {"count": 1, "id": "120101", "label": u"分类12-01-01"},
+                            {"count": 1, "id": "120102", "label": u"分类12-01-02"},
+                         {"count": 1, "id": "1202", "label": u"分类12-02"},
                          {"count": 1, "id": "15", "label": u"分类15"},
+                         {"count": 1, "id": "1501", "label": u"分类15-01"}
                         ])
 
     def _test_search_facets_under_a_category(self):
@@ -177,8 +183,12 @@ class ItemsSearchViewTest(BaseAPITest):
                          {"count": 1, "id": 1, "label": ""}
                         ])
         self.assertEqual(self.sortDictList(response.data["info"]["facets"]["categories"], by_key="id"), 
-                        [{"count": 2, "id": "1201", "label": u"分类12-01"},
-                         {"count": 1, "id": "1202", "label": u"分类12-02"}
+                        [
+                        {"count": 3, "id": "12", "label": u"分类12"},
+                         {"count": 2, "id": "1201", "label": u"分类12-01"},
+                            {"count": 1, "id": "120101", "label": u"分类12-01-01"},
+                            {"count": 1, "id": "120102", "label": u"分类12-01-02"},
+                         {"count": 1, "id": "1202", "label": u"分类12-02"},
                         ])
 
     def _test_search_filt_by_brand(self):
