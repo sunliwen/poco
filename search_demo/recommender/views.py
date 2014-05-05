@@ -187,16 +187,66 @@ class RecommenderAPIView(SingleRequestAPIView):
             return True, action_processor
 
 
-class EventsAPIView(SingleRequestAPIView):
+#class EventsAPIView(SingleRequestAPIView):
+#
+#    def getActionProcessor(self, args):
+#        event_type = args.get("event_type", None)
+#        action_processor = action_processors.EVENT_TYPE2ACTION_PROCESSOR.get(event_type, None)
+#        if action_processor is None:
+#            return False, {"code": 2, "err_msg": "no or invalid event_type"}
+#        else:
+#            return True, action_processor
+
+
+class EventsAPIView(BaseAPIView):
+    # these fields are not supposed to appear in the params
+    DISALLOWED_PARAMS = set(["is_reserved", "behavior"])
+    # these fields would not be recorded
+    # NOT_RECORDED_PARAMS = set(["not_log_action"])
+    # reserved event types. event types starts with "$" should be in this list
+    # and event types not starts with "$" should not be in this list
+    #RESERVED_EVENT_TYPES = set(action_processors.EVENT_TYPE2ACTION_PROCESSOR.keys() + ["$ClickLink"])
 
     def getActionProcessor(self, args):
-        event_type = args.get("event_type", None)
-        action_processor = action_processors.EVENT_TYPE2ACTION_PROCESSOR.get(event_type, None)
-        if action_processor is None:
-            return False, {"code": 2, "err_msg": "no or invalid event_type"}
+        event_type = args.get("event_type", "")
+        if event_type.startswith("$"):
+            action_processor = action_processors.EVENT_TYPE2ACTION_PROCESSOR.get(event_type, None)
         else:
-            return True, action_processor
+            action_processor = action_processors.CustomEventProcessor
+        return True, action_processor
 
+    def call_action_processor(self, request, response, site_id, args, not_log_action):
+        processor_found, processor_class = self.getActionProcessor(args)
+        if not processor_found:
+            response = processor_class
+            return response
+        else:
+            action_processor = processor_class(not_log_action)
+            err_msg, args = action_processor.processArgs(args)
+            if err_msg:
+                return {"code": 1, "err_msg": err_msg}
+            else:
+                args["ptm_id"] = get_ptm_id(request, response)
+                referer = request.META.get("HTTP_REFERER", "")
+                args["referer"] = referer
+                return action_processor.process(site_id, args)
+
+    def process(self, request, response, site_id, args):
+        not_log_action = "not_log_action" in args
+        if not_log_action:
+            del args["not_log_action"]
+        event_type = args.get("event_type", "")
+        
+        for param in args.keys():
+            if param in self.DISALLOWED_PARAMS:
+                return {"code": 1, "err_msg": "param %s is not allowed. " % param}
+
+        if event_type.startswith("$") and not action_processors.EVENT_TYPE2ACTION_PROCESSOR.has_key(event_type):
+            return {"code": 1, "err_msg": "Event types which start with '$' should be reserved event types. Please check the doc for a list of them."}
+        if not event_type.startswith("$") and action_processors.EVENT_TYPE2ACTION_PROCESSOR.has_key("$" + event_type):
+            return {"code": 1, "err_msg": "Custom event types should not have same name of reserved ones. Please check the doc for a list of reserved event types."}
+
+        return self.call_action_processor(request, response, site_id, args, not_log_action)
 
 def recommended_item_redirect(request):
     if request.method == "GET":

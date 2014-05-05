@@ -50,3 +50,5 @@ def write_log(site_id, content):
     mongo_client.writeLogToMongo(site_id, content)
     # check & update visitor cache
     update_visitor_cache(mongo_client, site_id, content)
+    # check & update user purchasing history
+    mongo_client.updateUserPurchasingHistory(site_id=site_id, user_id=content["user_id"])

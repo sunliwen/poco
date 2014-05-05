@@ -85,10 +85,7 @@ def extractArguments(request):
     return result
 
 
-class ArgumentProcessor:
-    def __init__(self, definitions):
-        self.definitions = definitions
-
+class BaseArgumentProcessor:
     # TODO, avoid hacky code
     # if user_id and 0 or null
     def _convertArg(self, argument_name, args):
@@ -99,6 +96,14 @@ class ArgumentProcessor:
         if argument_name == "user_id":
             return arg == "0" and "null" or arg
         return arg
+
+    def processArgs(self, args):
+        raise NotImplemented
+
+
+class ArgumentProcessor(BaseArgumentProcessor):
+    def __init__(self, definitions):
+        self.definitions = definitions
 
     def processArgs(self, args):
         err_msg = None
@@ -114,6 +119,16 @@ class ArgumentProcessor:
 
         return err_msg, result
 
+
+class CustomEventArgumentProcessor(BaseArgumentProcessor):
+    def processArgs(self, args):
+        result = {}
+        err_msg = None
+        if not args.has_key("user_id"):
+            err_msg = "user_id is required."
+        for argument_name in args.keys():
+            result[argument_name] = self._convertArg(argument_name, args)
+        return err_msg, result
 
 class ArgumentError(Exception):
     pass
@@ -181,10 +196,27 @@ class ActionProcessor(object):
             logWriter.writeLineToLocalLog(site_id, "END_REQUEST")
 
 
-class ViewItemProcessor(ActionProcessor):
+class BaseEventProcessor(ActionProcessor):
+    def logAction(self, site_id, args, action_content, tjb_id_required=True):
+        action_content["event_type"] = args["event_type"]
+        action_content["is_reserved"] = args["event_type"].startswith("$")
+        return super(BaseEventProcessor, self).logAction(site_id, args, action_content, tjb_id_required=True)
+
+
+class CustomEventProcessor(BaseEventProcessor):
+    action_name = "Event"
+    ap = CustomEventArgumentProcessor()
+
+    def _process(self, site_id, args):
+        self.logAction(site_id, args, args)
+        return {"code": 0}
+
+
+class ViewItemProcessor(BaseEventProcessor):
     action_name = "V"
     ap = ArgumentProcessor(
-         (("item_id", True),
+         (("event_type", True),
+         ("item_id", True),
          ("user_id", True)  # if no user_id, pass in "null"
         )
     )
@@ -210,42 +242,12 @@ class ViewItemProcessor(ActionProcessor):
         return {"code": 0}
 
 
-class UnlikeProcessor(ActionProcessor):
+class UnlikeProcessor(BaseEventProcessor):
     action_name = "UNLIKE"
     ap = ArgumentProcessor(
         (
+         ("event_type", True),
          ("item_id", True),
-         ("user_id", False),
-        )
-    )
-
-    def _process(self, site_id, args):
-        self.logAction(site_id, args,
-                        {"user_id": args["user_id"],
-                         "item_id": args["item_id"]})
-        return {"code": 0}
-
-
-class AddFavoriteProcessor(ActionProcessor):
-    action_name = "AF"
-    ap = ArgumentProcessor(
-        (
-         ("item_id", True),
-         ("user_id", False),
-        )
-    )
-
-    def _process(self, site_id, args):
-        self.logAction(site_id, args,
-                        {"user_id": args["user_id"],
-                         "item_id": args["item_id"]})
-        return {"code": 0}
-
-
-class RemoveFavoriteProcessor(ActionProcessor):
-    action_name = "RF"
-    ap = ArgumentProcessor(
-         (("item_id", True),
          ("user_id", True),
         )
     )
@@ -257,10 +259,44 @@ class RemoveFavoriteProcessor(ActionProcessor):
         return {"code": 0}
 
 
-class RateItemProcessor(ActionProcessor):
+class AddFavoriteProcessor(BaseEventProcessor):
+    action_name = "AF"
+    ap = ArgumentProcessor(
+        (
+         ("event_type", True),
+         ("item_id", True),
+         ("user_id", True),
+        )
+    )
+
+    def _process(self, site_id, args):
+        self.logAction(site_id, args,
+                        {"user_id": args["user_id"],
+                         "item_id": args["item_id"]})
+        return {"code": 0}
+
+
+class RemoveFavoriteProcessor(BaseEventProcessor):
+    action_name = "RF"
+    ap = ArgumentProcessor(
+         (("event_type", True),
+         ("item_id", True),
+         ("user_id", True),
+        )
+    )
+
+    def _process(self, site_id, args):
+        self.logAction(site_id, args,
+                        {"user_id": args["user_id"],
+                         "item_id": args["item_id"]})
+        return {"code": 0}
+
+
+class RateItemProcessor(BaseEventProcessor):
     action_name = "RI"
     ap = ArgumentProcessor(
-         (("item_id", True),
+         (("event_type", True),
+         ("item_id", True),
          ("score", True),
          ("user_id", True),
         )
@@ -277,10 +313,10 @@ class RateItemProcessor(ActionProcessor):
 # FIXME: check user_id, the user_id can't be null.
 
 
-class AddOrderItemProcessor(ActionProcessor):
+class AddOrderItemProcessor(BaseEventProcessor):
     action_name = "ASC"
     ap = ArgumentProcessor(
-        (
+        (("event_type", True),
          ("user_id", True),
          ("item_id", True),
         )
@@ -293,10 +329,10 @@ class AddOrderItemProcessor(ActionProcessor):
         return {"code": 0}
 
 
-class RemoveOrderItemProcessor(ActionProcessor):
+class RemoveOrderItemProcessor(BaseEventProcessor):
     action_name = "RSC"
     ap = ArgumentProcessor(
-        (
+        (("event_type", True),
          ("user_id", True),
          ("item_id", True),
         )
@@ -309,10 +345,10 @@ class RemoveOrderItemProcessor(ActionProcessor):
         return {"code": 0}
 
 
-class PlaceOrderProcessor(ActionProcessor):
+class PlaceOrderProcessor(BaseEventProcessor):
     action_name = "PLO"
     ap = ArgumentProcessor(
-        (
+        (("event_type", True),
          ("user_id", True),
          # order_content Format: item_id,price,amount|item_id,price,amount
          ("order_content", True),
@@ -336,7 +372,6 @@ class PlaceOrderProcessor(ActionProcessor):
                         "order_id": args["order_id"],
                         "uniq_order_id": uniq_order_id,
                         "order_content": self._convertOrderContent(args["order_content"])})
-        mongo_client.updateUserPurchasingHistory(site_id=site_id, user_id=args["user_id"])
         return {"code": 0}
 
 
@@ -917,14 +952,14 @@ logWriter = LogWriter()
 
 
 EVENT_TYPE2ACTION_PROCESSOR = {
-    "ViewItem": ViewItemProcessor,
-    "AddFavorite": AddFavoriteProcessor,
-    "RemoveFavorite": RemoveFavoriteProcessor,
-    "Unlike": UnlikeProcessor,
-    "RateItem": RateItemProcessor,
-    "AddOrderItem": AddOrderItemProcessor,
-    "RemoveOrderItem": RemoveOrderItemProcessor,
-    "PlaceOrder": PlaceOrderProcessor
+    "$ViewItem": ViewItemProcessor,
+    "$AddFavorite": AddFavoriteProcessor,
+    "$RemoveFavorite": RemoveFavoriteProcessor,
+    "$Unlike": UnlikeProcessor,
+    "$RateItem": RateItemProcessor,
+    "$AddOrderItem": AddOrderItemProcessor,
+    "$RemoveOrderItem": RemoveOrderItemProcessor,
+    "$PlaceOrder": PlaceOrderProcessor
 }
 
 
@@ -937,7 +972,5 @@ RECOMMEND_TYPE2ACTION_PROCESSOR = {
     "ByPurchasingHistory": GetByPurchasingHistoryProcessor,
     "ByShoppingCart": GetByShoppingCartProcessor,
     "ByHotIndex": GetByHotIndexProcessor
-    #"ByEachBrowsedItem": GetByEachBrowsedItemProcessor,
-    #"ByEachPurchasedItem": GetByEachPurchasedItemProcessor
 }
 

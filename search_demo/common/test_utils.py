@@ -79,8 +79,8 @@ class BaseAPITest(TestCase):
         self.assertEqual(response.status_code, expected_status_code)
         return response
 
-    def api_get(self, path, content_type="application/json", data={}, expected_status_code=200):
-        response = self.client.get(path, content_type=content_type, data=data)
+    def api_get(self, path, content_type="application/json", data={}, expected_status_code=200, **extra):
+        response = self.client.get(path, content_type=content_type, data=data, **extra)
         self.assertEqual(response.status_code, expected_status_code)
         return response
 
