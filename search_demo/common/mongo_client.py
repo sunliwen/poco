@@ -269,7 +269,7 @@ class MongoClient:
         site = c_sites.find_one({"site_token": site_token})
         return site
 
-    def updateSite(self, site_id, site_name, calc_interval):
+    def updateSite(self, site_id, site_name, calc_interval, algorithm_type="llh"):
         c_sites = self.getTjbDb()["sites"]
         site = c_sites.find_one({"site_id": site_id})
         if site is None:
@@ -282,6 +282,7 @@ class MongoClient:
         if site_name is not None:
             site["site_name"] = site_name
         site["calc_interval"] = calc_interval
+        site["algorithm_type"] = algorithm_type
         c_sites.save(site)
         return site
 

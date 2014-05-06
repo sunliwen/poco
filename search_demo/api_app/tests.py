@@ -154,8 +154,14 @@ class ItemsSearchViewTest(BaseAPITest):
                          {"count": 1, "id": 1, "label": ""}
                         ])
         self.assertEqual(self.sortDictList(response.data["info"]["facets"]["categories"], by_key="id"), 
-                        [{"count": 3, "id": "12", "label": u"分类12"},
+                        [
+                        {"count": 3, "id": "12", "label": u"分类12"},
+                         {"count": 2, "id": "1201", "label": u"分类12-01"},
+                            {"count": 1, "id": "120101", "label": u"分类12-01-01"},
+                            {"count": 1, "id": "120102", "label": u"分类12-01-02"},
+                         {"count": 1, "id": "1202", "label": u"分类12-02"},
                          {"count": 1, "id": "15", "label": u"分类15"},
+                         {"count": 1, "id": "1501", "label": u"分类15-01"}
                         ])
 
     def _test_search_facets_under_a_category(self):
@@ -177,8 +183,12 @@ class ItemsSearchViewTest(BaseAPITest):
                          {"count": 1, "id": 1, "label": ""}
                         ])
         self.assertEqual(self.sortDictList(response.data["info"]["facets"]["categories"], by_key="id"), 
-                        [{"count": 2, "id": "1201", "label": u"分类12-01"},
-                         {"count": 1, "id": "1202", "label": u"分类12-02"}
+                        [
+                        {"count": 3, "id": "12", "label": u"分类12"},
+                         {"count": 2, "id": "1201", "label": u"分类12-01"},
+                            {"count": 1, "id": "120101", "label": u"分类12-01-01"},
+                            {"count": 1, "id": "120102", "label": u"分类12-01-02"},
+                         {"count": 1, "id": "1202", "label": u"分类12-02"},
                         ])
 
     def _test_search_filt_by_brand(self):
@@ -373,6 +383,37 @@ class ItemsSearchViewTest(BaseAPITest):
                         ]
                 })
 
+        # And the default categories facet mode should be "SUB_TREE"
+        body = {"api_key": self.api_key,
+            "q": "",
+            "facets": {
+                "brand": {},
+                "categories": {},
+                "origin_place": {}
+            }
+        }
+        response = self.api_post(reverse("products-search"), data=body)
+        self.sortDictList(response.data["info"]["facets"]["brand"], "id")
+        self.sortDictList(response.data["info"]["facets"]["categories"], "id")
+        self.sortDictList(response.data["info"]["facets"]["origin_place"], "id")
+        self.assertEqual(response.data["info"]["facets"], 
+                {"brand": [{"count": 1, "id": "22", "label": u"雀巢"},
+                         {"count": 2, "id": "23", "label": u"能恩"},
+                         {"count": 1, "id": "24", "label": u"智多星"}
+                  ],
+                  "categories": 
+                        [{"count": 3, "id": "12", "label": u"分类12"},
+                         {"count": 2, "id": "1201", "label": u"分类12-01"},
+                            {"count": 1, "id": "120101", "label": u"分类12-01-01"},
+                            {"count": 1, "id": "120102", "label": u"分类12-01-02"},
+                         {"count": 1, "id": "1202", "label": u"分类12-02"},
+                         {"count": 1, "id": "15", "label": u"分类15"},
+                         {"count": 1, "id": "1501", "label": u"分类15-01"}
+                        ],
+                   "origin_place": [{"count": 3, "id": 0, "label": ""},
+                         {"count": 1, "id": 1, "label": ""}
+                        ]
+                })
 
         body = {"api_key": self.api_key,
             "q": "",

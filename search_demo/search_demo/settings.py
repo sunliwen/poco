@@ -41,7 +41,7 @@ INSTALLED_APPS = (
     'bootstrap_pagination',
     'django_extensions',
     'rest_framework',
-    'kombu.transport.django', # disable this in production
+    #'kombu.transport.django', # disable this in production
     'api_app',
     'recommender',
     'main_app',

@@ -5,6 +5,8 @@ PRINT_RAW_LOG = True
 
 # For Development
 BROKER_URL = "django://"
+# For Production, use rabbitmq as broker
+# BROKER_URL = 'amqp://guest:guest@localhost:5672//'
 
 API_PREFIX_FOR_SEARCH_DEMO = "http://localhost:2222/api/v1.6/"
 API_KEY_FOR_SEARCH_DEMO = "fb86b045" # This is the api key of search demo which uses leyou's data, and the site id is testsite001
