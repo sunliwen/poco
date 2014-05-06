@@ -58,4 +58,11 @@ def es_index_item(site_id, item):
     if brand:
         item["brand"] = brand["id"]
 
-    res = es.index(index=es_search_functions.getESItemIndexName(site_id), doc_type='item', id=item["item_id"], body=item)    #print "INDEXING DONE"
+    res = es.index(index=es_search_functions.getESItemIndexName(site_id), doc_type='item', id=item["item_id"], body=item)
+
+
+#def es_update_items_keywords(site_id):
+#    # FIXME: there may be race condition with new items update come it
+#    # TODO: get all items from mongodb
+#    for item in items:
+#        es_index_item(site_id, item)
