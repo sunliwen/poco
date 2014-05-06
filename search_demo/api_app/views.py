@@ -155,9 +155,9 @@ class ProductsSearch(BaseAPIView):
                 facets_dsl["categories"] = es_search_functions._getSubCategoriesFacets(cat_id, s)
             elif categories_facet_mode == "SUB_TREE":
                 facets_dsl["categories"] = es_search_functions.addFilterToFacets(s,
-                                            {'terms': {'regex': r'[^_]+', 'field': 'categories', 'size': 20}})
+                                            {'terms': {'regex': r'[^_]+', 'field': 'categories'}})
         if facets_selector.has_key("brand"):
-            facets_dsl["brand"] = es_search_functions.addFilterToFacets(s, {'terms': {'field': 'brand', 'size': 20}})
+            facets_dsl["brand"] = es_search_functions.addFilterToFacets(s, {'terms': {'field': 'brand'}})
         if facets_selector.has_key("origin_place"):
             facets_dsl["origin_place"] = es_search_functions.addFilterToFacets(s,
                                                     {'terms': {'field': 'origin_place', 

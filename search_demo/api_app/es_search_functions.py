@@ -63,7 +63,7 @@ def _getSubCategoriesFacets(cat_id, s):
         regex = r"null__.*"
     else:
         regex = r"%s__.*" % cat_id
-    result = {'terms': {'regex': regex, 'field': 'categories', 'size': 20}}
+    result = {'terms': {'regex': regex, 'field': 'categories'}}
     #result = {'terms': {'field': 'categories', 'size': 20}}
     addFilterToFacets(s, result)
     return result
