@@ -211,7 +211,7 @@ class ActionProcessor(object):
 class BaseEventProcessor(ActionProcessor):
     def logAction(self, site_id, args, action_content, tjb_id_required=True):
         action_content["event_type"] = args["event_type"]
-        action_content["is_reserved"] = args["event_type"].startswith("$")
+        action_content["is_reserved"] = EVENT_TYPE2ACTION_PROCESSOR.has_key(args["event_type"])
         return super(BaseEventProcessor, self).logAction(site_id, args, action_content, tjb_id_required=True)
 
 
@@ -984,15 +984,15 @@ logWriter = LogWriter()
 
 
 EVENT_TYPE2ACTION_PROCESSOR = {
-    "$ViewItem": ViewItemProcessor,
-    "$AddFavorite": AddFavoriteProcessor,
-    "$RemoveFavorite": RemoveFavoriteProcessor,
-    "$Unlike": UnlikeProcessor,
-    "$RateItem": RateItemProcessor,
-    "$AddOrderItem": AddOrderItemProcessor,
-    "$RemoveOrderItem": RemoveOrderItemProcessor,
-    "$PlaceOrder": PlaceOrderProcessor,
-    "$ClickLink": ClickLinkProcessor
+    "ViewItem": ViewItemProcessor,
+    "AddFavorite": AddFavoriteProcessor,
+    "RemoveFavorite": RemoveFavoriteProcessor,
+    "Unlike": UnlikeProcessor,
+    "RateItem": RateItemProcessor,
+    "AddOrderItem": AddOrderItemProcessor,
+    "RemoveOrderItem": RemoveOrderItemProcessor,
+    "PlaceOrder": PlaceOrderProcessor,
+    "ClickLink": ClickLinkProcessor
 }
 
 

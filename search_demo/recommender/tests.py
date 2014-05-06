@@ -33,7 +33,7 @@ class BaseRecommenderTest(BaseAPITest):
         for i in range(times):
             response = self.api_get(reverse("recommender-events"),
                     data={"api_key": self.api_key,
-                          "event_type": "$ViewItem",
+                          "event_type": "ViewItem",
                           "user_id": user_id,
                           "item_id": item_id
                           })
@@ -50,7 +50,7 @@ class BaseRecommenderTest(BaseAPITest):
     def _placeOrder(self, user_id, order_content):
         self.api_get(reverse("recommender-events"),
                 data={"api_key": self.api_key,
-                      "event_type": "$PlaceOrder",
+                      "event_type": "PlaceOrder",
                       "user_id": user_id,
                       "order_content": order_content
                       })
@@ -114,7 +114,6 @@ class EventsAPITest(BaseRecommenderTest):
         self.assertEquals(raw_logs[0]["referer"], referer)
 
     def _test_invalid_event0(self, data):
-        print "TINV", data
         initial_raw_log_num = len(self.get_last_n_raw_logs(n=None))
         data["api_key"] = self.api_key
         response = self.api_get(reverse("recommender-events"),
@@ -142,7 +141,7 @@ class EventsAPITest(BaseRecommenderTest):
 
     def _test_ViewItem(self):
         data = {
-              "event_type": "$ViewItem",
+              "event_type": "ViewItem",
               "user_id": "U1",
               "item_id": "I1"
               }
@@ -150,14 +149,14 @@ class EventsAPITest(BaseRecommenderTest):
                     "behavior": "V",
                     "user_id": "U1",
                     "item_id": "I1",
-                    "event_type": "$ViewItem",
+                    "event_type": "ViewItem",
                     "is_reserved": True
                 }
         self._test_event(data, expected)
         self._test_invalid_event(data, missing_keys=["user_id", "item_id"])
 
     def _test_AddFavorite(self):
-        data = {"event_type": "$AddFavorite",
+        data = {"event_type": "AddFavorite",
                   "user_id": "U1",
                   "item_id": "I1"
                 }
@@ -165,14 +164,14 @@ class EventsAPITest(BaseRecommenderTest):
                     "behavior": "AF",
                     "user_id": "U1",
                     "item_id": "I1",
-                    "event_type": "$AddFavorite",
+                    "event_type": "AddFavorite",
                     "is_reserved": True
                 }
         self._test_event(data, expected)
         self._test_invalid_event(data, missing_keys=["user_id", "item_id"])
 
     def _test_RemoveFavorite(self):
-        data = {"event_type": "$RemoveFavorite",
+        data = {"event_type": "RemoveFavorite",
                   "user_id": "U1",
                   "item_id": "I1"
                 }
@@ -180,14 +179,14 @@ class EventsAPITest(BaseRecommenderTest):
                     "behavior": "RF",
                     "user_id": "U1",
                     "item_id": "I1",
-                    "event_type": "$RemoveFavorite",
+                    "event_type": "RemoveFavorite",
                     "is_reserved": True
                 }
         self._test_event(data, expected)
         self._test_invalid_event(data, missing_keys=["user_id", "item_id"])
 
     def _test_Unlike(self):
-        data = {"event_type": "$Unlike",
+        data = {"event_type": "Unlike",
                   "user_id": "U1",
                   "item_id": "I1"
                 }
@@ -195,14 +194,14 @@ class EventsAPITest(BaseRecommenderTest):
                     "behavior": "UNLIKE",
                     "user_id": "U1",
                     "item_id": "I1",
-                  "event_type": "$Unlike",
+                  "event_type": "Unlike",
                   "is_reserved": True
                 }
         self._test_event(data, expected)
         self._test_invalid_event(data, missing_keys=["user_id", "item_id"])
 
     def _test_RateItem(self):
-        data = {"event_type": "$RateItem",
+        data = {"event_type": "RateItem",
                   "user_id": "U1",
                   "item_id": "I1",
                   "score": 3
@@ -212,14 +211,14 @@ class EventsAPITest(BaseRecommenderTest):
                     "user_id": "U1",
                     "item_id": "I1",
                     "score": '3',
-                  "event_type": "$RateItem",
+                  "event_type": "RateItem",
                   "is_reserved": True
                 }
         self._test_event(data, expected)
         self._test_invalid_event(data, missing_keys=["user_id", "item_id", "score"])
 
     def _test_AddOrderItem(self):
-        data = {"event_type": "$AddOrderItem",
+        data = {"event_type": "AddOrderItem",
                   "user_id": "U1",
                   "item_id": "I1",
                 }
@@ -227,14 +226,14 @@ class EventsAPITest(BaseRecommenderTest):
                     "behavior": "ASC",
                     "user_id": "U1",
                     "item_id": "I1",
-                    "event_type": "$AddOrderItem",
+                    "event_type": "AddOrderItem",
                     "is_reserved": True
                 }
         self._test_event(data, expected)
         self._test_invalid_event(data, missing_keys=["user_id", "item_id"])
 
     def _test_RemoveOrderItem(self):
-        data = {"event_type": "$RemoveOrderItem",
+        data = {"event_type": "RemoveOrderItem",
                   "user_id": "U1",
                   "item_id": "I1",
                 }
@@ -242,23 +241,23 @@ class EventsAPITest(BaseRecommenderTest):
                     "behavior": "RSC",
                     "user_id": "U1",
                     "item_id": "I1",
-                  "event_type": "$RemoveOrderItem",
+                  "event_type": "RemoveOrderItem",
                   "is_reserved": True
                 }
         self._test_event(data, expected)
         self._test_invalid_event(data, missing_keys=["user_id", "item_id"])
 
     def _test_ClickLink(self):
-        data = {"event_type": "$ClickLink",
+        data = {"event_type": "ClickLink",
                   "user_id": "U1",
-                  "link_type": "$SearchResult",
+                  "link_type": "SearchResult",
                   "link_url": "http://example.com/blahblah/"
                 }
         expected = {
                     "behavior": "Event",
                     "user_id": "U1",
-                    "event_type": "$ClickLink",
-                    "link_type": "$SearchResult",
+                    "event_type": "ClickLink",
+                    "link_type": "SearchResult",
                     "link_url": "http://example.com/blahblah/",
                     "is_reserved": True
                 }
@@ -267,11 +266,11 @@ class EventsAPITest(BaseRecommenderTest):
                          self._change_key(expected, "item_id", "I5"))
         self._test_event(self._change_key(data, "custom_field2", "abc"),
                          self._change_key(expected, "custom_field2", "abc"))
-        self._test_invalid_event(data, missing_keys=["user_id", "link_type", "link_url"],
-                                       invalid_keys=[("link_type", "$BLAHBLAH")])
+        self._test_invalid_event(data, missing_keys=["user_id", "link_type", "link_url"]
+                                       )
 
     def _test_PlaceOrder(self):
-        data = {"event_type": "$PlaceOrder",
+        data = {"event_type": "PlaceOrder",
                   "user_id": "U1",
                   "order_content": "I1,3.5,2|I2,5.5,1",
                   "order_id": "357755"
@@ -282,7 +281,7 @@ class EventsAPITest(BaseRecommenderTest):
                     "order_id": "357755",
                     "order_content": [{u'item_id': u'I1', u'price': u'3.5', u'amount': u'2'}, 
                                     {u'item_id': u'I2', u'price': u'5.5', u'amount': u'1'}],
-                  "event_type": "$PlaceOrder",
+                  "event_type": "PlaceOrder",
                   "is_reserved": True
                 }
         self._test_event(data, expected)
@@ -317,16 +316,8 @@ class EventsAPITest(BaseRecommenderTest):
                   "is_reserved": False
                 }
         self._test_event(data, expected)
-        #self._test_event(self._change_key(data, "event_type", "ViewItem"),
-        #                 self._change_key(data, "event_type", "ViewItem"))
 
-        self._test_invalid_event(data, missing_keys=["user_id"],
-                                       invalid_keys=[
-                                       ("event_type", "ViewItem"),
-                                       ("event_type", "AddFavorite"),
-                                       ("event_type", "$CustomEvent"),
-                                       ("event_type", "$CustomE")
-                                       ])
+        self._test_invalid_event(data, missing_keys=["user_id"])
 
 
 @override_settings(CELERY_EAGER_PROPAGATES_EXCEPTIONS=True,

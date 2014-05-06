@@ -187,17 +187,6 @@ class RecommenderAPIView(SingleRequestAPIView):
             return True, action_processor
 
 
-#class EventsAPIView(SingleRequestAPIView):
-#
-#    def getActionProcessor(self, args):
-#        event_type = args.get("event_type", None)
-#        action_processor = action_processors.EVENT_TYPE2ACTION_PROCESSOR.get(event_type, None)
-#        if action_processor is None:
-#            return False, {"code": 2, "err_msg": "no or invalid event_type"}
-#        else:
-#            return True, action_processor
-
-
 class EventsAPIView(BaseAPIView):
     # these fields are not supposed to appear in the params
     DISALLOWED_PARAMS = set(["is_reserved", "behavior"])
@@ -209,9 +198,8 @@ class EventsAPIView(BaseAPIView):
 
     def getActionProcessor(self, args):
         event_type = args.get("event_type", "")
-        if event_type.startswith("$"):
-            action_processor = action_processors.EVENT_TYPE2ACTION_PROCESSOR.get(event_type, None)
-        else:
+        action_processor = action_processors.EVENT_TYPE2ACTION_PROCESSOR.get(event_type, None)
+        if action_processor is None:
             action_processor = action_processors.CustomEventProcessor
         return True, action_processor
 
@@ -241,10 +229,10 @@ class EventsAPIView(BaseAPIView):
             if param in self.DISALLOWED_PARAMS:
                 return {"code": 1, "err_msg": "param %s is not allowed. " % param}
 
-        if event_type.startswith("$") and not action_processors.EVENT_TYPE2ACTION_PROCESSOR.has_key(event_type):
-            return {"code": 1, "err_msg": "Event types which start with '$' should be reserved event types. Please check the doc for a list of them."}
-        if not event_type.startswith("$") and action_processors.EVENT_TYPE2ACTION_PROCESSOR.has_key("$" + event_type):
-            return {"code": 1, "err_msg": "Custom event types should not have same name of reserved ones. Please check the doc for a list of reserved event types."}
+        #if event_type.startswith("$") and not action_processors.EVENT_TYPE2ACTION_PROCESSOR.has_key(event_type):
+        #    return {"code": 1, "err_msg": "Event types which start with '$' should be reserved event types. Please check the doc for a list of them."}
+        #if not event_type.startswith("$") and action_processors.EVENT_TYPE2ACTION_PROCESSOR.has_key("$" + event_type):
+        #    return {"code": 1, "err_msg": "Custom event types should not have same name of reserved ones. Please check the doc for a list of reserved event types."}
 
         return self.call_action_processor(request, response, site_id, args, not_log_action)
 
