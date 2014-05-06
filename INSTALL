@@ -1,17 +1,29 @@
-1. Use pip install -r requirements.txt to install required Python packages.
-2. For elasticsearch, please use "git clone git://github.com/medcl/elasticsearch-rtf.git --depth=1" to install.
-   To run elasticsearch:
-      cd elasticsearch/bin/service
-      ./elasticsearch console
+== ElasticSearch Installation ==
+    1. Install elasticsearch 1.0.1
+    2. Install  elasticsearch-analysis-pinyin
+        * simple way is to down load this directory https://github.com/medcl/elasticsearch-rtf/tree/master/plugins/analysis-pinyin and put it under the <elastic search root>/plugins/analysis-pinyin
+        * Or, you can download the plugin from /usr/share/elasticsearch/plugins . A "plugins" directory should be under the elasticsearch home directory.
 
-3. before running the Django server, please run:
-    python manage.py runscript load_data --script-args=<path/to/items.json>
+== MongoDB ==
+    * 2.6.0 is required.
 
-== mmseg dict file ==
-elasticsearch/config/mmseg
+== Django Server Setup ==
+    1. install packages in requirements.txt
+    2. copy local_config.py.EXAMPLE as local_config.py and modify if it is necessary.
+    3. BROKER_URL:
+        a. For development, we can just use the BROKER_URL in local_config.py.EXAMPLE. 
+        b. For production, use rabbitmq. check local_config.py.EXAMPLE for details.
+           * refs: http://docs.celeryproject.org/en/latest/getting-started/brokers/rabbitmq.html)
+    4. Also check other variables in local_settings.py.EXAMPLE
+        * you may need to set REPLICA_SET
+        * PRINT_RAW_LOG should be False for production server
+        * API_SERVER_PREFIX should be correct for redirection url to work
+        * And for production site, you need to config "CACHES" in local_settings.py. 
+    5. run "python manage.py syncdb"
+    7. Also run "celery -A search_demo worker" in the root dir of the search_demo project
 
-== Configuration of Celery ==
-    * For development, you may use the Django database backend
-        * In local_settings.py
-            * set BROKER_URL = "django://"
-            * start worker process, run following cmd under search_demo: celery -A search_demo worker -l info
+== Create a new site ==
+    (NOTE: if you are moving data from tuijianbao.net to haoyaoshi server, you don't need this step).
+    1. python manage.py runscript create_site --script-args=<site_id> <site_name>
+        * NOTE: please note down the api_key and site_token
+        * The site_token is for private apis. see document of private apis for usage. (aka. items)
