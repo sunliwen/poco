@@ -36,43 +36,47 @@ ITEMS =    [{
             "available": True,
             "item_id": "I123",
             "item_name": "雀巢奶粉",
-            "item_link": "",
+            "item_link": "http://example.com/I123/",
             "brand": "22",
             "item_level": 5,
             "item_comment_num": 15,
             "origin_place": 0,
-            "categories": ["12", "1202"]
+            "categories": ["12", "1202"],
+            "tags": ["老人"]
             },
             {
             "type": "product",
             "item_id": "I124",
             "item_name": "能恩超级",
-            "item_link": "",
+            "item_link": "http://example.com/I124/",
             "brand": "23",
             "item_level": 3,
             "item_comment_num": 10,
             "origin_place": 1,
-            "categories": ["12", "1201", "120101"]},
+            "categories": ["12", "1201", "120101"],
+            "tags": ["小孩", "妇女"]},
             {
             "type": "product",
             "item_id": "I125",
             "item_name": "能恩奶粉",
-            "item_link": "",
+            "item_link": "http://example.com/I125/",
             "brand": "23",
             "item_level": 3,
             "item_comment_num": 10,
             "origin_place": 0,
-            "categories":["12", "1201", "120102"]},
+            "categories":["12", "1201", "120102"],
+            "tags": ["老人", "小孩"]},
             {
             "type": "product",
             "item_id": "I126",
             "item_name": "智多星童话故事365",
-            "item_link": "",
+            "item_link": "http://example.com/I126/",
             "brand": "24",
             "item_level": 3,
             "item_comment_num": 10,
             "origin_place": 0,
-            "categories":["15", "1501"]}
+            "categories":["15", "1501"],
+            "tags": ["小孩"]}
             ]
 
 def getItems(item_ids=None):

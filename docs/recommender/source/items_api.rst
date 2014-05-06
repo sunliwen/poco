@@ -6,10 +6,28 @@ Items API
 HTTP方法: POST
 
 功能：
-    用来推送/更新商品信息。
+    用来推送/更新商品信息。一次可同时推送单个或多个商品信息。详见下面传入参数和返回结果的说明。
+
+Authentication
+---------------
+Items API为非公开api，需要authentication之后才能使用。
+
+认证包括api_key和api_token两个部分。
+    1. api_key为公开部分，需要在所有api中作为参数传入；
+    2. api_token仅在通过内网调用private api时作为header传入。
+    3. api_key和api_token必须相符合才能调用private api。
+
+认证方法：添加Http Header "Authorization" ::
+
+    例如site_token为3693cbdc-358c-41e1-a81e-8279d5b28847，则该Header内容为
+    "Token 3693cbdc-358c-41e1-a81e-8279d5b28847"
+
 
 传入参数
 ---------
+
+单个商品
+^^^^^^^^^
 
 传入参数为一个JSON结构，包括api_key和商品信息字段。目前可传如下字段：
 
@@ -31,6 +49,7 @@ item_level        否                                            商品星级。
 item_spec         否                                            规格文字
 item_comment_num  否                                            商品评论数。类型：数字
 origin_place      否                                            商品产地
+tags              否          []                                商品标签
 api_key           是                                            分配给用户站点的api key
 ================  ==========  ===============================   =============================================
 
@@ -70,8 +89,24 @@ api_key           是                                            分配给用户
           "name": "<品牌名称>"
         }
 
+
+多个商品
+^^^^^^^^
+传入参数为一个JSON结构，结构如下::
+
+    {"type": "multiple_products",
+     "api_key": "<the api key>",
+     "items": [
+     ]
+    }
+
+items中的内容同单个商品提交时的JSON结构，但不用填写"api_key".
+
 返回结果
 ---------
+
+单个商品
+^^^^^^^^
 
 ==============    ===============================
 名称               说明
@@ -79,6 +114,18 @@ api_key           是                                            分配给用户
 code              0 - 操作正确完成；1 - 参数有误; 99 - 未知服务器错误。
 err_msg           code非0时，错误信息
 ==============    ===============================
+
+
+多个商品
+^^^^^^^^
+
+==============    ===============================
+名称               说明
+==============    ===============================
+code              0 - 操作正确完成；4 - 有一个或多个错误; 99 - 未知服务器错误。
+errors            为一个列表，其内容同单个商品的返回结果，但多一个字段"item_id"以说明是哪个商品的错误。
+==============    ===============================
+
 
 示例
 -----
@@ -90,6 +137,7 @@ err_msg           code非0时，错误信息
 
     curl -X POST 'http://search.tuijianbao.net/api/v1.6/private/items/' \
          -H 'Content-Type: application/json' \
+         -H 'Authorization: Token <site_token>' \
          -d '{
             "api_key": "<THE API KEY>",
             "type": "product",

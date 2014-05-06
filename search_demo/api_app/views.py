@@ -1,6 +1,7 @@
 #encoding=utf8
 #from django.shortcuts import render
 import copy
+import logging
 from rest_framework import renderers
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -100,11 +101,28 @@ class BaseAPIView(APIView):
 
 # TODO: http://www.django-rest-framework.org/topics/documenting-your-api
 class ProductsSearch(BaseAPIView):
-    def _search(self, site_id, q, sort_fields, filters, highlight, facets_selector):
-        # TODO: this is just a simplified version of search
+    def _search(self, site_id, q, sort_fields, filters, highlight, facets_selector, search_config):
         s = S().indexes(es_search_functions.getESItemIndexName(site_id)).doctypes("item")
+        
         if isinstance(q, basestring) and q.strip() != "":
-            query = es_search_functions.construct_query(q)
+            if search_config["type"] == "SEARCH_TEXT":
+                query = es_search_functions.construct_query(q)
+                
+            elif search_config["type"] == "SEARCH_TERMS":
+                term_field = search_config["term_field"]
+                terms = q.split(" ")
+                should = [{"term": {term_field: term}} for term in terms]
+
+                if search_config["match_mode"] == "MATCH_MORE_BETTER":
+                    minimum_should_match = 1
+                elif search_config["match_mode"] == "MATCH_ALL":
+                    minimum_should_match = len(terms)
+                query = {
+                    "bool": {
+                        "should": should,
+                        "minimum_should_match" : minimum_should_match
+                    }
+                }
             s = s.query_raw(query)
         s = s.order_by(*sort_fields)
 
@@ -132,7 +150,7 @@ class ProductsSearch(BaseAPIView):
 
         facets_dsl = {}
         if facets_selector.has_key("categories"):
-            categories_facet_mode = facets_selector["categories"].get("mode", "DIRECT_CHILDREN")
+            categories_facet_mode = facets_selector["categories"]["mode"]
             if categories_facet_mode == "DIRECT_CHILDREN":
                 facets_dsl["categories"] = es_search_functions._getSubCategoriesFacets(cat_id, s)
             elif categories_facet_mode == "SUB_TREE":
@@ -144,33 +162,34 @@ class ProductsSearch(BaseAPIView):
             facets_dsl["origin_place"] = es_search_functions.addFilterToFacets(s,
                                                     {'terms': {'field': 'origin_place', 
                                                     'size': 20}})
-        s = s.facet_raw(**facets_dsl)
-
         facets_result = {}
-        if facets_selector.has_key("categories"):
-            categories_facet_mode = facets_selector["categories"].get("mode", "DIRECT_CHILDREN")
-            facets_list = s.facet_counts().get("categories", [])
-            if categories_facet_mode == "DIRECT_CHILDREN":
-                for facets in facets_list:
-                    facets["term"] == facets["term"]
-            facet_categories_list = [{"id": get_last_cat_id(facet["term"]),
-                                      "count": facet["count"]}
-                                      for facet in facets_list]
-            for facet_sub_cat in facet_categories_list:
-                facet_sub_cat["label"] = mongo_client.getPropertyName(site_id, "category", facet_sub_cat["id"])
-            facets_result["categories"] = facet_categories_list
-        
-        if facets_selector.has_key("brand"):
-            facets_result["brand"] = [{"id": facet["term"],
-                                 "label": mongo_client.getPropertyName(site_id, "brand", facet["term"]),
-                                 "count": facet["count"]}
-                                 for facet in s.facet_counts().get("brand", [])]
-        
-        if facets_selector.has_key("origin_place"):
-            facets_result["origin_place"] = [{"id": facet["term"],
-                                 "label": "",
-                                 "count": facet["count"]}
-                                 for facet in s.facet_counts().get("origin_place", [])]
+        if len(facets_dsl.keys()) > 0:
+            s = s.facet_raw(**facets_dsl)
+
+            if facets_selector.has_key("categories"):
+                categories_facet_mode = facets_selector["categories"]["mode"]
+                facets_list = s.facet_counts().get("categories", [])
+                if categories_facet_mode == "DIRECT_CHILDREN":
+                    for facets in facets_list:
+                        facets["term"] == facets["term"]
+                facet_categories_list = [{"id": get_last_cat_id(facet["term"]),
+                                          "count": facet["count"]}
+                                          for facet in facets_list]
+                for facet_sub_cat in facet_categories_list:
+                    facet_sub_cat["label"] = mongo_client.getPropertyName(site_id, "category", facet_sub_cat["id"])
+                facets_result["categories"] = facet_categories_list
+            
+            if facets_selector.has_key("brand"):
+                facets_result["brand"] = [{"id": facet["term"],
+                                     "label": mongo_client.getPropertyName(site_id, "brand", facet["term"]),
+                                     "count": facet["count"]}
+                                     for facet in s.facet_counts().get("brand", [])]
+            
+            if facets_selector.has_key("origin_place"):
+                facets_result["origin_place"] = [{"id": facet["term"],
+                                     "label": "",
+                                     "count": facet["count"]}
+                                     for facet in s.facet_counts().get("origin_place", [])]
 
         return s, facets_result
 
@@ -221,12 +240,14 @@ class ProductsSearch(BaseAPIView):
                            "param_name": "facets",
                             "message": "details in facet '%s' is invalid." % facets_key
                             })
-            category_facets_mode = facets.get("categories", {}).get("mode", None)
-            if category_facets_mode not in (None, "DIRECT_CHILDREN", "SUB_TREE"):
-                errors.append({"code": "INVALID_PARAM",
-                           "param_name": "facets",
-                            "message": "mode of facet 'categories' is invalid."
-                            })
+            #category_facets_mode = facets.get("categories", {}).get("mode", None)
+            if facets.has_key("categories"):
+                category_facets_mode = facets["categories"].setdefault("mode", self.DEFAULT_FACET_CATEGORY_MODE)
+                if category_facets_mode not in ("DIRECT_CHILDREN", "SUB_TREE"):
+                    errors.append({"code": "INVALID_PARAM",
+                               "param_name": "facets",
+                                "message": "mode of facet 'categories' is invalid."
+                                })
         else:
             errors.append({"code": "INVALID_PARAM",
                            "param_name": "facets",
@@ -296,6 +317,7 @@ class ProductsSearch(BaseAPIView):
 
         return errors
 
+    DEFAULT_FACET_CATEGORY_MODE = "SUB_TREE"
     VALID_SORT_FIELDS = ("price", "market_price", "item_level", "item_comment_num", "origin_place")
     FILTER_FIELD_TYPE_VALIDATORS = {
         "price": is_float,
@@ -312,7 +334,7 @@ class ProductsSearch(BaseAPIView):
     DEFAULT_FACETS = {
         "brand": {},
         "origin_place": {},
-        "categories": {"mode": "DIRECT_CHILDREN"}
+        "categories": {"mode": DEFAULT_FACET_CATEGORY_MODE}
     }
 
     SUPPORTED_FACETS = ["brand", "categories", "origin_place"]
@@ -322,8 +344,35 @@ class ProductsSearch(BaseAPIView):
     }
     PER_PAGE = 20
 
+    SEARCH_TERM_FIELDS = ["tags"]
+
     def post(self, request, format=None):
         return self.get(request, format)
+
+    def _cleanupSearchConfig(self, search_config):
+        if search_config is None:
+            search_config = {"type": "SEARCH_TEXT"}
+        else:
+            if isinstance(search_config, dict):
+                type = search_config.get("type", None)
+                if type not in ("SEARCH_TEXT", "SEARCH_TERMS"):
+                    return False, [{"code": "INVALID_PARAM", "param_name": "search_config", 
+                                "message": "invalid search_config 'type'"}]
+                if type == "SEARCH_TERMS":
+                    match_mode = search_config.get("match_mode", None)
+                    if match_mode in ("MATCH_ALL", "MATCH_MORE_BETTER"):
+                        term_field = search_config.get("term_field", None)
+                        if term_field not in (self.SEARCH_TERM_FIELDS):
+                            return False, [{"code": "INVALID_PARAM", "param_name": "search_config", 
+                                            "message": "search_config 'term_field' should be one of %s" \
+                                                        % ",".join(self.SEARCH_TERM_FIELDS)}]
+                    else:
+                        return False, [{"code": "INVALID_PARAM", "param_name": "search_config", 
+                                        "message": "invalid search_config 'match_mode'"}]
+            else:
+                return False, [{"code": "INVALID_PARAM", "param_name": "search_config", 
+                                "message": "invalid 'search_config'"}]
+        return True, search_config
 
     # refs: http://www.django-rest-framework.org/api-guide/pagination
     def get(self, request, format=None):
@@ -338,15 +387,9 @@ class ProductsSearch(BaseAPIView):
         filters = request.DATA.get("filters", {})
         highlight = request.DATA.get("highlight", False)
         facets_selector = request.DATA.get("facets", None)
+        search_config = request.DATA.get("search_config", None)
+        #result_mode = request.DATA.get("result_mode", "WITH_RECORDS")
         api_key = request.DATA["api_key"]
-
-        try:
-            per_page = int(per_page)
-        except ValueError:
-            return Response({"records": [], "info": {}, 
-                             "errors": [{"code": "INVALID_PARAM", 
-                                        "param_name": "per_page",
-                                        "message": "per_page must be a digit value."}]})
 
         # Apply default filters
         for filter_key , filter_content in self.DEFAULT_FILTERS.items():
@@ -357,8 +400,41 @@ class ProductsSearch(BaseAPIView):
         if facets_selector is None:
             facets_selector = copy.deepcopy(self.DEFAULT_FACETS)
 
+        #if result_mode not in ("WITHOUT_RECORDS", "WITH_RECORDS"):
+        #    return Response({"records": [], "info": {}, 
+        #                     "errors": [{"code": "INVALID_PARAM", 
+        #                                "param_name": "result_mode",
+        #                                "message": "invalid result_mode"}]})
+
+        is_valid, result = self._cleanupSearchConfig(search_config)
+        if not is_valid:
+            return Response({"records": [], "info": {}, "errors": result})
+        else:
+            search_config = result
+
+        try:
+            per_page = int(per_page)
+        except ValueError:
+            return Response({"records": [], "info": {}, 
+                             "errors": [{"code": "INVALID_PARAM", 
+                                        "param_name": "per_page",
+                                        "message": "per_page must be a digit value."}]})
+
+        if per_page <= 0:
+            return Response({"records": [], "info": {}, 
+                             "errors": [{"code": "INVALID_PARAM", 
+                                        "param_name": "per_page",
+                                        "message": "per_page must be greater than 0."}]})
+
         site_id = self.getSiteID(api_key)
-        result_set, facets_result = self._search(site_id, q, sort_fields, filters, highlight, facets_selector)
+        try:
+            result_set, facets_result = self._search(site_id, q, sort_fields, filters, highlight, facets_selector, search_config)
+        except:
+            logging.critical("Unknown exception raised!", exc_info=True)
+            return Response({"records": [], "info": {}, 
+                             "errors": [{"code": "UNKNOWN_ERROR", 
+                                        "message": "Unknown error, please try later."}]})
+
         paginator = Paginator(result_set, per_page)
 
         try:
@@ -408,7 +484,6 @@ class QuerySuggest(BaseAPIView):
 
         return errors
 
-
     def post(self, request, format=None):
         return self.get(request, format=None)
 
@@ -421,7 +496,13 @@ class QuerySuggest(BaseAPIView):
         api_key = request.DATA.get("api_key", "")
         site_id = self.getSiteID(api_key)
 
-        suggester = es_search_functions.Suggester(mongo_client, site_id)
-        suggested_texts = suggester.getQuerySuggestions(q)
+        try:
+            suggester = es_search_functions.Suggester(mongo_client, site_id)
+            suggested_texts = suggester.getQuerySuggestions(q)
+        except:
+            logging.critical("Unknown exception raised!", exc_info=True)
+            return Response({"records": [], "info": {}, 
+                             "errors": [{"code": "UNKNOWN_ERROR", 
+                                        "message": "Unknown error, please try later."}]})
 
         return Response({"suggestions": suggested_texts, "errors": []})

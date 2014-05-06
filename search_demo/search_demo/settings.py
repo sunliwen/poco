@@ -41,7 +41,7 @@ INSTALLED_APPS = (
     'bootstrap_pagination',
     'django_extensions',
     'rest_framework',
-    'kombu.transport.django', # disable this in production
+    #'kombu.transport.django', # disable this in production
     'api_app',
     'recommender',
     'main_app',
@@ -111,8 +111,8 @@ REST_FRAMEWORK = {
     )
 }
 
-
 # recommender app settings
+VISITOR_BROWSING_HISTORY_LENGTH = 15
 MONGODB_HOST = None
 REPLICA_SET = None
 PRINT_RAW_LOG = False
@@ -134,3 +134,4 @@ assert API_SERVER_PREFIX is not None
 #assert recommendation_deduplicate_item_names_required_set is not None
 #assert MEMCACHED_HOSTS is not None
 assert BROKER_URL is not None
+assert VISITOR_BROWSING_HISTORY_LENGTH > 0

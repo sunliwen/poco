@@ -18,10 +18,12 @@ sort_fields      否          [] (根据搜索结果相关度排序)            
 filters          否          []                                                           根据哪些字段值来过滤结果（具体见下面的示例）
 facets           否                                                                       对返回的聚类结果进行配置。categories配置参见下面注解。
 highlight        否          False                                                        是否在结果中加亮标记匹配的关键词
+search_config    否          {"type": "SEARCH_TEXT"}                                      详见下面注解。
 api_key          是                                                                       分配给用户站点的api key
 =============    ==========  ==========================================================   =============================================
 
-注：
+注::
+
     1. filters:
         1. "categories"字段只接受0或1个值，不接受多个值。
         2. 实施过程中，需要确定哪些字段用来过滤。目前，price, market_price, categories，item_id、available、item_level、item_comment_num和origin_place可用来过滤。
@@ -29,12 +31,27 @@ api_key          是                                                            
     2. sort_fields:
         1. price、market_price、item_level、item_comment_num和origin_place可用来排序。
     3. facets (聚类)
-        1. 如果在传参中没有此参数，则为默认状态。默认状态所有支持的facets都选中,categories为"DIRECT_CHILDREN"模式
-        2. 如果在传参中指定"facets"，则仅返回制定的聚类。
+        1. 如果在传参中没有此参数，则为默认状态。默认状态所有支持的facets都选中,categories为"SUB_TREE"模式
+        2. 如果在传参中指定"facets"，则仅返回制定的聚类::
            {"brand": {}}  # 这样仅返回brand的聚类
            {"brand": {}, "origin_place": {}} # 这样仅聚合brand和origin_place
            {"categories": {"mode": "DIRECT_CHILDREN"}} # 如果在filters中指定分类，则聚合这些分类的直接子分类；如果在filters中未指定分类，则聚合所有顶层分类
            {"categories": {"mode": "SUB_TREE"}} # 如果在filters中指定分类，则聚合这些分类及其所有直接间接子类；如果在filters中未指定分类，则聚合所有分类
+    4. search_config
+        1. 全文搜索：type=SEARCH_TEXT，示例
+            {"type": "SEARCH_TEXT"}
+        2. 标签匹配：type=SEARCH_TERMS
+            选择这种搜索时，要匹配的标签放到q之中，标签间以空格分隔。
+            所有标签必须匹配
+            {"type": "SEARCH_TERMS",
+             "match_mode": "MATCH_ALL",
+             "term_field": "tags"}
+
+            可部分匹配标签，匹配越多的排序靠前
+            {"type": "SEARCH_TERMS",
+             "match_mode": "MATCH_MORE_BETTER",
+             "term_field": "tags"}
+
 
 返回结果
 ---------
