@@ -282,7 +282,7 @@ class MongoClient:
         if site_name is not None:
             site["site_name"] = site_name
         site["calc_interval"] = calc_interval
-        site["algorithm_type"] = "llh"
+        site["algorithm_type"] = algorithm_type
         c_sites.save(site)
         return site
 
