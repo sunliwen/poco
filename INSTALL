@@ -25,5 +25,5 @@
 == Create a new site ==
     (NOTE: if you are moving data from tuijianbao.net to haoyaoshi server, you don't need this step).
     1. python manage.py runscript create_site --script-args=<site_id> <site_name>
-        * NOTE: please note down the api_key and site_token
-        * The site_token is for private apis. see document of private apis for usage. (aka. items)
+        * NOTE: please note down the api_key and api_token
+        * The api_token is for private apis. see document of private apis for usage. (aka. items)
