@@ -1,5 +1,6 @@
 import json
 import copy
+from django.conf import settings
 from django.test import TestCase
 from api_app import es_search_functions
 from django.core.urlresolvers import reverse
@@ -34,8 +35,13 @@ class BaseAPITest(TestCase):
         site_record = self.initSite(self.TEST_SITE_ID)
         self.api_key = site_record["api_key"]
         self.site_token = site_record["site_token"]
-
         self.maxDiff = None
+        # flush everything on redis
+        import redis
+        self.redis_client = redis.StrictRedis(host=settings.REDIS_CONFIGURATION["host"], 
+                                              port=settings.REDIS_CONFIGURATION["port"], 
+                                              db=settings.REDIS_CONFIGURATION["db"])
+        self.redis_client.flushall()
 
     def initSite(self, site_id):
         site_manage_utils.drop_site(self.mongo_client, site_id)

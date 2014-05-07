@@ -43,7 +43,6 @@ def es_index_item(site_id, item):
     if brand:
         item["brand"] = brand["id"]
 
-    print "INDEX ITEM:", item
     res = es.index(index=es_search_functions.getESItemIndexName(site_id), doc_type='item', id=item["item_id"], body=item)
 
 
