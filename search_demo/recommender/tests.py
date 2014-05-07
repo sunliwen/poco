@@ -1,3 +1,4 @@
+# encoding=utf8
 import cgi
 import urlparse
 import copy
@@ -91,6 +92,9 @@ class BaseRecommenderTest(BaseAPITest):
 #        start_time = time.time()
 #        tasks.update_hotview_list.delay(self.TEST_SITE_ID)
 #        print time.time() - start_time
+
+
+
 
 
 @override_settings(CELERY_EAGER_PROPAGATES_EXCEPTIONS=True,
@@ -363,13 +367,58 @@ class RecommenderRedirectTest(BaseRecommenderTest):
                                 "ptm_id": self.get_ptm_id(response)})
 
 
-
 @override_settings(CELERY_EAGER_PROPAGATES_EXCEPTIONS=True,
                    CELERY_ALWAYS_EAGER=True,
                    BROKER_BACKEND='memory')
 class ItemsAPITest(BaseRecommenderTest):
     #def test_items_with_tags(self):
     #    raise NotImplemented
+
+    def test_no_categories_provided(self):
+        raise NotImplemented
+
+    def _assertKWList(self, list_type, expected):
+        self.assertEqual(set([keyword_record["keyword"] for keyword_record in self.mongo_client.getSuggestKeywordList(self.TEST_SITE_ID, list_type)]), expected)
+
+    def test_updating_of_suggest_keyword_list(self):
+        from api_app import es_search_functions
+        # TODO: clean up the reddis
+        c_items = self.mongo_client.getSiteDBCollection(self.TEST_SITE_ID, "items")
+        self.assertEqual(c_items.count(), 0)
+        self.assertEqual(self.mongo_client.getSuggestKeywordList(self.TEST_SITE_ID).count(), 0)
+        from api_app.keyword_list import keyword_list
+        item = {
+            "api_key": self.api_key,
+            "type": "product",
+            "available": True,
+            "item_id": "I888",
+            "item_name": u"能恩奶粉",
+            "item_link": "http://example.com/"
+        }
+        #response= self.api_post(reverse("recommender-items"), data=item,
+        #                          expected_status_code=200,
+        #                          **{"HTTP_AUTHORIZATION": "Token %s" % self.site_token})
+        response = self.postItem(item)
+        self.assertEqual(response.data["code"], 0, "Unexpected response: %s" % response.data)
+
+        self.assertEqual(es_search_functions.getItemById(self.TEST_SITE_ID, "I888")["_source"]["keywords"], [u"能恩", u"奶粉"])
+
+        self._assertKWList(keyword_list.WHITE_LIST, set())
+        self._assertKWList(keyword_list.BLACK_LIST, set())
+        self._assertKWList(keyword_list.UNIDENTIFIED_LIST, set([u"能恩", u"奶粉"]))
+
+        # let's move 能恩 as white list
+        keyword_list.markKeywordsAsWhiteListed(self.TEST_SITE_ID, ["能恩"])
+        self._assertKWList(keyword_list.WHITE_LIST, set([u"能恩"]))
+        self._assertKWList(keyword_list.BLACK_LIST, set())
+        self._assertKWList(keyword_list.UNIDENTIFIED_LIST, set([u"奶粉"]))
+        self.assertEqual(es_search_functions.getItemById(self.TEST_SITE_ID, "I888")["_source"]["keywords"], [u"能恩", u"奶粉"])
+        # move 奶粉 into black list
+        keyword_list.markKeywordsAsBlackListed(self.TEST_SITE_ID, ["奶粉"])
+        self._assertKWList(keyword_list.WHITE_LIST, set([u"能恩"]))
+        self._assertKWList(keyword_list.BLACK_LIST, set([u"奶粉"]))
+        self._assertKWList(keyword_list.UNIDENTIFIED_LIST, set([]))
+        self.assertEqual(es_search_functions.getItemById(self.TEST_SITE_ID, "I888")["_source"]["keywords"], [u"能恩", u"奶粉"])
 
     def test_invalid_properties_format_in_posted_items(self):
         # TODO full test of properties type

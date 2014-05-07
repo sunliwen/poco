@@ -455,7 +455,7 @@ class UpdateItemProcessor(ActionProcessor):
                 if re.match(r"[A-Za-z0-9]+", category[expected_key]) is None:
                     return {"code": 1, "err_msg": "category ids can only contains digits and letters."}
             null_parent_id_found = null_parent_id_found or category["parent_id"] == "null"
-        if not null_parent_id_found:
+        if args["categories"] != [] and not null_parent_id_found:
             return {"code": 1, "err_msg": "At least one category should be at the top level"}
         return None
 

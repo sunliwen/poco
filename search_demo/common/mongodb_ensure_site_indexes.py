@@ -104,6 +104,12 @@ class SiteIndexesEnsurer:
         c_search_terms_cache.drop_indexes()
         c_search_terms_cache.ensure_index("terms_key", background=True, unique=False)
 
+    def fix_suggest_keyword_list(self):
+        c_suggest_keyword_list = self.getSiteDBCollection("suggest_keyword_list")
+        c_suggest_keyword_list.drop_indexes()
+        c_suggest_keyword_list.ensure_index("keyword", background=True, unique=True)
+        c_suggest_keyword_list.ensure_index("type", background=True, unique=False)
+
     def fix_all(self):
         self.fix_item_similarities_collections()
         self.fix_items()

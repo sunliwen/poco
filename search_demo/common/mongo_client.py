@@ -682,6 +682,28 @@ class MongoClient:
         cache_entry = c_search_terms_cache.find_one({"terms_key": terms_key})
         return terms_key, cache_entry
 
+    def updateSuggestKeywordList(self, site_id, list_type, keywords):
+        c_suggest_keyword_list = self.getSiteDBCollection(site_id, "suggest_keyword_list")
+        for keyword in keywords:
+            c_suggest_keyword_list.update({"keyword": keyword},
+                                          {"type": list_type, "keyword": keyword},
+                                          upsert=True)
+
+    def getSuggestKeywordStatus(self, site_id, keyword):
+        c_suggest_keyword_list = self.getSiteDBCollection(site_id, "suggest_keyword_list")
+        record = c_suggest_keyword_list.find_one({"keyword": keyword})
+        if record is None:
+            return None
+        else:
+            return record["type"]
+
+    def getSuggestKeywordList(self, site_id, list_type=None):
+        c_suggest_keyword_list = self.getSiteDBCollection(site_id, "suggest_keyword_list")
+        if list_type is None:
+            return c_suggest_keyword_list.find()
+        else:
+            return c_suggest_keyword_list.find({"type": list_type})
+
 def getConnection():
     if(settings.REPLICA_SET):
         return pymongo.MongoReplicaSetClient(settings.MONGODB_HOST, replicaSet=settings.REPLICA_SET)

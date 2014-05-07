@@ -501,8 +501,53 @@ class ItemsSearchViewTest(BaseAPITest):
         self._test_search_facets_selection()
         #self._test_search_facets_of_whole_sub_tree()
 
+    def _assertKWList(self, list_type, expected):
+        keywords = set([keyword_record["keyword"] for keyword_record in self.mongo_client.getSuggestKeywordList(self.TEST_SITE_ID, list_type)])
+        for k in keywords:
+            print k
+        self.assertEqual(keywords, expected)
+
     def test_suggestion(self):
         # TODO: no such api error
+
+        # first, unidentified keywords check
+        all_keywords = u"雀巢 智多星 故事 奶粉 超级 童话 童话故事 365 能恩".split(" ")
+        from api_app.keyword_list import keyword_list
+        self._assertKWList(keyword_list.WHITE_LIST, set())
+        self._assertKWList(keyword_list.BLACK_LIST, set())
+        self._assertKWList(keyword_list.UNIDENTIFIED_LIST, set(all_keywords))
+
+        # suggestion should return nothing
+        body = {"api_key": self.api_key,
+                "q": "童"
+               }
+        response = self.api_post(reverse("query-suggest"), data=body)
+        self.assertEqual(response.data["errors"], [])
+        self.assertEqual(response.data, 
+                         {"errors": [],
+                          "suggestions": []
+                         })
+
+        # let's move some keywords as white listed.
+        keyword_list.markKeywordsAsWhiteListed(self.TEST_SITE_ID, [u"童话"])
+        self.refreshSiteItemIndex(self.TEST_SITE_ID)
+        self.rebuildSuggestionCache()
+
+        # check completion
+        body = {"api_key": self.api_key,
+                "q": u"童"
+               }
+        response = self.api_post(reverse("query-suggest"), data=body)
+        self.assertEqual(response.data["errors"], [])
+        self.assertEqual(response.data, 
+                         {"errors": [],
+                          "suggestions": [{"count": 1, "type": "completion", "value": u"童话"}]
+                         })
+        
+        keyword_list.markKeywordsAsWhiteListed(self.TEST_SITE_ID, all_keywords)
+        self.refreshSiteItemIndex(self.TEST_SITE_ID)
+        self.rebuildSuggestionCache()
+
         body = {"api_key": self.api_key,
                 "q": "能恩"
                }
@@ -510,7 +555,8 @@ class ItemsSearchViewTest(BaseAPITest):
         self.assertEqual(response.data["errors"], [])
         self.assertEqual(response.data, 
                          {"errors": [],
-                          "suggestions": [{'count': 1, 'type': 'more_keyword', 'value': u'能恩 奶粉'}]
+                          "suggestions": [{'count': 1, 'type': 'more_keyword', 'value': u'能恩 超级'},
+                                          {'count': 1, 'type': 'more_keyword', 'value': u'能恩 奶粉'}]
                          })
 
         body = {"api_key": self.api_key,

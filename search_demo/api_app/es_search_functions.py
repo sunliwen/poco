@@ -15,6 +15,10 @@ def getESClient():
     return Elasticsearch()
 
 
+def getItemById(site_id, item_id):
+    es = getESClient()
+    return es.get(index=getESItemIndexName(site_id), doc_type="item", id=item_id)
+
 import jieba
 def preprocess_query_str(query_str):
     result = []
