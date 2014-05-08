@@ -7,6 +7,10 @@
 == MongoDB ==
     * 2.6.0 is required.
 
+== The Legacy Poco 1.0 code base ==
+    * Install and Configure Batch Server/Dash Board/Admin Board using Poco 1.0 https://github.com/sunliwen/poco
+    * NOTE: Please use the poco_1.6 branch
+
 == Django Server Setup ==
     1. install packages in requirements.txt
     2. copy local_config.py.EXAMPLE as local_config.py and modify if it is necessary.
