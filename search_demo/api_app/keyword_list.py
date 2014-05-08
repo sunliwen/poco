@@ -1,4 +1,6 @@
+#import redis
 import redis
+#from redis_cache import get_redis_connection
 from django.conf import settings
 from api_app import es_search_functions
 from common.mongo_client import getMongoClient
@@ -15,6 +17,7 @@ class KeywordList:
         self.redis_client = redis.StrictRedis(host=settings.REDIS_CONFIGURATION["host"], 
                                               port=settings.REDIS_CONFIGURATION["port"], 
                                               db=settings.REDIS_CONFIGURATION["db"])
+        #self.redis_client = get_redis_connection("default")
 
     def getKeywordListRedisKey(self, site_id):
         return "suggestion-keyword-list-%s" % site_id
