@@ -19,9 +19,12 @@ class KeywordList:
     def getKeywordListRedisKey(self, site_id):
         return "suggestion-keyword-list-%s" % site_id
 
+    def fetchSuggestKeywordList(self, site_id):
+        return self.mongo_client.getSuggestKeywordList(site_id)
+
     def prefillCache(self, keyword_list_key, site_id):
         keyword_list = {}
-        for record in self.mongo_client.getSuggestKeywordList(site_id):
+        for record in self.fetchSuggestKeywordList(site_id):
             keyword_list[record["keyword"]] = record["type"]
         if len(keyword_list) > 0:
             self.redis_client.hmset(keyword_list_key, keyword_list)
@@ -42,13 +45,13 @@ class KeywordList:
             keyword_status = self.getKeywordStatus(site_id, keyword)
             if keyword_status == self.WHITE_LIST:
                 accepted_keywords.append(keyword)
-            elif keyword_status == None:
+            elif keyword_status in (None, self.UNIDENTIFIED_LIST):
                 to_be_in_unidentified_keywords.append(keyword)
         self._updateUnidentifiedKeywords(site_id, to_be_in_unidentified_keywords)
         return accepted_keywords
 
-    def updateSuggestKeywordList(self, site_id, list_type, keywords):
-        self.mongo_client.updateSuggestKeywordList(site_id, list_type, keywords)
+    def updateSuggestKeywordList(self, site_id, list_type, keywords, increase_count=False):
+        self.mongo_client.updateSuggestKeywordList(site_id, list_type, keywords, increase_count=increase_count)
         keyword_list = {}
         for keyword in keywords:
             keyword_list[keyword] = list_type
@@ -57,7 +60,7 @@ class KeywordList:
 
     def _updateUnidentifiedKeywords(self, site_id, to_be_in_unidentified_keywords):
         self.updateSuggestKeywordList(site_id, self.UNIDENTIFIED_LIST, 
-                to_be_in_unidentified_keywords)
+                to_be_in_unidentified_keywords, increase_count=True)
 
 
     def _indexKeywordsForCompletion(self, site_id, keywords):

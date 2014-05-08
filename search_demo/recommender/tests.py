@@ -378,11 +378,11 @@ class ItemsAPITest(BaseRecommenderTest):
         raise NotImplemented
 
     def _assertKWList(self, list_type, expected):
-        self.assertEqual(set([keyword_record["keyword"] for keyword_record in self.mongo_client.getSuggestKeywordList(self.TEST_SITE_ID, list_type)]), expected)
+        self.assertEqual(set([(keyword_record["keyword"], keyword_record["count"]) 
+                for keyword_record in self.mongo_client.getSuggestKeywordList(self.TEST_SITE_ID, list_type)]), expected)
 
     def test_updating_of_suggest_keyword_list(self):
         from api_app import es_search_functions
-        # TODO: clean up the reddis
         c_items = self.mongo_client.getSiteDBCollection(self.TEST_SITE_ID, "items")
         self.assertEqual(c_items.count(), 0)
         self.assertEqual(self.mongo_client.getSuggestKeywordList(self.TEST_SITE_ID).count(), 0)
@@ -395,9 +395,17 @@ class ItemsAPITest(BaseRecommenderTest):
             "item_name": u"能恩奶粉",
             "item_link": "http://example.com/"
         }
-        #response= self.api_post(reverse("recommender-items"), data=item,
-        #                          expected_status_code=200,
-        #                          **{"HTTP_AUTHORIZATION": "Token %s" % self.site_token})
+        response = self.postItem(item)
+        self.assertEqual(response.data["code"], 0, "Unexpected response: %s" % response.data)
+
+        item = {
+            "api_key": self.api_key,
+            "type": "product",
+            "available": True,
+            "item_id": "I889",
+            "item_name": u"能恩超级",
+            "item_link": "http://example.com/"
+        }
         response = self.postItem(item)
         self.assertEqual(response.data["code"], 0, "Unexpected response: %s" % response.data)
 
@@ -405,20 +413,21 @@ class ItemsAPITest(BaseRecommenderTest):
 
         self._assertKWList(keyword_list.WHITE_LIST, set())
         self._assertKWList(keyword_list.BLACK_LIST, set())
-        self._assertKWList(keyword_list.UNIDENTIFIED_LIST, set([u"能恩", u"奶粉"]))
+        self._assertKWList(keyword_list.UNIDENTIFIED_LIST, set([(u"能恩", 2), (u"奶粉", 1), (u"超级", 1)]))
 
         # let's move 能恩 as white list
         keyword_list.markKeywordsAsWhiteListed(self.TEST_SITE_ID, ["能恩"])
-        self._assertKWList(keyword_list.WHITE_LIST, set([u"能恩"]))
+        self._assertKWList(keyword_list.WHITE_LIST, set([(u"能恩", 2)]))
         self._assertKWList(keyword_list.BLACK_LIST, set())
-        self._assertKWList(keyword_list.UNIDENTIFIED_LIST, set([u"奶粉"]))
+        self._assertKWList(keyword_list.UNIDENTIFIED_LIST, set([(u"奶粉", 1), (u"超级", 1)]))
         self.assertEqual(es_search_functions.getItemById(self.TEST_SITE_ID, "I888")["_source"]["keywords"], [u"能恩", u"奶粉"])
         # move 奶粉 into black list
         keyword_list.markKeywordsAsBlackListed(self.TEST_SITE_ID, ["奶粉"])
-        self._assertKWList(keyword_list.WHITE_LIST, set([u"能恩"]))
-        self._assertKWList(keyword_list.BLACK_LIST, set([u"奶粉"]))
-        self._assertKWList(keyword_list.UNIDENTIFIED_LIST, set([]))
+        self._assertKWList(keyword_list.WHITE_LIST, set([(u"能恩", 2)]))
+        self._assertKWList(keyword_list.BLACK_LIST, set([(u"奶粉", 1)]))
+        self._assertKWList(keyword_list.UNIDENTIFIED_LIST, set([(u"超级", 1)]))
         self.assertEqual(es_search_functions.getItemById(self.TEST_SITE_ID, "I888")["_source"]["keywords"], [u"能恩", u"奶粉"])
+        self.assertEqual(es_search_functions.getItemById(self.TEST_SITE_ID, "I889")["_source"]["keywords"], [u"能恩", u"超级"])
 
     def test_invalid_properties_format_in_posted_items(self):
         # TODO full test of properties type
