@@ -11,9 +11,11 @@ from rest_framework.views import APIView
 from rest_framework import status
 import es_search_functions
 from common.mongo_client import getMongoClient
+from recommender.property_cache import PropertyCache
 
 
 mongo_client = getMongoClient()
+property_cache = PropertyCache(mongo_client)
 
 
 # TODO: highlight
@@ -176,12 +178,12 @@ class ProductsSearch(BaseAPIView):
                                           "count": facet["count"]}
                                           for facet in facets_list]
                 for facet_sub_cat in facet_categories_list:
-                    facet_sub_cat["label"] = mongo_client.getPropertyName(site_id, "category", facet_sub_cat["id"])
+                    facet_sub_cat["label"] = property_cache.get_name(site_id, "category", facet_sub_cat["id"])
                 facets_result["categories"] = facet_categories_list
             
             if facets_selector.has_key("brand"):
                 facets_result["brand"] = [{"id": facet["term"],
-                                     "label": mongo_client.getPropertyName(site_id, "brand", facet["term"]),
+                                     "label": property_cache.get_name(site_id, "brand", facet["term"]),
                                      "count": facet["count"]}
                                      for facet in s.facet_counts().get("brand", [])]
             

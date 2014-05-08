@@ -5,6 +5,7 @@ import hashlib
 from elasticsearch import Elasticsearch
 from django.conf import settings
 from django.core.cache import get_cache
+from recommender.property_cache import PropertyCache
 
 
 def getESItemIndexName(site_id):
@@ -114,6 +115,7 @@ class Suggester:
         self.mongo_client = mongo_client
         self.site_id = site_id
         self.terms_cache = TermsCache(mongo_client)
+        self.property_cache = PropertyCache(mongo_client)
 
     def getItemIndex(self):
         return getESItemIndexName(self.site_id)
@@ -150,13 +152,15 @@ class Suggester:
     def getBreadCrumbs(self, category_id):
         names = []
         ids = [category_id]
-        prop = self.mongo_client.getProperty(self.site_id, "category", category_id)
+        #prop = self.mongo_client.getProperty(self.site_id, "category", category_id)
+        prop = self.property_cache.get(self.site_id, "category", category_id)
         while prop:
             names.append(prop["name"])
             parent_id = prop["parent_id"]
             if parent_id != "null" and not (parent_id in ids):
                 ids.append(parent_id)
-                prop = self.mongo_client.getProperty(self.site_id, "category", parent_id)
+                #prop = self.mongo_client.getProperty(self.site_id, "category", parent_id)
+                prop = self.property_cache.get(self.site_id, "category", parent_id)
             else:
                 break
         names.reverse()
