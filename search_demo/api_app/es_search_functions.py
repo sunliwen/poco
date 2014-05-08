@@ -58,7 +58,7 @@ def construct_query(query_str, for_filter=False):
     return query
 
 def addFilterToFacets(s, facets):
-    filter = s._build_query().get("filter", None)
+    filter = s.build_search().get("filter", None)
     if filter:
         facets["facet_filter"] = filter
     return facets
