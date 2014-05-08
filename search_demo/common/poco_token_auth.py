@@ -37,7 +37,7 @@ class TokenMatchAPIKeyPermission(permissions.BasePermission):
         if isinstance(site, AnonymousUser):
             return False
         else:
-            if site["api_key"] == request.DATA["api_key"]:
+            if site["api_key"] == request.DATA.get("api_key", None):
                 return True
             else:
                 return False

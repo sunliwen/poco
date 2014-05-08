@@ -6,9 +6,9 @@ from django.conf import settings
 import es_client
 from browsing_history_cache import BrowsingHistoryCache
 
-@shared_task
-def es_index_item(site_id, item):
-    es_client.es_index_item(site_id, item)
+#@shared_task
+#def es_index_item(site_id, item):
+#    es_client.es_index_item(site_id, item)
 
 
 ## Update keywords of items based on current keyword whitelist
@@ -32,7 +32,6 @@ def process_item_update_queue(item_update_queue):
             mongo_client.updateProperty(site_id, item["brand"])
         item = mongo_client.updateItem(site_id, item)
         es_client.es_index_item(site_id, item)
-
 
 @shared_task
 def update_hotview_list(site_id):

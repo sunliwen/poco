@@ -7,6 +7,13 @@
 == MongoDB ==
     * 2.6.0 is required.
 
+== The Legacy Poco 1.0 code base ==
+    * Install and Configure Batch Server/Dash Board/Admin Board using Poco 1.0 https://github.com/sunliwen/poco
+    * NOTE: Please use the poco_1.6 branch
+
+== Redis ==
+    * Redis is required for both development & production
+
 == Django Server Setup ==
     1. install packages in requirements.txt
     2. copy local_config.py.EXAMPLE as local_config.py and modify if it is necessary.
@@ -19,6 +26,7 @@
         * PRINT_RAW_LOG should be False for production server
         * API_SERVER_PREFIX should be correct for redirection url to work
         * And for production site, you need to config "CACHES" in local_settings.py. 
+            * We use django-redis currently. See local_config.py.EXAMPLE for configuration.
     5. run "python manage.py syncdb"
     7. Also run "celery -A search_demo worker" in the root dir of the search_demo project
 
@@ -27,3 +35,4 @@
     1. python manage.py runscript create_site --script-args=<site_id> <site_name>
         * NOTE: please note down the api_key and api_token
         * The api_token is for private apis. see document of private apis for usage. (aka. items)
+

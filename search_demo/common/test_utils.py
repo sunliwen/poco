@@ -1,5 +1,6 @@
 import json
 import copy
+from django.conf import settings
 from django.test import TestCase
 from api_app import es_search_functions
 from django.core.urlresolvers import reverse
@@ -34,8 +35,13 @@ class BaseAPITest(TestCase):
         site_record = self.initSite(self.TEST_SITE_ID)
         self.api_key = site_record["api_key"]
         self.site_token = site_record["site_token"]
-
         self.maxDiff = None
+        # flush everything on redis
+        import redis
+        self.redis_client = redis.StrictRedis(host=settings.REDIS_CONFIGURATION["host"], 
+                                              port=settings.REDIS_CONFIGURATION["port"], 
+                                              db=settings.REDIS_CONFIGURATION["db"])
+        self.redis_client.flushall()
 
     def initSite(self, site_id):
         site_manage_utils.drop_site(self.mongo_client, site_id)
@@ -63,21 +69,28 @@ class BaseAPITest(TestCase):
         self.assertEqual(res.data["errors"], [], "Invalid response: %s" % res.data)
         self.assertEqual(res.data["info"]["total_result_count"], expected_count)
 
-    def postItems(self, test_data_module, item_ids, site_token=None):
+    def postItem(self, item, site_token=None):
         if site_token is None:
             site_token = self.site_token
+        item["api_key"] = self.api_key
+        response = self.api_post(reverse("recommender-items"), data=item,
+                                    **{"HTTP_AUTHORIZATION": "Token %s" % site_token})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["code"], 0, "Invalid res: %s" % response.data)
+        self.refreshSiteItemIndex(self.TEST_SITE_ID)
+        self.rebuildSuggestionCache()
+        return response
+
+    def rebuildSuggestionCache(self):
+        from api_app.tasks import rebuild_suggestion_cache
+        rebuild_suggestion_cache.delay(self.TEST_SITE_ID)
+
+    def postItems(self, test_data_module, item_ids, site_token=None):
         self.assertItemsCount(0)
         items = test_data_module.getItems(None)
         for item in items:
-            item["api_key"] = self.api_key
-            response = self.api_post(reverse("recommender-items"), data=item,
-                                        **{"HTTP_AUTHORIZATION": "Token %s" % site_token})
-            self.assertEqual(response.status_code, 200)
-            self.assertEqual(response.data["code"], 0, "Invalid res: %s" % response.data)
-        self.refreshSiteItemIndex(self.TEST_SITE_ID)
+            self.postItem(item, site_token)
         self.assertItemsCount(len(items))
-        from api_app.tasks import rebuild_suggestion_cache
-        rebuild_suggestion_cache.delay(self.TEST_SITE_ID)
 
     def api_post(self, path, content_type="application/json", data={}, expected_status_code=200, **extra):
         response = self.client.post(path, content_type=content_type, data=json.dumps(data), **extra)
@@ -88,5 +101,4 @@ class BaseAPITest(TestCase):
         response = self.client.get(path, content_type=content_type, data=data, **extra)
         self.assertEqual(response.status_code, expected_status_code)
         return response
-
 

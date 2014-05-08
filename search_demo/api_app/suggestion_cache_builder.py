@@ -5,6 +5,7 @@ import time
 from elasticsearch import Elasticsearch
 import es_search_functions
 from common.mongo_client import getMongoClient
+from api_app.keyword_list import keyword_list
 
 
 class SuggestionCacheBuilder:
@@ -37,7 +38,7 @@ class SuggestionCacheBuilder:
                                    self.finished_tasks/float(current_tasks + self.finished_tasks)))
 
         if terms:
-            size_limit = 20
+            size_limit = 1000
         else:
             size_limit = 1000000
 
@@ -70,7 +71,8 @@ class SuggestionCacheBuilder:
 
         terms_to_check = []
         for kw in res["facets"]["keywords"]["terms"]:
-            if kw["count"] < terms_count:
+            keyword_status = keyword_list.getKeywordStatus(self.site_id, kw["term"])
+            if keyword_status == keyword_list.WHITE_LIST and kw["count"] < terms_count:
                 terms_to_check.append(kw)
 
         for term_to_check in terms_to_check:

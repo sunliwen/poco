@@ -1,3 +1,4 @@
+# encoding=utf8
 import cgi
 import urlparse
 import copy
@@ -39,12 +40,12 @@ class BaseRecommenderTest(BaseAPITest):
                           })
         return response
 
-    def _recommender(self, user_id, **args):
+    def _recommender(self, user_id, expected_status_code=200, **args):
         data = {"api_key": self.api_key,
                 "user_id": user_id}
         data.update(args)
         response = self.api_get(reverse("recommender-recommender"),
-                    data=data)
+                    data=data, expected_status_code=200)
         return response
 
     def _placeOrder(self, user_id, order_content):
@@ -91,6 +92,9 @@ class BaseRecommenderTest(BaseAPITest):
 #        start_time = time.time()
 #        tasks.update_hotview_list.delay(self.TEST_SITE_ID)
 #        print time.time() - start_time
+
+
+
 
 
 @override_settings(CELERY_EAGER_PROPAGATES_EXCEPTIONS=True,
@@ -363,13 +367,67 @@ class RecommenderRedirectTest(BaseRecommenderTest):
                                 "ptm_id": self.get_ptm_id(response)})
 
 
-
 @override_settings(CELERY_EAGER_PROPAGATES_EXCEPTIONS=True,
                    CELERY_ALWAYS_EAGER=True,
                    BROKER_BACKEND='memory')
 class ItemsAPITest(BaseRecommenderTest):
     #def test_items_with_tags(self):
     #    raise NotImplemented
+
+    def test_no_categories_provided(self):
+        raise NotImplemented
+
+    def _assertKWList(self, list_type, expected):
+        self.assertEqual(set([(keyword_record["keyword"], keyword_record["count"]) 
+                for keyword_record in self.mongo_client.getSuggestKeywordList(self.TEST_SITE_ID, list_type)]), expected)
+
+    def test_updating_of_suggest_keyword_list(self):
+        from api_app import es_search_functions
+        c_items = self.mongo_client.getSiteDBCollection(self.TEST_SITE_ID, "items")
+        self.assertEqual(c_items.count(), 0)
+        self.assertEqual(self.mongo_client.getSuggestKeywordList(self.TEST_SITE_ID).count(), 0)
+        from api_app.keyword_list import keyword_list
+        item = {
+            "api_key": self.api_key,
+            "type": "product",
+            "available": True,
+            "item_id": "I888",
+            "item_name": u"能恩奶粉",
+            "item_link": "http://example.com/"
+        }
+        response = self.postItem(item)
+        self.assertEqual(response.data["code"], 0, "Unexpected response: %s" % response.data)
+
+        item = {
+            "api_key": self.api_key,
+            "type": "product",
+            "available": True,
+            "item_id": "I889",
+            "item_name": u"能恩超级",
+            "item_link": "http://example.com/"
+        }
+        response = self.postItem(item)
+        self.assertEqual(response.data["code"], 0, "Unexpected response: %s" % response.data)
+
+        self.assertEqual(es_search_functions.getItemById(self.TEST_SITE_ID, "I888")["_source"]["keywords"], [u"能恩", u"奶粉"])
+
+        self._assertKWList(keyword_list.WHITE_LIST, set())
+        self._assertKWList(keyword_list.BLACK_LIST, set())
+        self._assertKWList(keyword_list.UNIDENTIFIED_LIST, set([(u"能恩", 2), (u"奶粉", 1), (u"超级", 1)]))
+
+        # let's move 能恩 as white list
+        keyword_list.markKeywordsAsWhiteListed(self.TEST_SITE_ID, ["能恩"])
+        self._assertKWList(keyword_list.WHITE_LIST, set([(u"能恩", 2)]))
+        self._assertKWList(keyword_list.BLACK_LIST, set())
+        self._assertKWList(keyword_list.UNIDENTIFIED_LIST, set([(u"奶粉", 1), (u"超级", 1)]))
+        self.assertEqual(es_search_functions.getItemById(self.TEST_SITE_ID, "I888")["_source"]["keywords"], [u"能恩", u"奶粉"])
+        # move 奶粉 into black list
+        keyword_list.markKeywordsAsBlackListed(self.TEST_SITE_ID, ["奶粉"])
+        self._assertKWList(keyword_list.WHITE_LIST, set([(u"能恩", 2)]))
+        self._assertKWList(keyword_list.BLACK_LIST, set([(u"奶粉", 1)]))
+        self._assertKWList(keyword_list.UNIDENTIFIED_LIST, set([(u"超级", 1)]))
+        self.assertEqual(es_search_functions.getItemById(self.TEST_SITE_ID, "I888")["_source"]["keywords"], [u"能恩", u"奶粉"])
+        self.assertEqual(es_search_functions.getItemById(self.TEST_SITE_ID, "I889")["_source"]["keywords"], [u"能恩", u"超级"])
 
     def test_invalid_properties_format_in_posted_items(self):
         # TODO full test of properties type
@@ -569,19 +627,15 @@ class GetByBrowsingHistoryTest(BaseRecommenderTest):
         super(GetByBrowsingHistoryTest, self).setUp()
         self.postItems(test_data1, None)
 
-    def test_by_browsing_history_return_topn(self):
+    def test_by_browsing_history_not_returning_topn(self):
         # We have no browsing history and no hot index
-        #browsing_history_cache = self.get_browsing_history_cache()
-        #browsing_history = browsing_history_cache.get_from_cache(self.TEST_SITE_ID, ptm_id, 
-        #                    no_result_as_none=True)
-        #self.assertEqual(browsing_history, [])
         # So we don't have recommendation from ByBrowsingHistory
         response = self._recommender("U1", type="ByBrowsingHistory", amount=5)
         self.assertEqual([item["item_id"] for item in response.data["topn"]], 
                         [])
-        # But ... If there is some by_viewed hot index
+        # If there is some by_viewed hot index
         # let's view some items
-        self._viewItem("U1", "I123", 3)
+        self._viewItem("U2", "I123", 3)
         self._viewItem("U2", "I124", 2)
         self._viewItem("U3", "I125", 1)
         self._viewItem("U5", "I126", 5)
@@ -589,7 +643,7 @@ class GetByBrowsingHistoryTest(BaseRecommenderTest):
         tasks.update_hotview_list.delay(self.TEST_SITE_ID)
         get_cache("default").clear()
 
-        # now we have topn
+        # now we have topns from ByHotIndex
         response = self.api_get(reverse("recommender-recommender"),
             data={"api_key": self.api_key,
                   "type": "ByHotIndex",
@@ -602,10 +656,10 @@ class GetByBrowsingHistoryTest(BaseRecommenderTest):
         self.assertEqual([item["item_id"] for item in response.data["topn"]],
                          ["I126", "I123", "I124", "I125"])
 
-        # And the ByBrowsingHistory should return same result
+        # But the ByBrowsingHistory still should return no result
         response = self._recommender("U1", type="ByBrowsingHistory", amount=5)
         self.assertEqual([item["item_id"] for item in response.data["topn"]], 
-                        ["I126", "I123", "I124", "I125"])
+                        [])
 
     def test_GetByBrowsingHistory(self):
         self.insert_item_similarities("V", "I123",
@@ -681,6 +735,105 @@ class GetByBrowsingHistoryTest(BaseRecommenderTest):
         self.assertEqual(browsing_history, item_ids)
 
         # TODO: test with same ids ["I125"] * 15
+
+
+@override_settings(CELERY_EAGER_PROPAGATES_EXCEPTIONS=True,
+                   CELERY_ALWAYS_EAGER=True,
+                   BROKER_BACKEND='memory')
+class AdUnitHomeTest(BaseRecommenderTest):
+    def setUp(self):
+        super(AdUnitHomeTest, self).setUp()
+        self.postItems(test_data1, None)
+
+    def test_invalid_args(self):
+        response = self._recommender("U1", type="/unit/home")
+        self.assertEqual(response.data["code"], 1)
+
+
+    def test(self):
+        # We have no browsing history and no hot index
+        # So we don't have recommendation from ByBrowsingHistory
+        response = self._recommender("U1", type="ByBrowsingHistory", amount=5)
+        self.assertEqual([item["item_id"] for item in response.data["topn"]], 
+                        [])
+        # Also not hot index
+        response = self._recommender("U1", type="ByHotIndex", amount=5, hot_index_type="by_viewed")
+        self.assertEqual([item["item_id"] for item in response.data["topn"]], 
+                        [])
+        # Also not /unit/home
+        response = self._recommender("U1", type="/unit/home", amount=5)
+        print "RP:", response.data
+        self.assertEqual([item["item_id"] for item in response.data["topn"]], 
+                        [])
+
+        # But ... If there is some by_viewed hot index
+        # let's view some items with other users
+        self._viewItem("U2", "I123", 7)
+        self._viewItem("U2", "I124", 5)
+        self._viewItem("U3", "I125", 3)
+        self._viewItem("U5", "I126", 1)
+
+        tasks.update_hotview_list.delay(self.TEST_SITE_ID)
+        get_cache("default").clear()
+
+        # now we have topn
+        response = self.api_get(reverse("recommender-recommender"),
+            data={"api_key": self.api_key,
+                  "type": "ByHotIndex",
+                  "hot_index_type": "by_viewed",
+                  "user_id": "U1",
+                  "amount": 5
+                  })
+
+        self.assertEqual(response.data["code"], 0)
+        self.assertEqual([item["item_id"] for item in response.data["topn"]],
+                         ["I123", "I124", "I125", "I126"])
+
+        # And the /unit/home should return same result, because the user has no browsing history
+        response = self._recommender("U1", type="/unit/home", amount=5)
+        self.assertEqual([item["item_id"] for item in response.data["topn"]], 
+                        ["I123", "I124", "I125", "I126"])
+
+        # And let's let the user U1 browse some items
+        self._viewItem("U1", "I123", 10)
+        response = self._viewItem("U1", "I124", 10)
+
+        # And add similarities for ViewItem
+        self.insert_item_similarities("V", "I123",
+                    [["I124", 0.9725],
+                     ["I125", 0.8023]])
+        self.insert_item_similarities("V", "I124",
+                    [["I125", 0.9721],
+                     ["I126", 0.7050]])
+
+        browsing_history_cache = self.get_browsing_history_cache()
+        browsing_history = browsing_history_cache.get_from_cache(self.TEST_SITE_ID, self.get_ptm_id(response), 
+                            no_result_as_none=True)
+        self.assertEqual(set(browsing_history), set(["I123", "I124"]))
+
+        # And the ByBrowsingHistory should return a different result than HotIndex
+        response = self._recommender("U1", type="ByBrowsingHistory", amount=5)
+        self.assertEqual([item["item_id"] for item in response.data["topn"]], 
+                        ["I125", "I126"])
+
+        raw_log_count = len(self.get_last_n_raw_logs(None))
+
+        # And now the /unit/home should return the same result as ByBrowsingHistory
+        # because ByBrowsingHistory takes priority in the logic of /unit/home
+        response = self._recommender("U1", type="/unit/home", amount=5)
+        self.assertEqual([item["item_id"] for item in response.data["topn"]], 
+                        ["I125", "I126"])
+        self.assertEqual(len(self.get_last_n_raw_logs(None)) - raw_log_count, 1)
+
+        # also check the raw log
+        raw_log = self.get_last_n_raw_logs(1)[0]
+        self.assertSeveralKeys(raw_log,
+                    {"user_id": "U1",
+                     "behavior": "Recommendation",
+                     "recommender_type": "/unit/home",
+                     "recommended_items": [u"I125", u"I126"],
+                     "amount": '5'
+                     })
 
 
 @override_settings(CELERY_EAGER_PROPAGATES_EXCEPTIONS=True,

@@ -455,7 +455,7 @@ class UpdateItemProcessor(ActionProcessor):
                 if re.match(r"[A-Za-z0-9]+", category[expected_key]) is None:
                     return {"code": 1, "err_msg": "category ids can only contains digits and letters."}
             null_parent_id_found = null_parent_id_found or category["parent_id"] == "null"
-        if not null_parent_id_found:
+        if args["categories"] != [] and not null_parent_id_found:
             return {"code": 1, "err_msg": "At least one category should be at the top level"}
         return None
 
@@ -864,28 +864,14 @@ class GetByBrowsingHistoryProcessor(BaseSimpleResultRecommendationProcessor):
 
     def getRecommendationLog(self, args, req_id, recommended_items):
         log = BaseSimpleResultRecommendationProcessor.getRecommendationLog(self, args, req_id, recommended_items)
-        #browsing_history = args["browsing_history"]
-        #if browsing_history == None:
-        #    browsing_history = []
-        #else:
-        #    browsing_history = browsing_history.split(",")
-        #log["browsing_history"] = browsing_history
         log["browsing_history"] = args["browsing_history"]
         return log
 
     def getTopN(self, site_id, args):
-        #browsing_history = args["browsing_history"]
-        #if browsing_history == None:
-        #    browsing_history = []
-        #else:
-        #    browsing_history = browsing_history.split(",")
         ptm_id = args["ptm_id"]
         browsing_history = browsing_history_cache.get(site_id, ptm_id)
         args["browsing_history"] = browsing_history
         topn = mongo_client.recommend_based_on_some_items(site_id, "V", browsing_history)
-        if len(topn) == 0:
-            topn = hot_view_list_cache.getHotViewList(site_id, 
-                            hot_index_type="by_viewed")
         return topn
 
 
@@ -996,14 +982,76 @@ EVENT_TYPE2ACTION_PROCESSOR = {
 }
 
 
-RECOMMEND_TYPE2ACTION_PROCESSOR = {
-    "AlsoViewed": GetAlsoViewedProcessor,
-    "ByBrowsingHistory": GetByBrowsingHistoryProcessor,
-    "AlsoBought": GetAlsoBoughtProcessor,
-    "BoughtTogether": GetBoughtTogetherProcessor,
-    "UltimatelyBought": GetUltimatelyBoughtProcessor,
-    "ByPurchasingHistory": GetByPurchasingHistoryProcessor,
-    "ByShoppingCart": GetByShoppingCartProcessor,
-    "ByHotIndex": GetByHotIndexProcessor
-}
+class RecommenderRegistry:
+    def __init__(self):
+        self.registry_map = {}
 
+    def register(self, recommender_type, action_processor):
+        self.registry_map[recommender_type] = action_processor
+        action_processor.recommender_type = recommender_type
+
+    def getRecommenderTypes(self):
+        return self.registry_map.keys()
+
+    def getProcessor(self, recommender_type):
+        return self.registry_map.get(recommender_type, None)
+
+
+def IfEmptyTryNextProcessor(argument_processor, action_processor_chain, extra_args_to_log=[]):
+    # TODO: action_processors should be of BaseSimpleResultRecommendationProcessor
+    # TODO: should check the argument list against those action processors
+    class IfEmptyTryNextProcessor(BaseSimpleResultRecommendationProcessor):
+        action_name = "Recommendation"
+
+        def getRecommendationLog(self, args, req_id, recommended_items):
+            log = BaseSimpleResultRecommendationProcessor.getRecommendationLog(self, args, req_id, recommended_items)
+            # FIXME fix the setting of recommender_type
+            log["recommender_type"] = self.recommender_type
+            for extra_arg in extra_args_to_log:
+                log[extra_arg] = args[extra_arg]
+            return log
+
+        # TODO
+        def getRecommendationResultFilter(self, site_id, args):
+            return SimpleRecommendationResultFilter()
+
+        def getTopN(self, site_id, args):
+            topn = []
+            for action_processor_class, extra_args in self.action_processor_chain:
+                action_processor = action_processor_class(not_log_action=True)
+                args = copy.deepcopy(args)
+                args.update(extra_args)
+                topn = action_processor.getTopN(site_id, args)
+                if len(topn) > 0:
+                    break
+            return topn
+
+    IfEmptyTryNextProcessor.ap = argument_processor
+    IfEmptyTryNextProcessor.action_processor_chain = action_processor_chain
+    return IfEmptyTryNextProcessor
+
+
+recommender_registry = RecommenderRegistry()
+
+recommender_registry.register("AlsoViewed",GetAlsoViewedProcessor)
+recommender_registry.register("ByBrowsingHistory", GetByBrowsingHistoryProcessor)
+recommender_registry.register("AlsoBought", GetAlsoBoughtProcessor)
+recommender_registry.register("BoughtTogether", GetBoughtTogetherProcessor)
+recommender_registry.register("UltimatelyBought", GetUltimatelyBoughtProcessor)
+recommender_registry.register("ByPurchasingHistory", GetByPurchasingHistoryProcessor)
+recommender_registry.register("ByShoppingCart", GetByShoppingCartProcessor)
+recommender_registry.register("ByHotIndex", GetByHotIndexProcessor)
+recommender_registry.register("/unit/home",
+                              IfEmptyTryNextProcessor(
+                                 ArgumentProcessor(
+                                    (("user_id", True),
+                                    ("ref", False),
+                                    ("include_item_info", False),
+                                    ("amount", True)
+                                    )
+                                  ),
+                                  [
+                                      (GetByBrowsingHistoryProcessor, {}),
+                                      (GetByHotIndexProcessor, {"hot_index_type": "by_viewed"})
+                                  ]
+                              ))

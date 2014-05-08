@@ -19,11 +19,11 @@ import os
 
 API_ROOT = "http://search.tuijianbao.net/api/v1.6/"
 #api_key = "4ad6af048ec"
-#api_key = "6fad74ab" # haoyaoshitest
+api_key = "6fad74ab" # haoyaoshitest
 #api_key = "fb86b045"  #testsite001
 
-api_key = "a4b4dc8a" # poco_internal_test
-site_token = "d70127ab-aea0-473f-8b91-c48a2e5a6be4"
+#api_key = "a4b4dc8a" # poco_internal_test
+#site_token = "d70127ab-aea0-473f-8b91-c48a2e5a6be4"
 
 
 api_access = api_client.APIClient(API_ROOT)

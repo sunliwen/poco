@@ -15,13 +15,25 @@ API_KEY_FOR_SEARCH_DEMO = "fb86b045" # This is the api key of search demo which 
 # refs: https://docs.djangoproject.com/en/dev/topics/cache/
 # we use memcached in production.
 # For development, the default local-memory caching is enough.
+#CACHES = {
+#    'default': {
+#        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+#        'LOCATION': 'unique-snowflake'
+#    }
+#}
+
+
+REDIS_CONFIGURATION = {"host": "localhost", "port": 6379, "db": 0}
+
+# Redis cache is used for both production and development
 CACHES = {
     'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'unique-snowflake'
+        'BACKEND': 'redis_cache.cache.RedisCache',
+        'LOCATION': '%(host)s:%(port)s:%(db)s' % REDIS_CONFIGURATION,
+        'OPTIONS': {
+            'CLIENT_CLASS': 'redis_cache.client.DefaultClient',
+            #'PASSWORD': 'secretpassword',  # Optional
+        }
     }
 }
-
-
-#MEMCACHED_HOSTS = ['127.0.0.1:11211']
 
