@@ -180,7 +180,7 @@ class RecommenderAPIView(SingleRequestAPIView):
 
     def getActionProcessor(self, args):
         type = args.get("type", None)
-        action_processor = action_processors.RECOMMEND_TYPE2ACTION_PROCESSOR.get(type, None)
+        action_processor = action_processors.recommender_registry.getProcessor(type)
         if action_processor is None:
             return False, {"code": 2, "err_msg": "no or invalid type"}
         else:
