@@ -30,7 +30,7 @@
         * Please check CRON_SITE_ID, CELERY_TIMEZONE, CELERYBEAT_SCHEDULE in local_config.py.EXAMPLE
     5. run "python manage.py syncdb"
     7. Also run "celery -A search_demo worker" in the root dir of the search_demo project
-    8. You also need to config the celery beat service.
+    8. You also need to set up the celery beat service.
         * celery beat -s "</path/to/celerybeat-schedule>"
             * refs: http://celery.readthedocs.org/en/latest/userguide/periodic-tasks.html
 

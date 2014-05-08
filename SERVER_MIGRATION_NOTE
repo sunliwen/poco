@@ -1,0 +1,11 @@
+This is the document for migrating data from tuijianbao.net to haoyaoshi server.
+
+1. You need to move the mongodb:
+    1. tjb-db
+        * sites collection. the record with "haoyaoshi" as site_id
+    2. tjbsite_haoyaoshi (be careful to preserve the indexes)
+
+2. You need to copy the whole ES data dir.
+
+3. For Batch/Dashboard/Adminboard: use the poco_1.6 branch.
+
