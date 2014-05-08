@@ -27,8 +27,12 @@
         * API_SERVER_PREFIX should be correct for redirection url to work
         * And for production site, you need to config "CACHES" in local_settings.py. 
             * We use django-redis currently. See local_config.py.EXAMPLE for configuration.
+        * Please check CRON_SITE_ID, CELERY_TIMEZONE, CELERYBEAT_SCHEDULE in local_config.py.EXAMPLE
     5. run "python manage.py syncdb"
     7. Also run "celery -A search_demo worker" in the root dir of the search_demo project
+    8. You also need to config the celery beat service.
+        * celery beat -s "</path/to/celerybeat-schedule>"
+            * refs: http://celery.readthedocs.org/en/latest/userguide/periodic-tasks.html
 
 == Create a new site ==
     (NOTE: if you are moving data from tuijianbao.net to haoyaoshi server, you don't need this step).

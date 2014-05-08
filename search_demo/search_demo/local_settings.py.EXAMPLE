@@ -37,3 +37,24 @@ CACHES = {
     }
 }
 
+CELERY_TIMEZONE = 'Asia/Shanghai'
+
+
+# currently, these tasks only support one site
+CRON_SITE_ID = "haoyaoshitest"
+
+
+CELERYBEAT_SCHEDULE = {
+    'rebuild_suggestion_cache': {
+        'task': 'api_app.tasks.rebuild_suggestion_cache',
+        'schedule': crontab(hour=23, minute=59), # midnight
+        'args': (CRON_SITE_ID, )
+    },
+    'update_hotview_list': {
+        'task': 'recommender.tasks.update_hotview_list',
+        'schedule': crontab(minute=01), # every hour
+        'args': (CRON_SITE_ID, )
+    }
+}
+
+
