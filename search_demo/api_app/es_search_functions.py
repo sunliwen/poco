@@ -9,7 +9,7 @@ from recommender.property_cache import PropertyCache
 
 
 def getESItemIndexName(site_id):
-    return "item-index-%s" % site_id
+    return "item-index-v1-%s" % site_id
 
 
 def getESClient():
