@@ -157,13 +157,13 @@ class ProductsSearch(BaseAPIView):
                 facets_dsl["categories"] = es_search_functions._getSubCategoriesFacets(cat_id, s)
             elif categories_facet_mode == "SUB_TREE":
                 facets_dsl["categories"] = es_search_functions.addFilterToFacets(s,
-                                            {'terms': {'regex': r'[^_]+', 'field': 'categories'}})
+                                            {'terms': {'regex': r'[^_]+', 'field': 'categories', 'size': 5000}})
         if facets_selector.has_key("brand"):
-            facets_dsl["brand"] = es_search_functions.addFilterToFacets(s, {'terms': {'field': 'brand'}})
+            facets_dsl["brand"] = es_search_functions.addFilterToFacets(s, {'terms': {'field': 'brand', 'size': 5000}})
         if facets_selector.has_key("origin_place"):
             facets_dsl["origin_place"] = es_search_functions.addFilterToFacets(s,
                                                     {'terms': {'field': 'origin_place', 
-                                                    'size': 20}})
+                                                    'size': 5000}})
         facets_result = {}
         if len(facets_dsl.keys()) > 0:
             s = s.facet_raw(**facets_dsl)
@@ -506,5 +506,4 @@ class QuerySuggest(BaseAPIView):
             return Response({"records": [], "info": {}, 
                              "errors": [{"code": "UNKNOWN_ERROR", 
                                         "message": "Unknown error, please try later."}]})
-
         return Response({"suggestions": suggested_texts, "errors": []})

@@ -124,6 +124,7 @@ class SiteIndexesEnsurer:
         self.fix_traffic_metrics()
         self.fix_cached_hot_view()
         self.fix_search_terms_cache()
+        self.fix_suggest_keyword_list()
 
 
 def fix_tjb_db_indexes(mongo_client):

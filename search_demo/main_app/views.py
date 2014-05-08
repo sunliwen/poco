@@ -50,7 +50,7 @@ def construct_query(query_str, for_filter=False):
     return query
 
 def addFilterToFacets(s, facets):
-    filter = s._build_query().get("filter", None)
+    filter = s.build_search().get("filter", None)
     if filter:
         facets["facet_filter"] = filter
     return filter
@@ -169,7 +169,6 @@ def v_index(request):
                body=body)
 
     breadcrumbs = get_breadcrumbs(category)
-
     if result["info"]["current_page"] > 1:
         prev_page = result["info"]["current_page"] - 1
     else:

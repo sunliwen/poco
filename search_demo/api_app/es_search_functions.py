@@ -58,7 +58,7 @@ def construct_query(query_str, for_filter=False):
     return query
 
 def addFilterToFacets(s, facets):
-    filter = s._build_query().get("filter", None)
+    filter = s.build_search().get("filter", None)
     if filter:
         facets["facet_filter"] = filter
     return facets
@@ -68,7 +68,7 @@ def _getSubCategoriesFacets(cat_id, s):
         regex = r"null__.*"
     else:
         regex = r"%s__.*" % cat_id
-    result = {'terms': {'regex': regex, 'field': 'categories'}}
+    result = {'terms': {'regex': regex, 'field': 'categories', 'size': 5000}}
     #result = {'terms': {'field': 'categories', 'size': 20}}
     addFilterToFacets(s, result)
     return result
@@ -100,7 +100,6 @@ class TermsCache:
         sorted_terms = sorted_terms
         terms_key = "terms-cache-" + hashlib.md5(u"|".join(sorted_terms).encode("utf8")).hexdigest()
         cache_entry = get_cache("default").get(terms_key)
-        #print "C:", cache_entry is not None
         if cache_entry is None:
             _, cache_entry = self.mongo_client.fetchSearchTermsCacheEntry(site_id, terms)
             if cache_entry:
