@@ -506,5 +506,4 @@ class QuerySuggest(BaseAPIView):
             return Response({"records": [], "info": {}, 
                              "errors": [{"code": "UNKNOWN_ERROR", 
                                         "message": "Unknown error, please try later."}]})
-
         return Response({"suggestions": suggested_texts, "errors": []})

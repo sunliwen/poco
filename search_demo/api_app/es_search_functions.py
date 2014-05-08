@@ -100,7 +100,6 @@ class TermsCache:
         sorted_terms = sorted_terms
         terms_key = "terms-cache-" + hashlib.md5(u"|".join(sorted_terms).encode("utf8")).hexdigest()
         cache_entry = get_cache("default").get(terms_key)
-        #print "C:", cache_entry is not None
         if cache_entry is None:
             _, cache_entry = self.mongo_client.fetchSearchTermsCacheEntry(site_id, terms)
             if cache_entry:
