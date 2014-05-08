@@ -18,7 +18,10 @@ def run(site_id, path):
                 list_type = keyword_list.WHITE_LIST
                 keyword = line
             keyword = unicode(keyword, "utf8")
-            keyword_list.updateSuggestKeywordList(site_id, list_type, [keyword])
+            if list_type == keyword_list.WHITE_LIST:
+                keyword_list.markKeywordsAsWhiteListed(site_id, [keyword])
+            elif list_type == keyword_list.BLACK_LIST:
+                keyword_list.markKeywordsAsBlackListed(site_id, [keyword])
         f_list_to_upload.close()
         print "Finished."
     else:
