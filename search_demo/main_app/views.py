@@ -159,6 +159,7 @@ def v_index(request):
        "q": query_str,
        "page": page_num,
        "sort_fields": sort_fields,
+       "facets": {"categories": {"mode": "DIRECT_CHILDREN"}},
        "highlight": True
     }
 
