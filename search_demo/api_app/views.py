@@ -466,13 +466,13 @@ class ProductsSearch(BaseAPIView):
 
 
 class QuerySuggest(BaseAPIView):
-    def _validate(self, request):
+    def _validate(self, args):
         errors = []
-        if not isinstance(request.DATA.get("q", None), basestring):
+        if not isinstance(args.get("q", None), basestring):
             errors.append({"code": "PARAM_REQUIRED", "field_name": "q",
                            "message": "'q' is required and must be a string."})
 
-        api_key = request.DATA.get("api_key", None)
+        api_key = args.get("api_key", None)
         if api_key is None:
             errors.append({"code": "PARAM_REQUIRED", "field_name": "api_key",
                            "message": "'api_key' is required."})
@@ -490,12 +490,18 @@ class QuerySuggest(BaseAPIView):
         return self.get(request, format=None)
 
     def get(self, request, format=None):
-        errors = self._validate(request)
+        if len(request.DATA) != 0:
+            args = request.DATA
+        else:
+            args = request.GET
+
+        errors = self._validate(args)
         if errors:
             return Response({"suggestions": [], "errors": errors})
 
-        q = request.DATA.get("q", "")
-        api_key = request.DATA.get("api_key", "")
+        q = args.get("q", "")
+        api_key = args.get("api_key", "")
+
         site_id = self.getSiteID(api_key)
 
         try:
