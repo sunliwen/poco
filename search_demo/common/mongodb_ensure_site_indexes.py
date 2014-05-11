@@ -88,19 +88,19 @@ class SiteIndexesEnsurer:
         c_visitors.ensure_index([("ptm_id", 1)], background=True, unique=True)
 
     def fix_traffic_metrics(self):
-        c_traffic_metrics = self.getSiteDBCollection("c_traffic_metrics")
+        c_traffic_metrics = self.getSiteDBCollection("traffic_metrics")
         c_traffic_metrics.drop_indexes()
         c_traffic_metrics.ensure_index([("item_id", 1)], background=True, unique=True)
 
     def fix_cached_hot_view(self):
-        c_cached_hot_view = self.getSiteDBCollection("c_cached_hot_view")
+        c_cached_hot_view = self.getSiteDBCollection("cached_hot_view")
         c_cached_hot_view.drop_indexes()
         c_cached_hot_view.ensure_index("hot_index_type", background=True, unique=False)
         c_cached_hot_view.ensure_index("category_id", background=True, unique=False)
         c_cached_hot_view.ensure_index("brand", background=True, unique=False)
 
     def fix_search_terms_cache(self):
-        c_search_terms_cache = self.getSiteDBCollection("c_search_terms_cache")
+        c_search_terms_cache = self.getSiteDBCollection("search_terms_cache")
         c_search_terms_cache.drop_indexes()
         c_search_terms_cache.ensure_index("terms_key", background=True, unique=False)
 
