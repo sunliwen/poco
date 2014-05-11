@@ -45,6 +45,7 @@ INSTALLED_APPS = (
     #'kombu.transport.django', # disable this in production
     'api_app',
     'recommender',
+    'dashboard',
     'main_app',
     'gunicorn'
 )

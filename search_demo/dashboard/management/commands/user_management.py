@@ -1,9 +1,8 @@
-import sys
-#import pymongo
+from django.core.management.base import BaseCommand, CommandError
 from common.mongo_client import getMongoClient
 import random
 import hashlib
-import settings
+from django.conf import settings
 
 
 # http://www.aspheute.com/english/20040105.asp
@@ -104,26 +103,34 @@ def cmd_promoteAdmin():
     else:
         print "the action cancelled."
 
-while True:
-    print "1. create New User"
-    print "2. generate New Password"
-    print "3. update managed sites"
-    print "4. add managed sites"
-    print "5. show user info"
-    print "6. list users"
-    print "7. promote user as admin"
-    cmd = raw_input("enter a number:").strip()
-    if cmd == "1":
-        cmd_createNewUser()
-    elif cmd == "2":
-        cmd_generateNewPassword()
-    elif cmd == "3":
-        cmd_updateSite()
-    elif cmd == "4":
-        cmd_addSite()   
-    elif cmd == "5":
-        cmd_showUserInfo()
-    elif cmd == "6":
-        cmd_listUsers()
-    elif cmd == "7":
-        cmd_promoteAdmin()
+
+class Command(BaseCommand):
+    args = ''
+    help = 'The User Management Utility for Dashboard'
+
+    def handle(self, *args, **options):
+        while True:
+            print "1. create New User"
+            print "2. generate New Password"
+            print "3. update managed sites"
+            print "4. add managed sites"
+            print "5. show user info"
+            print "6. list users"
+            print "7. promote user as admin"
+            cmd = raw_input("enter a number:").strip()
+            if cmd == "1":
+                cmd_createNewUser()
+            elif cmd == "2":
+                cmd_generateNewPassword()
+            elif cmd == "3":
+                cmd_updateSite()
+            elif cmd == "4":
+                cmd_addSite()   
+            elif cmd == "5":
+                cmd_showUserInfo()
+            elif cmd == "6":
+                cmd_listUsers()
+            elif cmd == "7":
+                cmd_promoteAdmin()
+
+        self.stdout.write("Exit.")
