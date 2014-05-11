@@ -26,6 +26,7 @@ def api_root(request, format=None):
     return Response({
         'search': reverse('products-search', request=request, format=format),
         'suggest': reverse('query-suggest', request=request, format=format),
+        'hot-keywords': reverse('hot-keywords', request=request, format=format),
         #'categories': reverse('categories-list', request=request, format=format)
     })
 
@@ -463,6 +464,55 @@ class ProductsSearch(BaseAPIView):
                 }
 
         return Response(result)
+
+
+class HotKeywords(BaseAPIView):
+    HOT_KEYWORDS = ["补肾", "六味地黄丸", "万艾可", "减肥", "同仁堂", "达克宁", "阿胶", 
+                    "力补金秋", "康王", "补血", "迪巧", "五子衍宗丸", "云南白药",
+                    "伟哥", "爱乐维", "参苓白术丸", "伊可新", "金匮肾气丸",
+                    "善存"]
+
+    def _validate(self, args):
+        errors = []
+        category_id = args.get("category_id", None)
+        if category_id is not None and not isinstance(category_id, basestring):
+            errors.append({"code": "INVALID_PARAM", "field_name": "category_id",
+                           "message": "category_id must be a string."})
+
+        amount = args.get("amount", "5")
+        try:
+            args["amount"] = int(args.get("amount", "5"))
+        except ValueError:
+            errors.append({"code": "INVALID_PARAM", "field_name": "amount",
+                           "message": "value of 'amount' is invalid."})
+
+        api_key = args.get("api_key", None)
+        if api_key is None:
+            errors.append({"code": "PARAM_REQUIRED", "field_name": "api_key",
+                           "message": "'api_key' is required."})
+        elif not isinstance(api_key, basestring):
+            errors.append({"code": "INVALID_PARAM",
+                           "param_name": "api_key",
+                           "message": "'api_key' must be a string."})
+        elif self.getSiteID(api_key) is None:
+            errors.append({"code": "INVALID_PARAM", "param_name": "api_key",
+                           "message": "no such api_key"})
+        return errors
+
+    def post(self, request, format=None):
+        return self.get(request, format=None)
+
+    def get(self, request, format=None):
+        if len(request.DATA) != 0:
+            args = request.DATA
+        else:
+            args = request.GET
+
+        errors = self._validate(args)
+        if errors:
+            return Response({"hot_keywords": [], "errors": errors})
+        
+        return Response({"hot_keywords": self.HOT_KEYWORDS[:args["amount"]], "errors": []})
 
 
 class QuerySuggest(BaseAPIView):
