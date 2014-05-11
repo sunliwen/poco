@@ -715,5 +715,8 @@ def getConnection():
         return pymongo.Connection(settings.MONGODB_HOST)
 
 
+mongo_client = MongoClient(getConnection())
+
+
 def getMongoClient():
-    return MongoClient(getConnection())
+    return mongo_client

@@ -998,7 +998,22 @@ class RecommenderRegistry:
         return self.registry_map.get(recommender_type, None)
 
 
-def IfEmptyTryNextProcessor(argument_processor, action_processor_chain, extra_args_to_log=[]):
+#def ExcludeItemsProcessor(action_processor_class, items_to_exclude=[]):
+#    class ExcludeItemsProcessor(BaseSimpleResultRecommendationProcessor):
+#        action_name = "Recommendation"
+#
+#        def __init__(self, not_log_action=False):
+#            BaseSimpleResultRecommendationProcessor.__init__(self, not_log_action)
+#            self.not_log_action_for_child = not_log_action
+#            self.not_log_action = True
+#
+#        def getTopN(self, site_id, args):
+#            action_processor = self.action_processor_class(self.not_log_action_for_child)
+#            topn = action_processor.getTopN(site_id, args)
+
+
+
+def IfEmptyTryNextProcessor(argument_processor, action_processor_chain, post_process_filters=[], extra_args_to_log=[]):
     # TODO: action_processors should be of BaseSimpleResultRecommendationProcessor
     # TODO: should check the argument list against those action processors
     class IfEmptyTryNextProcessor(BaseSimpleResultRecommendationProcessor):
@@ -1018,18 +1033,41 @@ def IfEmptyTryNextProcessor(argument_processor, action_processor_chain, extra_ar
 
         def getTopN(self, site_id, args):
             topn = []
-            for action_processor_class, extra_args in self.action_processor_chain:
+            for action_processor_class, extra_args_pipe in self.action_processor_chain:
                 action_processor = action_processor_class(not_log_action=True)
                 args = copy.deepcopy(args)
-                args.update(extra_args)
+                for extra_args_filler in extra_args_pipe:
+                    if isinstance(extra_args_filler, dict):
+                        args.update(extra_args_filler)
+                    else:
+                        extra_args_filler(site_id, args)
                 topn = action_processor.getTopN(site_id, args)
                 if len(topn) > 0:
                     break
+            for filter in post_process_filters:
+                topn = filter(site_id, args, topn)
             return topn
 
     IfEmptyTryNextProcessor.ap = argument_processor
     IfEmptyTryNextProcessor.action_processor_chain = action_processor_chain
     return IfEmptyTryNextProcessor
+
+
+def fill_category_id_by_item_id(site_id, args):
+    item_id = args["item_id"]
+    item = mongo_client.getItem(site_id, item_id)
+    if item is not None:
+        root_categories = [category for category in item["categories"] if category["parent_id"] == "null"]
+        if len(root_categories) > 0:
+            category_id = root_categories[0]["id"]
+    else:
+        category_id = None
+    args["category_id"] = category_id
+
+
+def exclude_item_id_in_args(site_id, args, topn):
+    item_id = args["item_id"]
+    return [item for item in topn if item_id != item[0]]
 
 
 recommender_registry = RecommenderRegistry()
@@ -1053,6 +1091,27 @@ recommender_registry.register("/unit/home",
                                   ),
                                   [
                                       (GetByBrowsingHistoryProcessor, {}),
-                                      (GetByHotIndexProcessor, {"hot_index_type": "by_viewed"})
+                                      (GetByHotIndexProcessor, [{"hot_index_type": "by_viewed"}])
                                   ]
+                              ))
+
+recommender_registry.register("/unit/item",
+                              IfEmptyTryNextProcessor(
+                                 ArgumentProcessor(
+                                    (("user_id", True),
+                                     ("item_id", True),
+                                    ("ref", False),
+                                    ("include_item_info", False),
+                                    ("amount", True)
+                                    )
+                                  ),
+                                  [
+                                      (GetAlsoViewedProcessor, {}),
+                                      (GetByHotIndexProcessor, 
+                                         [{"hot_index_type": "by_viewed"},
+                                          fill_category_id_by_item_id]),
+                                      (GetByHotIndexProcessor,
+                                       {"hot_index_type": "by_viewed"}) # This is the backup plan in case the hot index of specific categories is also empty
+                                  ],
+                                  post_process_filters=[exclude_item_id_in_args]
                               ))

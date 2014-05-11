@@ -575,3 +575,24 @@ class ItemsSearchViewTest(BaseAPITest):
                                           {'count': 1, 'type': 'more_keyword', 'value': u'奶粉 能恩'}
                                           ]}
                          )
+
+    def test_hot_keywords(self):
+        body = {"api_key": self.api_key
+               }
+        response = self.api_post(reverse("hot-keywords"), data=body)
+        self.assertEqual(response.data["errors"], [])
+        self.assertEqual(len(response.data["hot_keywords"]), 5)
+
+        body = {"api_key": self.api_key,
+                "amount": 3
+               }
+        response = self.api_post(reverse("hot-keywords"), data=body)
+        self.assertEqual(response.data["errors"], [])
+        self.assertEqual(len(response.data["hot_keywords"]), 3)
+
+        body = {"api_key": self.api_key,
+                "amount": 10
+               }
+        response = self.api_post(reverse("hot-keywords"), data=body)
+        self.assertEqual(response.data["errors"], [])
+        self.assertEqual(len(response.data["hot_keywords"]), 10)

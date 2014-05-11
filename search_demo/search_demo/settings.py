@@ -41,9 +41,11 @@ INSTALLED_APPS = (
     'bootstrap_pagination',
     'django_extensions',
     'rest_framework',
+    'compressor',
     #'kombu.transport.django', # disable this in production
     'api_app',
     'recommender',
+    'dashboard',
     'main_app',
     'gunicorn'
 )
@@ -111,12 +113,20 @@ REST_FRAMEWORK = {
     )
 }
 
+
+# django_compressor
+COMPRESS_ENABLED = not DEBUG
+COMPRESS_ROOT = STATIC_ROOT
+COMPRESS_OUTPUT_DIR = 'min'
+
+
 # recommender app settings
 VISITOR_BROWSING_HISTORY_LENGTH = 15
 MONGODB_HOST = None
 REPLICA_SET = None
 PRINT_RAW_LOG = False
 API_SERVER_PREFIX = None
+API_PATH_PREFIX = None
 #MEMCACHED_HOSTS = None
 BROKER_URL = None
 # this should be a dictionary. set([site_id])
@@ -131,6 +141,7 @@ from local_settings import *
 
 assert MONGODB_HOST is not None
 assert API_SERVER_PREFIX is not None
+assert API_PATH_PREFIX is not None
 #assert recommendation_deduplicate_item_names_required_set is not None
 #assert MEMCACHED_HOSTS is not None
 assert BROKER_URL is not None

@@ -13,3 +13,4 @@
 
    search_api
    suggest_api
+   hot_keywords_api

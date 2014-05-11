@@ -740,17 +740,67 @@ class GetByBrowsingHistoryTest(BaseRecommenderTest):
 @override_settings(CELERY_EAGER_PROPAGATES_EXCEPTIONS=True,
                    CELERY_ALWAYS_EAGER=True,
                    BROKER_BACKEND='memory')
-class AdUnitHomeTest(BaseRecommenderTest):
+class AdUnitTest(BaseRecommenderTest):
     def setUp(self):
-        super(AdUnitHomeTest, self).setUp()
+        super(AdUnitTest, self).setUp()
         self.postItems(test_data1, None)
 
     def test_invalid_args(self):
         response = self._recommender("U1", type="/unit/home")
         self.assertEqual(response.data["code"], 1)
 
+    def testUnitItem(self):
+        # And add similarities for ViewItem
+        self.insert_item_similarities("V", "I123",
+                    [["I124", 0.9725],
+                     ["I125", 0.8023]])
+        self.insert_item_similarities("V", "I124",
+                    [["I125", 0.9721],
+                     ["I126", 0.7050]])
 
-    def test(self):
+        self._viewItem("U2", "I123", 7)
+        self._viewItem("U2", "I124", 5)
+        self._viewItem("U3", "I125", 3)
+        self._viewItem("U5", "I126", 1)
+
+        tasks.update_hotview_list.delay(self.TEST_SITE_ID)
+
+        # For item_id=INULL, there is no AlsoViewed recommendation
+        response = self._recommender("U1", type="AlsoViewed", item_id="INULL", amount=5)
+        self.assertEqual([item["item_id"] for item in response.data["topn"]], 
+                        [])
+        # For item_id=I123
+        response = self._recommender("U1", type="AlsoViewed", item_id="I123", amount=5)
+        self.assertEqual([item["item_id"] for item in response.data["topn"]], 
+                        ["I124", "I125"])
+        # there is recommendation for ByHotIndex, category_id=12
+        response = self._recommender("U1", type="ByHotIndex", category_id="12", hot_index_type="by_viewed", amount=5)
+        self.assertEqual(response.data["code"], 0, "Invalid response: %s" % response.data)
+        self.assertEqual([item["item_id"] for item in response.data["topn"]], 
+                        ["I123", "I124", "I125"])
+
+        # ByHotIndex of full site
+        response = self._recommender("U1", type="ByHotIndex", hot_index_type="by_viewed", amount=5)
+        self.assertEqual(response.data["code"], 0, "Invalid response: %s" % response.data)
+        self.assertEqual([item["item_id"] for item in response.data["topn"]], 
+                        ["I123", "I124", "I125", "I126"])
+
+        # For /unit/item, if item_id=INULL, the ByHotIndex of full site should be used.
+        response = self._recommender("U1", type="/unit/item", item_id="INULL", amount=5)
+        self.assertEqual([item["item_id"] for item in response.data["topn"]], 
+                        ["I123", "I124", "I125", "I126"])
+
+        # For /unit/item, if item_id=I125, the hot index of category 12 would be used. And I125 should be filtered out.
+        response = self._recommender("U1", type="/unit/item", item_id="I125", amount=5)
+        self.assertEqual([item["item_id"] for item in response.data["topn"]], 
+                        ["I123", "I124"])
+
+        # For /unit/item, if item_id=I123, the AlsoViewed recommendation should be used
+        response = self._recommender("U1", type="/unit/item", item_id="I123", amount=5)
+        self.assertEqual([item["item_id"] for item in response.data["topn"]], 
+                        ["I124", "I125"])
+
+    def testUnitHome(self):
         # We have no browsing history and no hot index
         # So we don't have recommendation from ByBrowsingHistory
         response = self._recommender("U1", type="ByBrowsingHistory", amount=5)

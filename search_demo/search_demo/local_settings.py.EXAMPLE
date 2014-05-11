@@ -1,7 +1,11 @@
+DEBUG = False
+
 MONGODB_HOST = "localhost"
 API_SERVER_PREFIX = "http://localhost:2222"
 PRINT_RAW_LOG = True
 #recommendation_deduplicate_item_names_required_set = set([])
+
+API_PATH_PREFIX = "/api/v1.6/"
 
 # For Development
 BROKER_URL = "django://"
@@ -58,3 +62,16 @@ CELERYBEAT_SCHEDULE = {
 }
 
 
+# These are configuration copied from old dashboard configuration
+COMPRESS_ENABLED=not DEBUG
+
+# Following configure is for GMail SMTP
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = '<your user>'
+EMAIL_HOST_PASSWORD = '<your password>' # Hint: you may use 2-step authentication without put your main password here.
+
+# EDM sender email
+EDM_SENDER_EMAIL = '<the sender appear on edm emails>'
