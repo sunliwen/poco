@@ -9,6 +9,7 @@ import re
 import datetime
 import os.path
 import uuid
+import urlparse
 from django.conf import settings
 import getopt
 import urllib
@@ -557,7 +558,7 @@ class BaseRecommendationProcessor(ActionProcessor):
                                   "item_id": item_id,
                                    "req_id": req_id})
         REDIRECT_PATH = reverse("recommender-redirect")
-        full_url = settings.API_SERVER_PREFIX + REDIRECT_PATH + "?" + param_str
+        full_url = urlparse.urljoin(settings.API_SERVER_PREFIX, REDIRECT_PATH) + "?" + param_str
         return full_url
 
     def getRecommendationResultFilter(self, site_id, args):
