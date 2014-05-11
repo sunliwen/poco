@@ -39,11 +39,14 @@ def update_visitor_cache(mongo_client, site_id, content):
         browsing_history_cache.update_cache(site_id, ptm_id, browsing_history)
 
 
-def _write_log(site_id, content, update_visitor_cache=True):
-    mongo_client = getMongoClient()
+mongo_client = getMongoClient()
+
+
+def _write_log(site_id, content, is_update_visitor_cache=True):
+    #mongo_client = getMongoClient()
     mongo_client.writeLogToMongo(site_id, content)
     # check & update visitor cache
-    if update_visitor_cache:
+    if is_update_visitor_cache:
         update_visitor_cache(mongo_client, site_id, content)
     # check & update user purchasing history
     if content["behavior"] == "PLO":
