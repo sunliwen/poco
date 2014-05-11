@@ -466,7 +466,7 @@ class ProductsSearch(BaseAPIView):
         return Response(result)
 
 
-class HotKeywords(BaseAPIView):
+class Keywords(BaseAPIView):
     HOT_KEYWORDS = ["补肾", "六味地黄丸", "万艾可", "减肥", "同仁堂", "达克宁", "阿胶", 
                     "力补金秋", "康王", "补血", "迪巧", "五子衍宗丸", "云南白药",
                     "伟哥", "爱乐维", "参苓白术丸", "伊可新", "金匮肾气丸",
@@ -478,6 +478,10 @@ class HotKeywords(BaseAPIView):
         if category_id is not None and not isinstance(category_id, basestring):
             errors.append({"code": "INVALID_PARAM", "field_name": "category_id",
                            "message": "category_id must be a string."})
+
+        if args.get("type", None) != "hot":
+            errors.append({"code": "INVALID_PARAM", "field_name": "type",
+                           "message": "Only type='hot' are supported. "})
 
         amount = args.get("amount", "5")
         try:
@@ -510,9 +514,9 @@ class HotKeywords(BaseAPIView):
 
         errors = self._validate(args)
         if errors:
-            return Response({"hot_keywords": [], "errors": errors})
+            return Response({"keywords": [], "errors": errors})
         
-        return Response({"hot_keywords": self.HOT_KEYWORDS[:args["amount"]], "errors": []})
+        return Response({"keywords": self.HOT_KEYWORDS[:args["amount"]], "errors": []})
 
 
 class QuerySuggest(BaseAPIView):

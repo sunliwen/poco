@@ -10,7 +10,7 @@ urlpatterns = patterns('main_app.views',
     url(r'^v1.6/$', views.api_root, name="api_root"),
     url(r'^v1.6/public/search/$', views.ProductsSearch.as_view(), name="products-search"),
     url(r'^v1.6/public/suggest/$', views.QuerySuggest.as_view(), name="query-suggest"),
-    url(r'^v1.6/public/hot-keywords/$', views.HotKeywords.as_view(), name="hot-keywords"),
+    url(r'^v1.6/public/keywords/$', views.Keywords.as_view(), name="keywords"),
     )
 
 

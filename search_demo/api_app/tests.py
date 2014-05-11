@@ -576,23 +576,22 @@ class ItemsSearchViewTest(BaseAPITest):
                                           ]}
                          )
 
-    def test_hot_keywords(self):
-        body = {"api_key": self.api_key
-               }
-        response = self.api_post(reverse("hot-keywords"), data=body)
+    def test_keywords(self):
+        body = {"api_key": self.api_key}
+        response = self.api_post(reverse("keywords"), data=body)
         self.assertEqual(response.data["errors"], [])
-        self.assertEqual(len(response.data["hot_keywords"]), 5)
+        self.assertEqual(len(response.data["keywords"]), 5)
 
         body = {"api_key": self.api_key,
                 "amount": 3
                }
-        response = self.api_post(reverse("hot-keywords"), data=body)
+        response = self.api_post(reverse("keywords"), data=body)
         self.assertEqual(response.data["errors"], [])
-        self.assertEqual(len(response.data["hot_keywords"]), 3)
+        self.assertEqual(len(response.data["keywords"]), 3)
 
         body = {"api_key": self.api_key,
                 "amount": 10
                }
-        response = self.api_post(reverse("hot-keywords"), data=body)
+        response = self.api_post(reverse("keywords"), data=body)
         self.assertEqual(response.data["errors"], [])
-        self.assertEqual(len(response.data["hot_keywords"]), 10)
+        self.assertEqual(len(response.data["keywords"]), 10)
