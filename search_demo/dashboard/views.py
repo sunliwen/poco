@@ -1,6 +1,6 @@
 # coding=utf-8
-import sys
-sys.path.insert(0, "../")
+#import sys
+#sys.path.insert(0, "../")
 import hashlib
 import datetime
 from django.http import HttpResponse
@@ -18,10 +18,9 @@ from common.utils import getLatestUserOrderDatetime
 
 import smtplib
 from django.core.mail import EmailMessage
+import json
 
-import simplejson as json
-
-import settings
+from django.conf import settings
 
 import re
 
@@ -842,7 +841,7 @@ def edm_send(request, api_key, emailing_user_id):
                {"emailing_user_id": emailing_user_id,
                "recommended_items": recommended_items,
                })
-        from_email = settings.edm_sender_email
+        from_email = settings.EDM_SENDER_EMAIL
         to_email = edm_test_email
         email_message = EmailMessage(subject=subject, body=body, from_email=from_email, to=[to_email])
         email_message.content_subtype = "html"

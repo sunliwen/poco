@@ -41,6 +41,7 @@ INSTALLED_APPS = (
     'bootstrap_pagination',
     'django_extensions',
     'rest_framework',
+    'compressor',
     #'kombu.transport.django', # disable this in production
     'api_app',
     'recommender',
@@ -110,6 +111,13 @@ REST_FRAMEWORK = {
         'rest_framework.renderers.BrowsableAPIRenderer',
     )
 }
+
+
+# django_compressor
+COMPRESS_ENABLED = not DEBUG
+COMPRESS_ROOT = STATIC_ROOT
+COMPRESS_OUTPUT_DIR = 'min'
+
 
 # recommender app settings
 VISITOR_BROWSING_HISTORY_LENGTH = 15
