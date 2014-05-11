@@ -422,8 +422,8 @@ def site_items_list(request):
 
 import cgi
 import urlparse
-from common.utils import APIAccess
-api_access = APIAccess(settings.api_server_name, settings.api_server_port)
+from common.api_client import APIClient
+api_client = APIClient(settings.API_SERVER_PREFIX + settings.API_PATH_PREFIX)
 
 
 def _getItemIdFromRedirectUrl(redirect_url):
@@ -432,9 +432,9 @@ def _getItemIdFromRedirectUrl(redirect_url):
     return item_id
 
 
-def _getTopnByAPI(site, path, item_id, amount):
-    result = api_access("/%s" % path,
-               {"api_key": site["api_key"],
+def _getTopnByAPI(site, recommender_type, item_id, amount):
+    result = api_access("/recommender/",
+                {"api_key": site["api_key"],
                 "item_id": item_id,
                 "user_id": "null",
                 "amount": amount,
@@ -451,7 +451,7 @@ def _getTopnByAPI(site, path, item_id, amount):
     return topn
 
 def _getUltimatelyBought(site, item_id, amount):
-    topn = _getTopnByAPI(site, "getUltimatelyBought", item_id, 15)
+    topn = _getTopnByAPI(site, "UltimatelyBought", item_id, 15)
     for topn_item in topn:
         topn_item["score"] = "%.1f%%" % (topn_item["score"] * 100)
     return topn
@@ -470,9 +470,9 @@ def show_item(request):
          "site_id": site_id,
          "item": item_in_db, "user_name": request.session["user_name"], 
          "item_id": item_id,
-         "getAlsoViewed": _getTopnByAPI(site, "getAlsoViewed", item_id, 15),
-         "getAlsoBought": _getTopnByAPI(site, "getAlsoBought", item_id, 15),
-         "getBoughtTogether": _getTopnByAPI(site, "getBoughtTogether", item_id, 15),
+         "getAlsoViewed": _getTopnByAPI(site, "AlsoViewed", item_id, 15),
+         "getAlsoBought": _getTopnByAPI(site, "AlsoBought", item_id, 15),
+         "getBoughtTogether": _getTopnByAPI(site, "BoughtTogether", item_id, 15),
          "getUltimatelyBought": _getUltimatelyBought(site, item_id, 15)
          },
          context_instance=RequestContext(request))
@@ -763,9 +763,9 @@ def ajax_item(request, api_key, item_id):
             'image_link': item.get('image_link', ''),
             'available': item['available'],
             'rec_lists':{
-                "also_viewed": _getTopnByAPI(site, "getAlsoViewed", item_id, 15),
-                "also_bought": _getTopnByAPI(site, "getAlsoBought", item_id, 15),
-                "bought_together": _getTopnByAPI(site, "getBoughtTogether", item_id, 15),
+                "also_viewed": _getTopnByAPI(site, "AlsoViewed", item_id, 15),
+                "also_bought": _getTopnByAPI(site, "AlsoBought", item_id, 15),
+                "bought_together": _getTopnByAPI(site, "BoughtTogether", item_id, 15),
                 "ultimately_bought": _getUltimatelyBought(site, item_id, 15),
                 "black_list": black_list
                 }
@@ -866,11 +866,11 @@ def ajax_recs(request, api_key, item_id, rec_type):
     data = {'rec_list':{}};
     rec_list = [];
     if(rec_type == "also_viewed"):
-        rec_list = _getTopnByAPI(site, "getAlsoViewed", item_id, 15)
+        rec_list = _getTopnByAPI(site, "AlsoViewed", item_id, 15)
     elif(rec_type == "also_bought"):
-        rec_list = _getTopnByAPI(site, "getAlsoBought", item_id, 15)
+        rec_list = _getTopnByAPI(site, "AlsoBought", item_id, 15)
     elif(rec_type == "bought_together"):
-        rec_list = _getTopnByAPI(site, "getBoughtTogether", item_id, 15)
+        rec_list = _getTopnByAPI(site, "BoughtTogether", item_id, 15)
     elif(rec_type == "ultimately_bought"):
         rec_list = _getUltimatelyBought(site, item_id, 15)
     elif(rec_type == "black_list"):

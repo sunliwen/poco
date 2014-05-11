@@ -5,6 +5,8 @@ API_SERVER_PREFIX = "http://localhost:2222"
 PRINT_RAW_LOG = True
 #recommendation_deduplicate_item_names_required_set = set([])
 
+API_PATH_PREFIX = "/api/v1.6"
+
 # For Development
 BROKER_URL = "django://"
 # For Production, use rabbitmq as broker
