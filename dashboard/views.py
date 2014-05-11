@@ -10,6 +10,7 @@ from django.template.loader import render_to_string
 from django.shortcuts import redirect
 from django.template import RequestContext
 import pymongo
+from common.mongo_client import getMongoClient
 import random
 from common.utils import getSiteDBCollection
 from common.utils import getSiteDB
@@ -20,25 +21,18 @@ from django.core.mail import EmailMessage
 
 import simplejson as json
 
-from api.mongo_client import MongoClient
-
 import settings
 
 import re
 
 from dashboard.middleware.http import Http403
 
-def getConnection():
-    if(settings.replica_set):
-        return pymongo.MongoReplicaSetClient(settings.mongodb_host, replicaSet=settings.replica_set)
-    else:
-        return pymongo.Connection(settings.mongodb_host)
 
-mongo_client = MongoClient(getConnection())
+mongo_client = getMongoClient()
 
 
 def getSiteStatistics(site_id, from_date_str, to_date_str):
-    c_statistics = getSiteDBCollection(mongo_client.connection, site_id, "statistics")
+    c_statistics = mongo_client.getSiteDBCollection(site_id, "statistics")
     #to_date = datetime.date.today() - datetime.timedelta(1)
     #to_date_str = to_date.strftime("%Y-%m-%d")
     year,month,day=from_date_str.split("-")
@@ -136,29 +130,25 @@ def login_and_admin_only(callable):
 
 
 def _getUserSites(user_name):
-    connection = mongo_client.connection
-    c_users = connection["tjb-db"]["users"]
-    c_sites = connection["tjb-db"]["sites"]
+    c_users = mongo_client.getTjbDb()["users"]
+    c_sites = mongo_client.getTjbDb()["sites"]
     user = c_users.find_one({"user_name": user_name})
     sites = [c_sites.find_one({"site_id": site_id}) for site_id in user["sites"]]
     sites.sort(key=lambda x: x["site_name"]) 
     return sites
 
 def _getUserSiteIds(user_name):
-    connection = mongo_client.connection
-    c_users = connection["tjb-db"]["users"]
+    c_users = mongo_client.getTjbDb()["users"]
     user = c_users.find_one({"user_name": user_name})
     return user["sites"]
 
 def getUser(user_name):
-    connection = mongo_client.connection
-    c_users = connection["tjb-db"]["users"]
+    c_users = mongo_client.getTjbDb()["users"]
     user = c_users.find_one({"user_name": user_name})
     return user
 
 def saveUser(user):
-    connection = mongo_client.connection
-    c_users = connection["tjb-db"]["users"]
+    c_users = mongo_client.getTjbDb()["users"]
     c_users.save(user)
 
 def index(request):
@@ -185,9 +175,8 @@ def index(request):
 def dashboard(request):
     user_name = request.session["user_name"]
     sites = _getUserSites(user_name)
-    connection = mongo_client.connection
     for site in sites:
-        c_items = getSiteDBCollection(connection, site['site_id'], "items")
+        c_items = mongo_client.getSiteDBCollection(site['site_id'], "items")
         site['items_count'] = c_items.find({"available": True}).count()
     return render_to_response("dashboard/index.html", 
             {"page_name": "控制台首页", "sites": sites, "user_name": user_name,
@@ -420,8 +409,7 @@ def site_items_list(request):
     sites = _getUserSites(user_name)
     site_id = request.GET.get("site_id", sites[0].get("site_id",""))
     page_num = int(request.GET.get("page_num", "1"))
-    connection = mongo_client.connection
-    site = connection["tjb-db"]["sites"].find_one({"site_id": site_id})
+    site = mongo_client.getTjbDb()["sites"].find_one({"site_id": site_id})
     result = {"page_name": u"%s商品列表" % site["site_name"],
              "site": site, 
              "sites": sites, 
@@ -474,8 +462,8 @@ def show_item(request):
     site_id = request.GET["site_id"]
     item_id = request.GET["item_id"]
     connection = mongo_client.connection
-    site = connection["tjb-db"]["sites"].find_one({"site_id": site_id})
-    c_items = getSiteDBCollection(connection, site_id, "items")
+    site = mongo_client.getTjbDb()["sites"].find_one({"site_id": site_id})
+    c_items = mongo_client.getSiteDBCollection(site_id, "items")
     item_in_db = c_items.find_one({"item_id": item_id})
     return render_to_response("dashboard/show_item.html",
         {"page_name": item_in_db["item_name"],
@@ -492,17 +480,15 @@ def show_item(request):
 
 
 def loadCategoryGroupsSrc(site_id):
-    connection = mongo_client.connection
-    site = connection["tjb-db"]["sites"].find_one({"site_id": site_id})
+    site = mongo_client.getTjbDb()["sites"].find_one({"site_id": site_id})
     return site.get("category_groups_src", "")
 
 from common.utils import updateCategoryGroups
 @login_required
 def update_category_groups(request):
     if request.method == "GET":
-        connection = mongo_client.connection
         site_id = request.GET["site_id"]
-        site = connection["tjb-db"]["sites"].find_one({"site_id": site_id})
+        site = mongo_client.getTjbDb()["sites"].find_one({"site_id": site_id})
         category_groups_src = loadCategoryGroupsSrc(site_id)
         return render_to_response("dashboard/update_category_groups.html",
                 {"site_id": site_id, "category_groups_src": category_groups_src,
@@ -537,7 +523,7 @@ def ajax_toggle_black_list(request):
 
 
 def itemInfoListFromItemIdList(site_id, item_id_list):
-    c_items = getSiteDBCollection(mongo_client.connection, site_id, "items")
+    c_items = mongo_client.getSiteDBCollection(site_id, "items")
     item_info_list = [item for item in c_items.find({"item_id": {"$in": item_id_list}},
         {"item_id": 1, "item_name": 1, "item_link": 1, "image_link": ''}
                                   )]
@@ -570,8 +556,7 @@ def login(request):
         msg = request.GET.get("msg", None)
         return render_to_response("login.html", {"page_name": "登录 | 推荐宝", "msg": msg}, context_instance=RequestContext(request))
     else:
-        conn = mongo_client.connection
-        users = conn["tjb-db"]["users"]
+        users = mongo_client.getTjbDb()["users"]
         user_in_db = users.find_one({"user_name": request.POST["name"]})
         login_succ = False
         if user_in_db is not None:
@@ -590,8 +575,7 @@ def apply(request):
             msg = "already_applied"
         return render_to_response("apply.html", {"msg": msg}, context_instance=RequestContext(request)) 
     else:
-        conn = mongo_client.connection
-        applicants = conn["tjb-db"]["applicants"]
+        applicants = mongo_client.getTjbDb()["applicants"]
 
         data = {"email": request.POST["email"], 
 		"phone": request.POST["phone"],
@@ -607,9 +591,8 @@ def apply(request):
 
 import copy
 def _getCurrentUser(request):
-    conn = mongo_client.connection
     if request.session.has_key("user_name"):
-        return conn["tjb-db"]["users"].find_one({"user_name": request.session["user_name"]})
+        return mongo_client.getTjbDb()["users"].find_one({"user_name": request.session["user_name"]})
     else:
         return None
 

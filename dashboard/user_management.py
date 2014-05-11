@@ -1,5 +1,6 @@
 import sys
-import pymongo
+#import pymongo
+from common.mongo_client import getMongoClient
 import random
 import hashlib
 import settings
@@ -18,12 +19,10 @@ def createHashedPassword(password):
     hashed_password = hashlib.sha256(password + salt).hexdigest()
     return hashed_password, salt
 
-if settings.replica_set:
-    connection = pymongo.MongoReplicaSetClient(settings.mongodb_host, replicaSet=settings.replica_set)
-else:
-    connection = pymongo.Connection(settings.mongodb_host)
 
-users = connection["tjb-db"]["users"]
+mongo_client = getMongoClient()
+
+c_users = mongo_client.getTjbDb()["users"]
 
 random.seed(open("/dev/random", "rb").read(10))
 
@@ -39,7 +38,7 @@ def _inputSites():
 def cmd_createNewUser():
     while True:
         user_name = raw_input("name:")
-        if users.find_one({"user_name": user_name}) is None:
+        if c_users.find_one({"user_name": user_name}) is None:
             break
         else:
             print "user already exists."
@@ -51,14 +50,14 @@ def cmd_createNewUser():
 
     hashed_password, salt = createHashedPassword(password)
 
-    users.insert({"user_name": user_name, "hashed_password": hashed_password, "salt": salt,
+    c_users.insert({"user_name": user_name, "hashed_password": hashed_password, "salt": salt,
                   "sites": sites, "is_admin": False})
 
 
 def _enterExistedUser():
     while True:
         user_name = raw_input("name:")
-        user_in_db = users.find_one({"user_name": user_name})
+        user_in_db = c_users.find_one({"user_name": user_name})
         if user_in_db is not None:
             break
         else:
@@ -74,13 +73,13 @@ def cmd_generateNewPassword():
 
     hashed_password, salt = createHashedPassword(password)
     
-    users.update({"user_name": user["user_name"]}, \
+    c_users.update({"user_name": user["user_name"]}, \
             {"$set": {"hashed_password": hashed_password, "salt": salt}})
 
 def cmd_updateSite():
     user = _enterExistedUser()
     sites = _inputSites()
-    users.update({"user_name": user["user_name"]}, {"$set": {"sites": sites}})
+    c_users.update({"user_name": user["user_name"]}, {"$set": {"sites": sites}})
 
 def cmd_addSite():
     user = _enterExistedUser()
@@ -88,20 +87,20 @@ def cmd_addSite():
     sites = sites + _inputSites()
     sites = list(set(sites))
     sites.sort()
-    users.update({"user_name": user["user_name"]}, {"$set": {"sites": sites}})
+    c_users.update({"user_name": user["user_name"]}, {"$set": {"sites": sites}})
 
 def cmd_showUserInfo():
     user = _enterExistedUser()
     print user
 
 def cmd_listUsers():
-    for user in users.find():
+    for user in c_users.find():
         print "IsAdmin:%s" % user.get("is_admin", False), "User Name:%s" % user["user_name"], "Managed Sites:%s" % (user["sites"],)
 
 def cmd_promoteAdmin():
     user = _enterExistedUser()
     if raw_input("WARNING: you are about to promote %s as admin.(yes to continue)" % user["user_name"]) == "yes":
-        users.update({"user_name": user["user_name"]}, {"$set": {"is_admin": True}})
+        c_users.update({"user_name": user["user_name"]}, {"$set": {"is_admin": True}})
     else:
         print "the action cancelled."
 
