@@ -7,6 +7,7 @@ from django.http import HttpResponse
 from django.http import HttpResponseNotFound
 from django.shortcuts import render_to_response
 from django.template.loader import render_to_string
+from django.core.urlresolvers import reverse
 from django.shortcuts import redirect
 from django.template import RequestContext
 import pymongo
@@ -108,7 +109,7 @@ def convertColumn(row, column_name):
 def login_required(callable):
     def method(*args,**kws):
         if not args[0].session.has_key("user_name"):
-            return redirect("/login")
+            return redirect(reverse("dashboard-login"))
         return callable(*args,**kws)
     return method
 
@@ -153,7 +154,7 @@ def saveUser(user):
 def index(request):
     referer = request.META.get('HTTP_REFERER') 
     if not referer and request.session.has_key("user_name"):
-        return redirect('/dashboard')
+        return redirect(reverse('dashboard-dashboard'))
     else :
         user_name = request.session.get("user_name", None)
         return render_to_response("index.html",
@@ -433,7 +434,7 @@ def _getItemIdFromRedirectUrl(redirect_url):
 
 
 def _getTopnByAPI(site, recommender_type, item_id, amount):
-    result = api_access("/recommender/",
+    result = api_client("public/recommender/",
                 {"api_key": site["api_key"],
                 "item_id": item_id,
                 "user_id": "null",
@@ -545,12 +546,12 @@ def ajax_get_black_list(request):
 # Authentication System
 def logout(request):
     del request.session["user_name"]
-    return redirect("/")
+    return redirect(reverse("dashboard-index"))
 
 
 def login(request):
     if request.session.has_key("user_name"):
-        return redirect("/dashboard")
+        return redirect(reverse("dashboard-dashboard"))
     if request.method == "GET":
         msg = request.GET.get("msg", None)
         return render_to_response("login.html", {"page_name": "登录 | 推荐宝", "msg": msg}, context_instance=RequestContext(request))
@@ -563,9 +564,9 @@ def login(request):
 
         if login_succ:
             request.session["user_name"] = request.POST["name"]
-            return redirect("/dashboard")
+            return redirect(reverse("dashboard-dashboard"))
         else:
-            return redirect("/login?msg=login_failed")
+            return redirect(reverse("dashboard-login") + "?msg=login_failed")
             
 def apply(request):
     if request.method == "GET":
@@ -585,7 +586,7 @@ def apply(request):
         request.session["applied_success"] = True
         # TODO
         # avoid apply more than once
-        return redirect("/apply?msg=succ")
+        return redirect(reverse("dashboard-apply") + "?msg=succ")
 
 
 import copy

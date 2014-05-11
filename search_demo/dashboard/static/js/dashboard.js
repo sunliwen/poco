@@ -148,7 +148,7 @@ var App = {
   Views: {},
   Routers: {},
   Collections: {},
-  RestUrl: '/ajax',
+  RestUrl: '/dashboard/ajax',
   Router: {},
   initialize: function(Router) {
     this.Router = new Router;

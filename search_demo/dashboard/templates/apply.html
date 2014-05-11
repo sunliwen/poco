@@ -26,7 +26,7 @@
       </div>
       {% else %}
       <div class="span-20">
-        <form action="/apply" method="post">
+        <form action="{% url 'dashboard-apply' %}" method="post">
           <fieldset>
             <legend>请留下您的联系方式，我们的工作人员会联系您</legend>
 

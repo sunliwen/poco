@@ -21,7 +21,7 @@
             }        
     </script>
     <br/>
-    <form method="POST" name="sendmail_form" action="/edm_send/{{api_key}}/{{emailing_user_id}}/" onsubmit="return validateForm()">
+    <form method="POST" name="sendmail_form" action="{% url 'dashboard-edm-send' api_key emailing_user_id %}" onsubmit="return validateForm()">
         接收人电邮：<input name="edm_test_email" type="text" value="{{edm_test_email}}" >
         <input name="submit" type="submit" value="发送" >
         {% csrf_token %}

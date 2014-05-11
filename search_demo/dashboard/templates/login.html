@@ -7,7 +7,7 @@
     </div>
 
     <div class="span-9 push-3 last prepend-top">
-      <!--<a href="/apply" class="regist-big-button">马上申请推荐宝</a>-->
+      <!--<a href="{% url 'dashboard-apply' %}" class="regist-big-button">马上申请推荐宝</a>-->
     </div>
   </div>
 </div>
@@ -25,7 +25,7 @@
     {% endif %}
 
     <div class="span-22">
-      <form action="/login" method="post">
+      <form action="{% url 'dashboard-login' %}" method="post">
         <fieldset>
           <legend>登陆后台查看分析报告</legend>
 

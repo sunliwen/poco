@@ -1,4 +1,4 @@
-from django.conf.urls.defaults import patterns, url
+from django.conf.urls import patterns, url
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 
 
@@ -16,20 +16,20 @@ urlpatterns = patterns('',
 
     # Uncomment the next line to enable the admin:
     # url(r'^admin/', include(admin.site.urls)),
-    url(r'^$', 'dashboard.views.index', name='index'),
-    url(r'^login$', 'dashboard.views.login'),
-    url(r'^logout$', 'dashboard.views.logout'),
-    url(r'^dashboard/$', 'dashboard.views.dashboard'),
-    url(r'^apply$', 'dashboard.views.apply'),
+    url(r'^$', 'dashboard.views.index', name='dashboard-index'),
+    url(r'^login$', 'dashboard.views.login', name='dashboard-login'),
+    url(r'^logout$', 'dashboard.views.logout', name='dashboard-logout'),
+    url(r'^dashboard/$', 'dashboard.views.dashboard', name="dashboard-dashboard"),
+    url(r'^apply$', 'dashboard.views.apply', name="dashboard-apply"),
     url(r'^site_items_list$', 'dashboard.views.site_items_list'),
     url(r'^show_item$', 'dashboard.views.show_item'),
     url(r'^update_category_groups$', 'dashboard.views.update_category_groups'),
-    url(r'^report/(?P<api_key>.+)/$', 'dashboard.views.report'),
-    url(r'^items/(?P<api_key>.+)/$', 'dashboard.views.items'),
-    url(r'^edm/(?P<api_key>.+)/$', 'dashboard.views.edm'),
-    url(r'^edm_preview/(?P<api_key>.+)/(?P<emailing_user_id>.+)/$', 'dashboard.views.edm_preview'),
-    url(r'^edm_send/(?P<api_key>.+)/(?P<emailing_user_id>.+)/$', 'dashboard.views.edm_send'),
-    url(r'^user/$', 'dashboard.views.user'),
+    url(r'^report/(?P<api_key>.+)/$', 'dashboard.views.report', name="dashboard-report"),
+    url(r'^items/(?P<api_key>.+)/$', 'dashboard.views.items', name='dashboard-items'),
+    url(r'^edm/(?P<api_key>.+)/$', 'dashboard.views.edm', name="dashboard-edm"),
+    url(r'^edm_preview/(?P<api_key>.+)/(?P<emailing_user_id>.+)/$', 'dashboard.views.edm_preview', name="dashboard-edm-preview"),
+    url(r'^edm_send/(?P<api_key>.+)/(?P<emailing_user_id>.+)/$', 'dashboard.views.edm_send', name="dashboard-edm-send"),
+    url(r'^user/$', 'dashboard.views.user', name='dashboard-user'),
     url(r'^ajax/update_category_groups$', 'dashboard.views.ajax_update_category_groups'),
     url(r'^ajax/update_category_groups2$', 'dashboard.views.ajax_update_category_groups2'),
     url(r'^ajax/get_site_statistics$', 'dashboard.views.ajax_get_site_statistics'),
@@ -44,4 +44,6 @@ urlpatterns = patterns('',
     url(r'^ajax/recs/(?P<api_key>.+)/id/(?P<item_id>.+)/(?P<rec_type>.+)$', 'dashboard.views.ajax_recs'),
 )
 
-urlpatterns += staticfiles_urlpatterns()
+#urlpatterns += staticfiles_urlpatterns()
+
+

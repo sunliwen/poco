@@ -23,9 +23,9 @@ $(document).ready(function(){
 {% endblock %}
 {% block site-nav %}
 <ul class="nav">
-  <li><a href="/report/{{api_key}}/#">推荐统计</a></li>
-  <li><a href="/items/{{api_key}}/#">商品管理</a></li>
-  <li class="active"><a href="/edm/{{api_key}}/#">直邮列表</a></li>
+  <li><a href="{% url 'dashboard-report' api_key %}#">推荐统计</a></li>
+  <li><a href="{% url 'dashboard-items' api_key %}#">商品管理</a></li>
+  <li class="active"><a href="{% url 'dashboard-edm' api_key %}#">直邮列表</a></li>
 </ul>
 {% endblock %}
 {% block container %}
@@ -44,7 +44,7 @@ $(document).ready(function(){
         {% if not data.curr_right_reached %}<a href="?page_num={{data.next_page_num}}">&gt;</a>&nbsp;<a href="?page_num={{data.max_page_num}}">&gt;&gt;</a>{% endif %}
         <ol>
             {% for emailing_user in data.models %}
-            <li>{{emailing_user.user_id}} &nbsp; <a target="_blank" href="/edm_preview/{{api_key}}/{{emailing_user.user_id}}">预览直邮内容</a></li>
+            <li>{{emailing_user.user_id}} &nbsp; <a target="_blank" href="{% url 'dashboard-edm-preview' api_key emailing_user.user_id %}">预览直邮内容</a></li>
             {% endfor %}
         </ol>
       </div>
