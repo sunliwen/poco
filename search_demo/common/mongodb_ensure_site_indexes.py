@@ -90,7 +90,7 @@ class SiteIndexesEnsurer:
     def fix_traffic_metrics(self):
         c_traffic_metrics = self.getSiteDBCollection("traffic_metrics")
         c_traffic_metrics.drop_indexes()
-        c_traffic_metrics.ensure_index([("item_id", 1)], background=True, unique=True)
+        c_traffic_metrics.ensure_index([("item_id", 1)], background=True, unique=False)
 
     def fix_cached_hot_view(self):
         c_cached_hot_view = self.getSiteDBCollection("cached_hot_view")

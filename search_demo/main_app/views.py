@@ -180,7 +180,7 @@ def v_index(request):
     else:
         next_page = None
 
-    return render_to_response("index.html", 
+    return render_to_response("demo-index.html", 
             {"result": result,
              "prev_page": prev_page, "next_page": next_page,
              "query_str": query_str, "category": category,

@@ -26,7 +26,7 @@ def api_root(request, format=None):
     return Response({
         'search': reverse('products-search', request=request, format=format),
         'suggest': reverse('query-suggest', request=request, format=format),
-        'hot-keywords': reverse('hot-keywords', request=request, format=format),
+        'keywords': reverse('keywords', request=request, format=format),
         #'categories': reverse('categories-list', request=request, format=format)
     })
 
