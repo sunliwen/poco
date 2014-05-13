@@ -255,14 +255,14 @@ class EventsAPITest(BaseRecommenderTest):
         data = {"event_type": "ClickLink",
                   "user_id": "U1",
                   "link_type": "SearchResult",
-                  "link_url": "http://example.com/blahblah/"
+                  "url": "http://example.com/blahblah/"
                 }
         expected = {
                     "behavior": "Event",
                     "user_id": "U1",
                     "event_type": "ClickLink",
                     "link_type": "SearchResult",
-                    "link_url": "http://example.com/blahblah/",
+                    "url": "http://example.com/blahblah/",
                     "is_reserved": True
                 }
         self._test_event(data, expected)
@@ -270,7 +270,7 @@ class EventsAPITest(BaseRecommenderTest):
                          self._change_key(expected, "item_id", "I5"))
         self._test_event(self._change_key(data, "custom_field2", "abc"),
                          self._change_key(expected, "custom_field2", "abc"))
-        self._test_invalid_event(data, missing_keys=["user_id", "link_type", "link_url"]
+        self._test_invalid_event(data, missing_keys=["user_id", "link_type", "url"]
                                        )
 
     def _test_PlaceOrder(self):

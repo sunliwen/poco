@@ -231,16 +231,12 @@ class ClickLinkProcessor(BaseEventProcessor):
             (("event_type", True),
              ("user_id", True),
              ("link_type", True),
-             ("link_url", True)),
+             ("url", True)),
             accept_extra_fields=True
     )
 
-    RESERVED_LINK_TYPES = set(["$SearchResult"])
-
     def _process(self, site_id, args):
         link_type = args["link_type"]
-        if link_type.startswith("$") and (link_type not in self.RESERVED_LINK_TYPES):
-            return {"code": 1, "err_msg": "'%s' is not a reserved link_type." % link_type}
         self.logAction(site_id, args, args)
         return {"code": 0}
 
