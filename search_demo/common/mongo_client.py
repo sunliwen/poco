@@ -497,7 +497,6 @@ class MongoClient:
     def writeLogToMongo(self, site_id, content):
         c_raw_logs = getSiteDBCollection(self.connection, site_id, "raw_logs")
         c_raw_logs.insert(content)
-        self.updateTrafficMetricsFromLog(site_id, content)
 
     # TODO: should use pub/sub to handle this
     def updateVisitorsFromLog(self, site_id, raw_log):
@@ -539,6 +538,71 @@ class MongoClient:
                                   "brand": brand},
                                   upsert=True
                                  )
+
+    def _constructMetricsUpdatingDictForTimeStamp(self, prefix, timestamp):
+        year, month, day, hour = timestamp.year, timestamp.month, timestamp.day, timestamp.hour
+        updating_dict = {
+            "$inc": {
+                "%s.%d.%s" % (prefix, year, prefix): 1,
+                "%s.%d.%d.%s" % (prefix, year, month, prefix): 1,
+                "%s.%d.%d.%d.%s" % (prefix, year, month, day, prefix): 1,
+                "%s.%d.%d.%d.%d.%s" % (prefix, year, month, day, hour, prefix): 1
+            }
+        }
+        return updating_dict
+
+    def updateKeywordMetricsFromLog(self, site_id, raw_log):
+        c_keyword_metrics = getSiteDBCollection(self.connection, site_id, "keyword_metrics")
+        created_on = raw_log["created_on"]
+        keywords = [keyword.strip() for keyword in raw_log.get("q", "").split(" ")]
+        category_id = raw_log.get("category_id", "null")
+        if raw_log["behavior"] == "Event" and raw_log["event_type"] == "Search":
+            for keyword in keywords:
+                c_keyword_metrics.update(
+                        {"keyword": keyword, "category_id": category_id},
+                        self._constructMetricsUpdatingDictForTimeStamp("k", created_on),
+                        upsert=True
+                    )
+
+    def calculateKeywordHotViewList(self, site_id, today=None):
+        if today is None:
+            today = datetime.date.today()
+        last_7_days_attr_names = self.getLast7DaysAttributeNames("k", today)
+        c_keyword_metrics = getSiteDBCollection(self.connection, site_id, "keyword_metrics")
+        res = c_keyword_metrics.aggregate(
+            [
+            {"$project": {
+                "keyword": 1,
+                "count": {"$add": last_7_days_attr_names}
+            }
+            },
+            {"$group": {
+                "_id": "$keyword",
+                "count": {"$sum": "$count"}
+                }
+            },
+            {"$match": {"count": {"$gt": 0}}},
+            {"$sort": {"count": -1}},
+            {"$limit": 50}
+            ]
+        )
+        result = res.get("result", [])
+
+        topn = [record["_id"] for record in result]
+        return {"null": topn}
+
+    def getFromCachedResults(self, site_id, cache_key):
+        c_cached_results = self.getSiteDBCollection(site_id, "cached_results")
+        cached_result = c_cached_results.find_one({"cache_key": cache_key})
+        if cached_result:
+            del cached_result["_id"]
+        return cached_result
+
+    def updateCachedResults(self, site_id, cache_key, result):
+        c_cached_results = self.getSiteDBCollection(site_id, "cached_results")
+        c_cached_results.update({"cache_key": cache_key},
+                                {"cache_key": cache_key, "result": result},
+                                upsert=True)
 
     # TODO: should use pub/sub to handle this
     def updateTrafficMetricsFromLog(self, site_id, raw_log):

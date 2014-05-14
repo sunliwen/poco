@@ -2,6 +2,7 @@
 
 from celery import shared_task
 from common.mongo_client import getMongoClient
+from common.cached_result import cached_result
 from django.conf import settings
 import es_client
 from browsing_history_cache import BrowsingHistoryCache
@@ -24,6 +25,12 @@ def update_hotview_list(site_id):
     for hot_index_type, prefix in mongo_client.HOT_INDEX_TYPE2INDEX_PREFIX.items():
         mongo_client.updateHotViewList(site_id, hot_index_type)
 
+@shared_task
+def update_keyword_hot_view_list(site_id):
+    mongo_client = getMongoClient()
+    results = mongo_client.calculateKeywordHotViewList(site_id)
+    for category_id, topn in results.items():
+        cached_result.set("KeywordHotView", site_id, (category_id, ), topn)
 
 def update_visitor_cache(mongo_client, site_id, content):
     if content["behavior"] == "V":
@@ -45,6 +52,8 @@ mongo_client = getMongoClient()
 def _write_log(site_id, content, is_update_visitor_cache=True):
     #mongo_client = getMongoClient()
     mongo_client.writeLogToMongo(site_id, content)
+    mongo_client.updateTrafficMetricsFromLog(site_id, content)
+    mongo_client.updateKeywordMetricsFromLog(site_id, content)
     # check & update visitor cache
     if is_update_visitor_cache:
         update_visitor_cache(mongo_client, site_id, content)

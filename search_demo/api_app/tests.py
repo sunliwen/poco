@@ -577,10 +577,53 @@ class ItemsSearchViewTest(BaseAPITest):
                          )
 
     def test_keywords(self):
-        body = {"api_key": self.api_key}
+        # Without calculation, we would get an empty keyword list
+        body = {"api_key": self.api_key, "type": "hot"}
+        response = self.api_get(reverse("keywords"), data=body)
+        self.assertEqual(response.data["errors"], [])
+        self.assertEqual(len(response.data["keywords"]), 0)
+
+        # Add some search event
+        # 2 感冒 in null, 2 感冒 in 123; 3 牛黄 in 123, but 感冒 should be the top.
+        for q, category_id in (("牛黄 奶粉", "123"), 
+                               ("感冒 冲剂", "null"),
+                               ("感冒 牛黄", "123"),
+                               ("感冒 牛黄", "123"),
+                               ("感冒 冲剂", "null")):
+            self.api_get(reverse("recommender-events"),
+                         data={"api_key": self.api_key, 
+                               "event_type": "Search",
+                               "user_id": "U1",
+                               "q": q,
+                               "category_id": category_id})
+
+        # run the update_keyword_hot_view_list task
+        from recommender.tasks import update_keyword_hot_view_list
+        update_keyword_hot_view_list.delay(self.TEST_SITE_ID)
+
+        # Now we should get some result
+        body = {"api_key": self.api_key, "type": "hot", "amount": 1}
         response = self.api_post(reverse("keywords"), data=body)
         self.assertEqual(response.data["errors"], [])
-        self.assertEqual(len(response.data["keywords"]), 5)
+        self.assertEqual(response.data["keywords"],
+                         [u"感冒"]
+                         )
+
+        body = {"api_key": self.api_key, "type": "hot", "amount": 2}
+        response = self.api_post(reverse("keywords"), data=body)
+        self.assertEqual(response.data["errors"], [])
+        self.assertEqual(response.data["keywords"],
+                         [u"感冒", u"牛黄"]
+                         )
+
+        body = {"api_key": self.api_key, "type": "hot", "amount": 4}
+        response = self.api_post(reverse("keywords"), data=body)
+        self.assertEqual(response.data["errors"], [])
+        self.assertEqual(response.data["keywords"],
+                         [u"感冒", u"牛黄", u"冲剂", u"奶粉"]
+                         )
+
+        return
 
         body = {"api_key": self.api_key,
                 "amount": 3

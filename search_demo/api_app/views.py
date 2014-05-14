@@ -11,6 +11,7 @@ from rest_framework.views import APIView
 from rest_framework import status
 import es_search_functions
 from common.mongo_client import getMongoClient
+from common.cached_result import cached_result
 from recommender.property_cache import PropertyCache
 
 
@@ -467,11 +468,6 @@ class ProductsSearch(BaseAPIView):
 
 
 class Keywords(BaseAPIView):
-    HOT_KEYWORDS = ["补肾", "六味地黄丸", "万艾可", "减肥", "同仁堂", "达克宁", "阿胶", 
-                    "力补金秋", "康王", "补血", "迪巧", "五子衍宗丸", "云南白药",
-                    "伟哥", "爱乐维", "参苓白术丸", "伊可新", "金匮肾气丸",
-                    "善存"]
-
     def _validate(self, args):
         errors = []
         category_id = args.get("category_id", None)
@@ -485,7 +481,7 @@ class Keywords(BaseAPIView):
 
         amount = args.get("amount", "5")
         try:
-            args["amount"] = int(args.get("amount", "5"))
+            int(args.get("amount", "5"))
         except ValueError:
             errors.append({"code": "INVALID_PARAM", "field_name": "amount",
                            "message": "value of 'amount' is invalid."})
@@ -511,12 +507,19 @@ class Keywords(BaseAPIView):
             args = request.DATA
         else:
             args = request.GET
+        
 
         errors = self._validate(args)
         if errors:
             return Response({"keywords": [], "errors": errors})
         
-        return Response({"keywords": self.HOT_KEYWORDS[:args["amount"]], "errors": []})
+        category_id = args.get("category_id", "null")
+        amount = args.get("amount", 5)
+        site_id = self.getSiteID(args["api_key"])
+        keywords = cached_result.get("KeywordHotView", site_id, (category_id, ))
+        if keywords is None:
+            keywords = []
+        return Response({"keywords": keywords[:amount], "errors": []})
 
 
 class QuerySuggest(BaseAPIView):

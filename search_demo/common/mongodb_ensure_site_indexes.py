@@ -1,4 +1,4 @@
-
+import pymongo
 
 
 class SiteIndexesEnsurer:
@@ -110,6 +110,17 @@ class SiteIndexesEnsurer:
         c_suggest_keyword_list.ensure_index("keyword", background=True, unique=True)
         c_suggest_keyword_list.ensure_index("type", background=True, unique=False)
 
+    def fix_keyword_metrics(self):
+        c_keyword_metrics = self.getSiteDBCollection("keyword_metrics")
+        c_keyword_metrics.drop_indexes()
+        c_keyword_metrics.ensure_index([("keyword", pymongo.ASCENDING), ("category_id", pymongo.ASCENDING)], 
+                        background=True, unique=True)
+
+    def fix_cached_results(self):
+        c_cached_results = self.getSiteDBCollection("cached_results")
+        c_cached_results.drop_indexes()
+        c_cached_results.ensure_index("cache_key", background=True, unique=True)
+
     def fix_all(self):
         self.fix_item_similarities_collections()
         self.fix_items()
@@ -125,6 +136,8 @@ class SiteIndexesEnsurer:
         self.fix_cached_hot_view()
         self.fix_search_terms_cache()
         self.fix_suggest_keyword_list()
+        self.fix_keyword_metrics()
+        self.fix_cached_results()
 
 
 def fix_tjb_db_indexes(mongo_client):
