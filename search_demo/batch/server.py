@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import logging
 import sys
-#sys.path.append("../")
+sys.path.append("../")
 sys.path.append("pylib")
 import time
 import datetime
