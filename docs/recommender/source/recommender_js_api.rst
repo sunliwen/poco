@@ -3,47 +3,6 @@ Recommender JS API
 
 功能：用来在网页上集成用户行为跟踪和商品推荐功能。
 
-简明教程
-----------
-
-JsSdk Demo页面 http://search.tuijianbao.net/sdk/demo/
-
-在页面底部包含下面两个js文件::
-
-    <script type="text/javascript" language="javascript" charset="utf-8" src="http://search.tuijianbao.net/sdk/js/api-1.6.js"></script>
-    <script type="text/javascript" language="javascript" charset="utf-8" src="http://search.tuijianbao.net/sdk/skin/ui-1.6.js"></script>
-
-
-API调用范例::
-
-    <div id="search-results">
-        <ul>
-            <li><a href="http://example.com/product-1.html" class="result-link" data-item_id="1"></a></li>
-            <li><a href="http://example.com/product-2.html" class="result-link" data-item_id="2"></a></li>
-        </ul>
-    </div>
-
-    <script type="text/javascript" language="javascript" >
-        var debug = true;
-        var p = new _poco("<API Key>", "http://<api server prefix>/api/v1.6", debug);
-        p.addSharedParams({'item_id': 'K8900',
-                           'user_id': 'U123',
-                           'amount': '6'});
-
-        p.addEvent({"event_type": "ViewItem"});
-        p.addEvent({"type": "PlaceOrder", "order_id": "O123", "order_content": "I123,1.50,2|I250,15.50,1"});
-        // This is a custom event
-        p.addEvent({"event_type": "CustomEvt1", "purchasing_amount": 15.0});
-        p.addRecommender({"type": "AlsoViewed"});
-        p.addRecommender({"type": "ByHotIndex", "hot_index_type": "viewed", "category_id": "C1", "brand": "B25"});
-
-        // 跟踪用户链接点击事件。详见 _poco.track_links文档
-        p.track_links("#search-results .result-link",
-                      "SearchResult",
-                      {"q": "haoyaoshi", "page": "1"});
-        p.invoke("tjbCallback");
-    </script>
-
 _poco.addSharedParams
 -------------------------
 
@@ -315,28 +274,4 @@ track_links(css_selector, link_type, shared_params)
     2. shared_params是一个hash类型，其中所有的键值对也将作为这次事件的参数传入。
     3. 在每个链接元素上可以添加一些"data-"开头的attribute, 这些属性也会作为这次事件的参数传入。
 
-
-举例::
-
-        假设我们需要跟踪搜索结果页上的链接点击事件。这些链接的HTML代码如下：
-        <div id="search-results">
-            <ul>
-                <li><a href="http://example.com/product-1.html" data-item_id="1">Search Result 001</a></li>
-                <li><a href="http://example.com/product-2.html" data-item_id="2">Search Result 002</a></li>
-            </ul>
-        </div>
-
-        其中在data-item_id属性中，为每个链接设置了其相关的item id。
-
-        然后我们加入如下JS代码。
-        <script>
-        var p = new _poco("<API Key>", "http://<api server prefix>/api/v1.6", debug);
-        ... ...
-        p.track_links("#search-results .result-link",
-                      "SearchResult",
-                      {"q": "haoyaoshi", "page": "1"});
-        </script>
-        这次track_links调用将注册上面那些搜索链接的点击事件。因为我们是要跟踪搜索结果的链接点击，所以link_type为"SearchResult"。我们希望跟踪这些链接是来自什么样的搜索，所以将shared_params中设置q和page两个参数。这样每一个链接的点击事件都会记录查询字符串和搜索结果页的页码。
-        当某个链接被点击后，它上面的data-item_id属性也会被搜集起来，作为事件的参数。
-        假如我们点击上面第一个链接，就会向服务器发送如下的事件内容：
-        {"event_type": "ClickLink", "link_type": "SearchResult", "q": "haoyaoshi", "page": "1", "item_id": "1"}
+示例详见"Recommender JS 集成操作指南"之"如何跟踪用户点击搜索页链接事件"

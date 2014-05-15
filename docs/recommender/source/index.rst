@@ -12,5 +12,6 @@
    :maxdepth: 2
 
    items_api
+   recommender_js_guide.rst
    recommender_js_api.rst
 
