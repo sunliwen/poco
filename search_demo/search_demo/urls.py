@@ -12,6 +12,7 @@ urlpatterns = patterns('',
     url(r'^api/', include('api_app.urls')),
     url(r'^api/', include('recommender.urls')),
     url(r'^dashboard/', include('dashboard.urls')),
+    url(r'^bo/', include('adminboard.urls')),
 )
 
 

@@ -46,6 +46,7 @@ INSTALLED_APPS = (
     'api_app',
     'recommender',
     'dashboard',
+    'adminboard',
     'main_app',
     'gunicorn'
 )
