@@ -154,7 +154,7 @@ def saveUser(user):
 def index(request):
     referer = request.META.get('HTTP_REFERER') 
     if not referer and request.session.has_key("user_name"):
-        return redirect(reverse('dashboard-dashboard'))
+        return redirect(reverse('dashboard-sites'))
     else :
         user_name = request.session.get("user_name", None)
         return render_to_response("index.html",
@@ -172,7 +172,7 @@ def index(request):
 #            context_instance=RequestContext(request))
 
 @login_required
-def dashboard(request):
+def sites(request):
     user_name = request.session["user_name"]
     sites = _getUserSites(user_name)
     for site in sites:
@@ -551,7 +551,7 @@ def logout(request):
 
 def login(request):
     if request.session.has_key("user_name"):
-        return redirect(reverse("dashboard-dashboard"))
+        return redirect(reverse("dashboard-sites"))
     if request.method == "GET":
         msg = request.GET.get("msg", None)
         return render_to_response("login.html", {"page_name": "登录 | 推荐宝", "msg": msg}, context_instance=RequestContext(request))
@@ -564,7 +564,7 @@ def login(request):
 
         if login_succ:
             request.session["user_name"] = request.POST["name"]
-            return redirect(reverse("dashboard-dashboard"))
+            return redirect(reverse("dashboard-sites"))
         else:
             return redirect(reverse("dashboard-login") + "?msg=login_failed")
             
