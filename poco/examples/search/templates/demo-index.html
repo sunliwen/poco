@@ -103,7 +103,7 @@
         <!-- search block -->
 
         <div class="col-xs-9 legend-header-search" style="height:90px; background-color: white">
-          <form id="form-query" action="{% url 'main_app_v_index' %}" method="GET">
+          <form id="form-query" action="{% url 'examples_app_v_index' %}" method="GET">
           <div class="row legend-search" style="padding-top: 15px">
             <div class="col-xs-2 btn-group pull-left">
               <button type="button" class="btn btn-default">全部</button>
@@ -160,9 +160,9 @@
 
       <div class="row legend-breadcrumbs">
         <ol class="breadcrumb">
-          <li class="glyphicon"><a href="{% url 'main_app_v_index' %}">首页</a></li>
+          <li class="glyphicon"><a href="{% url 'examples_app_v_index' %}">首页</a></li>
           {% for breadcrumb in breadcrumbs %}
-          <li class="glyphicon {% if breadcrumb.active %}active{% endif %}"><a href="{% url 'main_app_v_index' %}{% if breadcrumb.category.id %}?cat={{ breadcrumb.category.id }}{% endif %}">{{ breadcrumb.category.name }}</a></li>
+          <li class="glyphicon {% if breadcrumb.active %}active{% endif %}"><a href="{% url 'examples_app_v_index' %}{% if breadcrumb.category.id %}?cat={{ breadcrumb.category.id }}{% endif %}">{{ breadcrumb.category.name }}</a></li>
           {% endfor %}
         </ol>
       </div>
