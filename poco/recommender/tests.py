@@ -374,8 +374,8 @@ class ItemsAPITest(BaseRecommenderTest):
     #def test_items_with_tags(self):
     #    raise NotImplemented
 
-    def test_no_categories_provided(self):
-        raise NotImplemented
+    #def test_no_categories_provided(self):
+    #    raise NotImplemented
 
     def _assertKWList(self, list_type, expected):
         self.assertEqual(set([(keyword_record["keyword"], keyword_record["count"]) 
