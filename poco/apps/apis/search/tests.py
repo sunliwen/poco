@@ -9,6 +9,7 @@ from common.mongo_client import getMongoClient
 from apps.apis.search import es_search_functions
 from common.test_utils import BaseAPITest
 from common import test_data1
+from apps.apis.recommender.tasks import update_keyword_hot_view_list
 
 
 # refs: http://stackoverflow.com/questions/4055860/unit-testing-with-django-celery
@@ -598,7 +599,6 @@ class ItemsSearchViewTest(BaseAPITest):
                                "category_id": category_id})
 
         # run the update_keyword_hot_view_list task
-        from recommender.tasks import update_keyword_hot_view_list
         update_keyword_hot_view_list.delay(self.TEST_SITE_ID)
 
         # Now we should get some result
