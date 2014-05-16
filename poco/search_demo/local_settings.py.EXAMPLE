@@ -82,3 +82,6 @@ EMAIL_HOST_PASSWORD = '<your password>' # Hint: you may use 2-step authenticatio
 
 # EDM sender email
 EDM_SENDER_EMAIL = '<the sender appear on edm emails>'
+
+# This should be modified to suit the directory structure on the deployed site
+STATIC_ROOT = "/cube/app/search.tuijianbao.net/public_html/static/"
