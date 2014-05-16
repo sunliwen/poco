@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 DEBUG = False
 
 MONGODB_HOST = "localhost"
@@ -47,7 +49,7 @@ CELERY_TIMEZONE = 'Asia/Shanghai'
 # currently, these tasks only support one site
 CRON_SITE_ID = "haoyaoshitest"
 
-
+from celery.schedules import crontab
 CELERYBEAT_SCHEDULE = {
     'rebuild_suggestion_cache': {
         'task': 'api_app.tasks.rebuild_suggestion_cache',
