@@ -2,7 +2,7 @@ import json
 import copy
 from django.conf import settings
 from django.test import TestCase
-from api_app import es_search_functions
+from apps.apis.search import es_search_functions
 from django.core.urlresolvers import reverse
 import site_manage_utils
 from common.mongo_client import getMongoClient
@@ -82,7 +82,7 @@ class BaseAPITest(TestCase):
         return response
 
     def rebuildSuggestionCache(self):
-        from api_app.tasks import rebuild_suggestion_cache
+        from apps.apis.search.tasks import rebuild_suggestion_cache
         rebuild_suggestion_cache.delay(self.TEST_SITE_ID)
 
     def postItems(self, test_data_module, item_ids, site_token=None):

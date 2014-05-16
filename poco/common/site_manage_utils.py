@@ -1,7 +1,7 @@
 import uuid
 from elasticsearch import Elasticsearch
 from elasticsearch.exceptions import NotFoundError
-from api_app import es_search_functions
+from apps.apis.search import es_search_functions
 from common import mongodb_ensure_site_indexes
 from common.mongo_client import getMongoClient
 

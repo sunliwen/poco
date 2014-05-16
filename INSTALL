@@ -7,10 +7,6 @@
 == MongoDB ==
     * 2.6.0 is required.
 
-== The Legacy Poco 1.0 code base ==
-    * Install and Configure Batch Server/Dash Board/Admin Board using Poco 1.0 https://github.com/sunliwen/poco-v1
-    * NOTE: Please use the poco_1.6 branch
-
 == Redis ==
     * Redis is required for both development & production
 

@@ -1,4 +1,4 @@
-from api_app.keyword_list import keyword_list
+from apps.apis.search.keyword_list import keyword_list
 
 
 def run(site_id, path):

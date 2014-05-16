@@ -1,4 +1,4 @@
-from api_app.tasks import rebuild_suggestion_cache
+from apps.apis.search.tasks import rebuild_suggestion_cache
 
 
 def run(site_id):
