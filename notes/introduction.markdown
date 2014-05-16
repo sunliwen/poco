@@ -1,6 +1,6 @@
 Create Index/Load Data
 ----------------------
-source code: search/search_demo/scripts/load_data.py
+source code: poco/scripts/load_data.py
     createIndex function
         item_name is a multi_field.
         All analyzer/tokenizer/filter are defined here.
@@ -10,7 +10,7 @@ source code: search/search_demo/scripts/load_data.py
 
 Search/Query String Suggestion
 ------------------------------
-source code: search/search_demo/main_app/view.py
+source code: poco/main_app/view.py
     * check def construct_query for how the query is constructed. The query boost Chinese matching.
     * v_ajax_auto_complete_term
         * This is the auto completion

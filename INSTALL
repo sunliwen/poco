@@ -8,7 +8,7 @@
     * 2.6.0 is required.
 
 == The Legacy Poco 1.0 code base ==
-    * Install and Configure Batch Server/Dash Board/Admin Board using Poco 1.0 https://github.com/sunliwen/poco
+    * Install and Configure Batch Server/Dash Board/Admin Board using Poco 1.0 https://github.com/sunliwen/poco-v1
     * NOTE: Please use the poco_1.6 branch
 
 == Redis ==
@@ -29,7 +29,7 @@
             * We use django-redis currently. See local_config.py.EXAMPLE for configuration.
         * Please check CRON_SITE_ID, CELERY_TIMEZONE, CELERYBEAT_SCHEDULE in local_config.py.EXAMPLE
     5. run "python manage.py syncdb"
-    7. Also run "celery -A search_demo worker" in the root dir of the search_demo project
+    7. Also run "celery -A poco worker" in the root dir of the poco project
     8. You also need to set up the celery beat service.
         * celery beat -s "</path/to/celerybeat-schedule>"
             * refs: http://celery.readthedocs.org/en/latest/userguide/periodic-tasks.html
