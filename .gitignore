@@ -4,3 +4,9 @@
 
 build
 poco/conf/local_settings.py
+
+env
+static
+log
+
+public_html
