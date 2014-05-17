@@ -1,0 +1,53 @@
+upstream poco_server_backend {
+    #ip_hash; # distribute client to same backend based on ip
+    server master.intranet:9600;
+}
+
+server {
+    server_name poco.ehaoyao.com en83.tuijianbao.net;
+
+    access_log /cube/log/poco_access.log;
+    error_log /cube/log/poco_error.log;
+
+    root /cube/apps/poco/public_html;
+
+    proxy_next_upstream error;
+
+    # Allow file uploads
+    client_max_body_size 50M;
+
+    location /nginx_status {
+        stub_status on;
+        access_log off;
+
+        allow 127.0.0.1;
+        allow 10.10.10.0/24;
+        deny all;
+    }
+
+    location ^~ /static/ {
+        if ($query_string) {
+            expires max;
+        }
+    }
+
+    location / {
+        #proxy_pass_header Server; # uncomment will exploit app server
+        #add_header Content-Type "application/x-javascript; charset=UTF-8";
+        proxy_set_header Host $http_host;
+        proxy_redirect off;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Scheme $scheme;
+        proxy_set_header Refer $http_referer;
+        proxy_pass http://poco_server_backend;
+
+        # anti ddos
+        if ( $http_user_agent = "-") {
+            return 403;
+        }
+
+        if ( $http_user_agent ~* (bot|spider)) {
+            return 403;
+        }
+    }
+}

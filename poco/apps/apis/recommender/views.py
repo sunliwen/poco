@@ -35,6 +35,7 @@ class BaseAPIView(APIView):
         return dict(kv for kv in request.GET.items())
 
     def get(self, request, format=None):
+        print "GOT THE REQ:"
         args = self._extractArguments(request)
         api_key = args.get("api_key", None)
         api_key2site_id = mongo_client.getApiKey2SiteID()
@@ -171,6 +172,7 @@ class RecommenderAPIView(SingleRequestAPIView):
     def process(self, request, response, site_id, args):
         debug = args.get("debug", "false") == "true"
         result = super(RecommenderAPIView, self).process(request, response, site_id, args)
+        print "RESULT:", result, type(result)
         if result["code"] == 0:
             result["type"] = args["type"]
         if result["code"] == 0 and debug:

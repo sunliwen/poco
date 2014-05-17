@@ -679,6 +679,7 @@ class GetByBrowsingHistoryTest(BaseRecommenderTest):
                             no_result_as_none=True)
         self.assertEqual(browsing_history, ["K300", "K301"])
 
+	print "1========"
         response = self._recommender("U1", type="ByBrowsingHistory", amount=5)
         self.assertEqual([item["item_id"] for item in response.data["topn"]], 
                         [])
@@ -688,10 +689,11 @@ class GetByBrowsingHistoryTest(BaseRecommenderTest):
         browsing_history = browsing_history_cache.get_from_cache(self.TEST_SITE_ID, ptm_id, 
                             no_result_as_none=True)
         self.assertEqual(browsing_history, ["K300", "K301", "I123", "I124"])
-        
+
+	print "2=========" 
         response = self._recommender("U1", type="ByBrowsingHistory", amount=5)
         self.assertEqual([item["item_id"] for item in response.data["topn"]], 
-                        ["I125", "I126"])
+                        ["I125", "I126"], "Unexpected Response: %s" % response.data)
 
         last_raw_log = self.get_last_n_raw_logs(1)[0]
         self.assertEqual(last_raw_log["behavior"], "RecBOBH")

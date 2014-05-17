@@ -3,7 +3,7 @@ from __future__ import absolute_import
 DEBUG = False
 
 MONGODB_HOST = "localhost"
-API_SERVER_PREFIX = "http://localhost:2222"
+API_SERVER_PREFIX = "http://localhost:9600"
 PRINT_RAW_LOG = True
 #recommendation_deduplicate_item_names_required_set = set([])
 
@@ -14,7 +14,7 @@ BROKER_URL = "django://"
 # For Production, use rabbitmq as broker
 # BROKER_URL = 'amqp://guest:guest@localhost:5672//'
 
-API_PREFIX_FOR_SEARCH_DEMO = "http://localhost:2222/api/v1.6/"
+API_PREFIX_FOR_SEARCH_DEMO = "http://localhost:9600/api/v1.6/"
 API_KEY_FOR_SEARCH_DEMO = "fb86b045" # This is the api key of search demo which uses leyou's data, and the site id is testsite001
 
 # For Production you need to configure CACHES settings
