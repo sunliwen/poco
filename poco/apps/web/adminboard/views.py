@@ -158,7 +158,7 @@ class BaseUserHandler:
 
 class AddUserHandler(BaseUserHandler):
     def addUser(self, user_name, password, is_admin, sites):
-        print user_name, password, is_admin, sites
+        #print user_name, password, is_admin, sites
         connection = mongo_client.connection
         c_users = connection["tjb-db"]["users"]
         hashed_password, salt = createHashedPassword(password)
@@ -179,7 +179,7 @@ class AddUserHandler(BaseUserHandler):
             is_admin = arguments["is_admin"] == "true"
             site_ids = arguments.getlist("site_ids")
 
-            print "ARGUMENTS:", arguments
+            #print "ARGUMENTS:", arguments
 
             if not self._checkUserNameValid(user_name):
                 return HttpResponse("Invalid User Name(length of user name should be greater than 3 and only A-Z a-z 0-9 and underscore are permitted.)")
@@ -253,7 +253,7 @@ class EditUserHandler(BaseUserHandler):
         if self._checkUserNameAvailable(user_name):
             return HttpResponse("user does not exist.")
         user = self._getUser(user_name)
-        print "USER:", user
+        #print "USER:", user
         return render_to_response("adminboard/edit_user.html", 
                 {"is_add_user": False, "data": user, "all_site_ids": self.getSiteIds()},
                 context_instance=RequestContext(request))
