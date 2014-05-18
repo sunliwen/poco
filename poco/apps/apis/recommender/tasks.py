@@ -30,7 +30,8 @@ def update_keyword_hot_view_list(site_id):
     mongo_client = getMongoClient()
     results = mongo_client.calculateKeywordHotViewList(site_id)
     for category_id, topn in results.items():
-        cached_result.set("KeywordHotView", site_id, (category_id, ), topn)
+        if len(topn) > 0:
+            cached_result.set("KeywordHotView", site_id, (category_id, ), topn)
 
 def update_visitor_cache(mongo_client, site_id, content):
     if content["behavior"] == "V":
