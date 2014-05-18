@@ -17,6 +17,7 @@ import action_processors
 #logging.basicConfig(format="%(asctime)s|%(levelname)s|%(name)s|%(message)s",
 #                    level=logging.WARNING,
 #                    datefmt="%Y-%m-%d %I:%M:%S")
+logger = logging.getLogger(__name__)
 
 
 class APIRootView(APIView):
