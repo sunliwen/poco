@@ -2,6 +2,7 @@ import urllib
 import urllib2
 import urlparse
 import json
+import logging
 
 
 class APIClient:
@@ -25,5 +26,10 @@ class APIClient:
                                   headers=full_headers)
 
         content = urllib2.urlopen(req).read()
-        result = json.loads(content)
+        try:
+            result = json.loads(content)
+        except ValueError:
+            logging.getLogger("APIClient").critical("Invalid response: path=%r,params=%r, body=%r, headers=%r, result: %r" \
+                    % (path, params, body, headers, content))
+            raise
         return result

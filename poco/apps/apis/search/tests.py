@@ -504,8 +504,6 @@ class ItemsSearchViewTest(BaseAPITest):
 
     def _assertKWList(self, list_type, expected):
         keywords = set([keyword_record["keyword"] for keyword_record in self.mongo_client.getSuggestKeywordList(self.TEST_SITE_ID, list_type)])
-        for k in keywords:
-            print k
         self.assertEqual(keywords, expected)
 
     def test_suggestion(self):

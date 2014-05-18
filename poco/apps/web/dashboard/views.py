@@ -3,8 +3,9 @@
 #sys.path.insert(0, "../")
 import hashlib
 import datetime
+import urllib2
 from django.http import HttpResponse
-from django.http import HttpResponseNotFound
+from django.http import HttpResponseNotFound, HttpResponseForbidden
 from django.shortcuts import render_to_response
 from django.template.loader import render_to_string
 from django.core.urlresolvers import reverse
@@ -13,9 +14,12 @@ from django.template import RequestContext
 import pymongo
 from common.mongo_client import getMongoClient
 import random
+import logging
 from common.utils import getSiteDBCollection
 from common.utils import getSiteDB
 from common.utils import getLatestUserOrderDatetime
+from common.utils import get_ip
+from common.api_client import APIClient
 
 import smtplib
 from django.core.mail import EmailMessage
@@ -106,11 +110,77 @@ def convertColumn(row, column_name):
     else:
         row[column_name] = None
 
+#def login_required(callable):
+#    def method(*args,**kws):
+#        if not args[0].session.has_key("user_name"):
+#            return redirect(reverse("dashboard-login"))
+#        return callable(*args,**kws)
+#    return method
+
+
+class MockAPIClient:
+    def __call__(self, path, params, body=None, headers={}):
+        if params["uid"] == "963" and params["verify"] == "1956d40d7aafcb683209702c02190b1b":
+            return {"response": {"code": 1}}
+        else:
+            return {"response": {"code": 0}}
+
+
+class HaoyaoshiAuthentication:
+    def __init__(self, api_client, uuid, token):
+        self.api_client = api_client
+        self.uuid = uuid
+        self.token = token
+
+    def check(self, haoyaoshi_uid, haoyaoshi_verify):
+        try:
+            result = self.api_client("", params={"uuid": self.uuid,
+                                        "token": self.token,
+                                        "uid": haoyaoshi_uid,
+                                        "verify": haoyaoshi_verify})
+        except (ValueError, urllib2.HTTPError):
+            return "ERROR"
+        if result.has_key("response") and result["response"].has_key("code"):
+            if result["response"]["code"] == 1:
+                return "SUCC"
+            else:
+                return "FAIL"
+        else:
+            logging.getLogger("Dashboard").critical("Invalid Haoyaoshi BO Integration response: %s" % result)
+            return "ERROR"
+
+
+haoyaoshi_auth = HaoyaoshiAuthentication(APIClient(settings.HAOYAOSHI_ADMIN_VERIFY_URL),
+                                  settings.HAOYAOSHI_ADMIN_UUID,
+                                  settings.HAOYAOSHI_ADMIN_TOKEN)
+#haoyaoshi_auth = HaoyaoshiAuthentication(MockAPIClient(),
+#                                  settings.HAOYAOSHI_ADMIN_UUID,
+#                                  settings.HAOYAOSHI_ADMIN_TOKEN)
+
+
+
 def login_required(callable):
     def method(*args,**kws):
-        if not args[0].session.has_key("user_name"):
-            return redirect(reverse("dashboard-login"))
-        return callable(*args,**kws)
+        request = args[0]
+        haoyaoshi_uid = request.COOKIES.get("COOKIE_ADMIN_USER_ID", None)
+        haoyaoshi_verify = request.COOKIES.get("COOKIE_ADMIN_VERIFY", None)
+        # TODO log the IP of failed attempt
+        print haoyaoshi_uid, haoyaoshi_verify
+        client_ip = get_ip(request)
+        auth_result = haoyaoshi_auth.check(haoyaoshi_uid, haoyaoshi_verify)
+        if (haoyaoshi_uid is not None) and (haoyaoshi_verify is not None) \
+                    and auth_result == "SUCC":
+            # log which user do what
+            logging.getLogger("Dashboard").info("Haoyaoshi Auth Succ: ip=%s, path=%s, uid=%s" % (client_ip, request.path, haoyaoshi_uid))
+            request.session["user_name"] = settings.HAOYAOSHI_DASHBOARD_USER
+            return callable(*args, **kws)
+        else:
+            if auth_result == "FAIL":
+                logging.getLogger("Dashboard").info("Haoyaoshi Auth Failed: ip=%s, path=%s, uid=%s, verify=%s" % (client_ip, request.path, haoyaoshi_uid, haoyaoshi_verify))
+                return HttpResponseForbidden("未登录")
+            else:
+                return HttpResponseForbidden("后台集成接口错误")
+
     return method
 
 
@@ -151,16 +221,18 @@ def saveUser(user):
     c_users = mongo_client.getTjbDb()["users"]
     c_users.save(user)
 
+@login_required
 def index(request):
-    referer = request.META.get('HTTP_REFERER') 
-    if not referer and request.session.has_key("user_name"):
-        return redirect(reverse('dashboard-sites'))
-    else :
-        user_name = request.session.get("user_name", None)
-        return render_to_response("index.html",
-                                 {"page_name":"推荐宝",
-                                  "user_name":user_name},
-                                 context_instance=RequestContext(request))
+    return redirect(reverse('dashboard-sites'))
+    #referer = request.META.get('HTTP_REFERER') 
+    #if not referer and request.session.has_key("user_name"):
+    #    return redirect(reverse('dashboard-sites'))
+    #else :
+    #    user_name = request.session.get("user_name", None)
+    #    return render_to_response("index.html",
+    #                             {"page_name":"推荐宝",
+    #                              "user_name":user_name},
+    #                             context_instance=RequestContext(request))
    
 #@login_and_admin_only
 #def admin_charts(request):

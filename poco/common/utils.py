@@ -187,3 +187,17 @@ def dt(dt_str):
     us = int(us.rstrip("Z"), 10)
     return dt + datetime.timedelta(microseconds=us)
 
+
+# refs: https://djangosnippets.org/snippets/2575/
+def get_ip(request):
+    """Returns the IP of the request, accounting for the possibility of being
+    behind a proxy.
+    """
+    ip = request.META.get("HTTP_X_FORWARDED_FOR", None)
+    if ip:
+        # X_FORWARDED_FOR returns client1, proxy1, proxy2,...
+        ip = ip.split(", ")[0]
+    else:
+        ip = request.META.get("REMOTE_ADDR", "")
+    return ip
+

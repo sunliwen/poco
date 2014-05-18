@@ -85,3 +85,10 @@ EDM_SENDER_EMAIL = '<the sender appear on edm emails>'
 
 # This should be modified to suit the directory structure on the deployed site
 STATIC_ROOT = "/cube/app/search.tuijianbao.net/public_html/static/"
+
+
+# Haoyaoshi Integration Settings
+HAOYAOSHI_ADMIN_UUID = "tuijianbao0516"
+HAOYAOSHI_ADMIN_TOKEN = "tuijian20140516"
+HAOYAOSHI_ADMIN_VERIFY_URL = "http://admin.ehaoyao.com/v1/admin/verify.jsonp"
+HAOYAOSHI_DASHBOARD_USER = "haoyaoshi"
