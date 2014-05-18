@@ -6,6 +6,7 @@
   <!--[if lt IE 9]>
     <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
   <![endif]-->
+{% load settings_value %}
 {% load compress %}
 {% compress css %}
   <link rel="stylesheet" href="{{STATIC_URL}}style.css" type="text/css" media="print,screen,projection"> 
@@ -59,7 +60,7 @@
             <ul class="dropdown-menu">
               <li><a href="{% url 'dashboard-user' %}">帐户设置</a></li>
               <li class="divider"></li>
-              <li><a href="{% url 'dashboard-logout' %}">退出</a></li>
+              <li><a href="{% settings_value 'HAOYAOSHI_ADMIN_URL' %}/admin/logout">退出</a></li>
             </ul>
           </li>
           <li><a href="{% url 'dashboard-sites' %}">控制台首页</a></li>
