@@ -1,7 +1,7 @@
 Keywords API
 ================
 
-路径: /v1.6/public/hot-keywords/
+路径: /v1.6/public/keywords/
 
 HTTP方法: GET/POST
 
