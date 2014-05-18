@@ -30,6 +30,11 @@ server {
             expires max;
         }
     }
+    location ^~ /docs/ {
+        if ($query_string) {
+            expires max;
+        }
+    }
 
     location / {
         #proxy_pass_header Server; # uncomment will exploit app server
