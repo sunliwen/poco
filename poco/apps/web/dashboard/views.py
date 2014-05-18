@@ -165,7 +165,7 @@ def login_required(callable):
         haoyaoshi_uid = request.COOKIES.get("COOKIE_ADMIN_USER_ID", None)
         haoyaoshi_verify = request.COOKIES.get("COOKIE_ADMIN_VERIFY", None)
         # TODO log the IP of failed attempt
-        print haoyaoshi_uid, haoyaoshi_verify
+        #print haoyaoshi_uid, haoyaoshi_verify
         client_ip = get_ip(request)
         auth_result = haoyaoshi_auth.check(haoyaoshi_uid, haoyaoshi_verify)
         if (haoyaoshi_uid is not None) and (haoyaoshi_verify is not None) \
@@ -652,7 +652,7 @@ def apply(request):
         data = {"email": request.POST["email"], 
 		"phone": request.POST["phone"],
 		"created_on": datetime.datetime.now()}
-        print data
+        #print data
         applicants.insert(data)
 	
         request.session["applied_success"] = True

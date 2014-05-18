@@ -74,8 +74,8 @@ class LogWriter:
 
     def writeEntry(self, site_id, content):
         content["created_on"] = datetime.datetime.now()
-        if settings.PRINT_RAW_LOG:
-            print "RAW LOG: site_id: %s, %s" % (site_id, content)
+        #if settings.PRINT_RAW_LOG:
+        #    print "RAW LOG: site_id: %s, %s" % (site_id, content)
         write_log.delay(site_id, content)
 
 
