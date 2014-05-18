@@ -595,8 +595,10 @@ class MongoClient:
         c_cached_results = self.getSiteDBCollection(site_id, "cached_results")
         cached_result = c_cached_results.find_one({"cache_key": cache_key})
         if cached_result:
-            del cached_result["_id"]
-        return cached_result
+            result = cached_result["result"]
+        else:
+            result = None
+        return result
 
     def updateCachedResults(self, site_id, cache_key, result):
         c_cached_results = self.getSiteDBCollection(site_id, "cached_results")
