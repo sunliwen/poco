@@ -34,8 +34,8 @@ REDIS_CONFIGURATION = {"host": "localhost", "port": 6379, "db": 0}
 # Redis cache is used for both production and development
 CACHES = {
     'default': {
-        'BACKEND': 'redis_cache.cache.RedisCache',
-        'LOCATION': '%(host)s:%(port)s:%(db)s' % REDIS_CONFIGURATION,
+        'BACKEND': 'redis_cache.RedisCache',
+        'LOCATION': 'localhost:6379',#'%(host)s:%(port)s:%(db)s' % REDIS_CONFIGURATION,
         'OPTIONS': {
             'CLIENT_CLASS': 'redis_cache.client.DefaultClient',
             #'PASSWORD': 'secretpassword',  # Optional
