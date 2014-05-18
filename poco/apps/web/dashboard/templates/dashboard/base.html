@@ -55,15 +55,16 @@
         {% block site-nav %}
         {% endblock %}
         <ul class="nav secondary-nav">
+          <li><a href="{% settings_value 'HAOYAOSHI_ADMIN_URL' %}">返回好药师后台</a></li>
           <li class="dropdown" data-dropdown="dropdown">
           <a href="#" class="dropdown-toggle">{{ user_name }}</a>
             <ul class="dropdown-menu">
               <li><a href="{% url 'dashboard-user' %}">帐户设置</a></li>
               <li class="divider"></li>
-              <li><a href="{% settings_value 'HAOYAOSHI_ADMIN_URL' %}/admin/logout">退出</a></li>
             </ul>
           </li>
-          <li><a href="{% url 'dashboard-sites' %}">控制台首页</a></li>
+          <li><a href="{% settings_value 'HAOYAOSHI_ADMIN_URL' %}/admin/logout">退出好药师后台</a></li>
+          <!--<li><a href="{% url 'dashboard-sites' %}">控制台首页</a></li> -->
           <li><a href="#">帮助</a></li>
         </ul>
       </div>
