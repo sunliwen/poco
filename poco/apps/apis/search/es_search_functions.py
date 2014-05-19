@@ -53,11 +53,11 @@ def construct_query(query_str, for_filter=False):
         query = {
             "bool": {
                 "must": match_phrases,
-                "should": [
-                    {'match': {'item_name': {"boost": 2.0,
-                                             'query': splitted_keywords,
-                                             'operator': "and"}}}
-                ]
+                #"should": [
+                #    {'match': {'item_name': {"boost": 2.0,
+                #                             'query': splitted_keywords,
+                #                             'operator': "and"}}}
+                #]
             }
         }
 
