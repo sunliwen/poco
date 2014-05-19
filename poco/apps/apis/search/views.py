@@ -3,11 +3,12 @@
 import copy
 import logging
 import hashlib
+import json
 from rest_framework import renderers
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
-from django.http import Http404
+from django.http import Http404, HttpResponse
 from django.core.cache import get_cache
 from django.conf import settings
 from rest_framework.views import APIView
@@ -441,9 +442,10 @@ class ProductsSearch(BaseAPIView):
 
         search_cache_key = self._getSearchCacheKey(site_id, request.DATA)
         django_cache = get_cache("default")
-        cached_result = django_cache.get(search_cache_key)
-        if cached_result is not None:
-            result = cached_result
+        result_in_cache = django_cache.get(search_cache_key)
+        if (result_in_cache is not None):
+            #result = json.loads(result_in_cache)
+            return HttpResponse(result_in_cache)
         else:
             try:
                 result_set, facets_result = self._search(site_id, q, sort_fields, filters, highlight, facets_selector, search_config)
@@ -477,7 +479,8 @@ class ProductsSearch(BaseAPIView):
                       },
                       "errors": []
                     }
-            django_cache.set(search_cache_key, result, settings.CACHE_EXPIRY_SEARCH_RESULTS)
+            django_cache.set(search_cache_key, json.dumps(result), settings.CACHE_EXPIRY_SEARCH_RESULTS)
+
 
         return Response(result)
 
