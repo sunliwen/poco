@@ -186,6 +186,11 @@ COMPRESS_ROOT = STATIC_ROOT
 COMPRESS_OUTPUT_DIR = 'min'
 
 
+STATICFILES_FINDERS = ("django.contrib.staticfiles.finders.FileSystemFinder",
+ "django.contrib.staticfiles.finders.AppDirectoriesFinder",
+ "compressor.finders.CompressorFinder")
+
+
 # recommender app settings
 VISITOR_BROWSING_HISTORY_LENGTH = 15
 MONGODB_HOST = None
