@@ -1,9 +1,9 @@
 from __future__ import absolute_import
 
-DEBUG = False
+DEBUG = True
 
 MONGODB_HOST = "localhost"
-API_SERVER_PREFIX = "http://localhost:9600"
+API_SERVER_PREFIX = "http://localhost:2222"
 PRINT_RAW_LOG = True
 #recommendation_deduplicate_item_names_required_set = set([])
 
@@ -14,8 +14,8 @@ BROKER_URL = "django://"
 # For Production, use rabbitmq as broker
 # BROKER_URL = 'amqp://guest:guest@localhost:5672//'
 
-API_PREFIX_FOR_SEARCH_DEMO = "http://localhost:9600/api/v1.6/"
-API_KEY_FOR_SEARCH_DEMO = "fb86b045" # This is the api key of search demo which uses leyou's data, and the site id is testsite001
+API_PREFIX_FOR_SEARCH_DEMO = "http://localhost:2222/api/v1.6/"
+API_KEY_FOR_SEARCH_DEMO = "fb86b045"  # This is the api key of search demo which uses leyou's data, and the site id is testsite001
 
 # For Production you need to configure CACHES settings
 # refs: https://docs.djangoproject.com/en/dev/topics/cache/
@@ -28,20 +28,29 @@ API_KEY_FOR_SEARCH_DEMO = "fb86b045" # This is the api key of search demo which 
 #    }
 #}
 
-
 REDIS_CONFIGURATION = {"host": "localhost", "port": 6379, "db": 0}
+
 
 # Redis cache is used for both production and development
 CACHES = {
     'default': {
         'BACKEND': 'redis_cache.RedisCache',
-        'LOCATION': 'localhost:6379',#'%(host)s:%(port)s:%(db)s' % REDIS_CONFIGURATION,
+        #'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'localhost:6379',
         'OPTIONS': {
-            'CLIENT_CLASS': 'redis_cache.client.DefaultClient',
-            #'PASSWORD': 'secretpassword',  # Optional
+            'DB': '0',
+            'PARSER_CLASS': 'redis.connection.HiredisParser',
+            'CONNECTION_POOL_CLASS': 'redis.BlockingConnectionPool',
+            'CONNECTION_POOL_CLASS_KWARGS': {
+                'max_connections': 50,
+                'timeout': 20,
+            }
         }
     }
 }
+
+
+SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 
 CELERY_TIMEZONE = 'Asia/Shanghai'
 
@@ -53,24 +62,24 @@ from celery.schedules import crontab
 CELERYBEAT_SCHEDULE = {
     'rebuild_suggestion_cache': {
         'task': 'apps.apis.search.tasks.rebuild_suggestion_cache',
-        'schedule': crontab(hour=23, minute=59), # midnight
+        'schedule': crontab(hour=23, minute=59),  # midnight
         'args': (CRON_SITE_ID, )
     },
     'update_hotview_list': {
         'task': 'recommender.tasks.update_hotview_list',
-        'schedule': crontab(minute=01), # every hour
+        'schedule': crontab(minute=01),  # every hour
         'args': (CRON_SITE_ID, )
     },
     'update_keyword_hot_view_list': {
         'task': 'recommender.tasks.update_keyword_hot_view_list',
-        'schedule': crontab(minute=01), # every hour
+        'schedule': crontab(minute=01),  # every hour
         'args': (CRON_SITE_ID, )
     }
 }
 
 
 # These are configuration copied from old dashboard configuration
-COMPRESS_ENABLED=not DEBUG
+#COMPRESS_ENABLED=not DEBUG
 
 # Following configure is for GMail SMTP
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
@@ -78,16 +87,14 @@ EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = '<your user>'
-EMAIL_HOST_PASSWORD = '<your password>' # Hint: you may use 2-step authentication without put your main password here.
+EMAIL_HOST_PASSWORD = '<your password>'  # Hint: you may use 2-step authentication without put your main password here.
 
 # EDM sender email
 EDM_SENDER_EMAIL = '<the sender appear on edm emails>'
 
 # This should be modified to suit the directory structure on the deployed site
-STATIC_ROOT = "/cube/app/search.tuijianbao.net/public_html/static/"
+#STATIC_ROOT = "/cube/app/search.tuijianbao.net/public_html/static/"
 
-
-# Haoyaoshi Integration Settings
 HAOYAOSHI_ADMIN_UUID = "tuijianbao0516"
 HAOYAOSHI_ADMIN_TOKEN = "tuijian20140516"
 HAOYAOSHI_ADMIN_VERIFY_URL = "http://admin.ehaoyao.com/v1/admin/verify.jsonp"
