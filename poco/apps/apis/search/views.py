@@ -2,11 +2,14 @@
 #from django.shortcuts import render
 import copy
 import logging
+import hashlib
 from rest_framework import renderers
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
 from django.http import Http404
+from django.core.cache import get_cache
+from django.conf import settings
 from rest_framework.views import APIView
 from rest_framework import status
 import es_search_functions
@@ -379,6 +382,9 @@ class ProductsSearch(BaseAPIView):
                                 "message": "invalid 'search_config'"}]
         return True, search_config
 
+    def _getSearchCacheKey(self, site_id, search_data):
+        return "search-result-cache-%s-%s" % (site_id, hashlib.md5(repr(dict(search_data))).hexdigest())
+
     # refs: http://www.django-rest-framework.org/api-guide/pagination
     def get(self, request, format=None):
         errors = self._validate(request)
@@ -432,38 +438,46 @@ class ProductsSearch(BaseAPIView):
                                         "message": "per_page must be greater than 0."}]})
 
         site_id = self.getSiteID(api_key)
-        try:
-            result_set, facets_result = self._search(site_id, q, sort_fields, filters, highlight, facets_selector, search_config)
-        except:
-            logging.critical("Unknown exception raised!", exc_info=True)
-            return Response({"records": [], "info": {}, 
-                             "errors": [{"code": "UNKNOWN_ERROR", 
-                                        "message": "Unknown error, please try later."}]})
 
-        paginator = Paginator(result_set, per_page)
+        search_cache_key = self._getSearchCacheKey(site_id, request.DATA)
+        django_cache = get_cache("default")
+        cached_result = django_cache.get(search_cache_key)
+        if cached_result is not None:
+            result = cached_result
+        else:
+            try:
+                result_set, facets_result = self._search(site_id, q, sort_fields, filters, highlight, facets_selector, search_config)
+            except:
+                logging.critical("Unknown exception raised!", exc_info=True)
+                return Response({"records": [], "info": {}, 
+                                 "errors": [{"code": "UNKNOWN_ERROR", 
+                                            "message": "Unknown error, please try later."}]})
 
-        try:
-            items_page = paginator.page(page)
-        except PageNotAnInteger:
-            items_page = paginator.page(1)
-            page = 1
-        except EmptyPage:
-            items_page = paginator.page(paginator.num_pages)
-            page = paginator.num_pages
+            paginator = Paginator(result_set, per_page)
 
-        items_list = [item for item in items_page]
+            try:
+                items_page = paginator.page(page)
+            except PageNotAnInteger:
+                items_page = paginator.page(1)
+                page = 1
+            except EmptyPage:
+                items_page = paginator.page(paginator.num_pages)
+                page = paginator.num_pages
 
-        #serializer = ItemSerializer(items_list, many=True)
-        result = {"records": serialize_items(items_list),
-                  "info": {
-                     "current_page": page,
-                     "num_pages": paginator.num_pages,
-                     "per_page": per_page,
-                     "total_result_count": paginator.count,
-                     "facets": facets_result
-                  },
-                  "errors": []
-                }
+            items_list = [item for item in items_page]
+
+            #serializer = ItemSerializer(items_list, many=True)
+            result = {"records": serialize_items(items_list),
+                      "info": {
+                         "current_page": page,
+                         "num_pages": paginator.num_pages,
+                         "per_page": per_page,
+                         "total_result_count": paginator.count,
+                         "facets": facets_result
+                      },
+                      "errors": []
+                    }
+            django_cache.set(search_cache_key, result, settings.CACHE_EXPIRY_SEARCH_RESULTS)
 
         return Response(result)
 

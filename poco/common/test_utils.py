@@ -6,6 +6,7 @@ from apps.apis.search import es_search_functions
 from django.core.urlresolvers import reverse
 import site_manage_utils
 from common.mongo_client import getMongoClient
+from django.core.cache import get_cache
 
 import pprint
 def my_safe_repr(object, context, maxlevels, level):
@@ -36,12 +37,17 @@ class BaseAPITest(TestCase):
         self.api_key = site_record["api_key"]
         self.site_token = site_record["site_token"]
         self.maxDiff = None
+        self.clearCaches()
+
+    def clearCaches(self):
         # flush everything on redis
         import redis
         self.redis_client = redis.StrictRedis(host=settings.REDIS_CONFIGURATION["host"], 
                                               port=settings.REDIS_CONFIGURATION["port"], 
                                               db=settings.REDIS_CONFIGURATION["db"])
         self.redis_client.flushall()
+        # To be safe, also clear django cache
+        get_cache("default").clear()
 
     def initSite(self, site_id):
         site_manage_utils.drop_site(self.mongo_client, site_id)
@@ -61,6 +67,7 @@ class BaseAPITest(TestCase):
         self.es.indices.refresh(index=es_search_functions.getESItemIndexName(site_id))
 
     def assertItemsCount(self, expected_count):
+        self.clearCaches()
         c_items = self.mongo_client.getSiteDBCollection(self.TEST_SITE_ID, "items")
         self.assertEqual(c_items.count(), expected_count)
         res = self.client.post(reverse("products-search"),

@@ -100,3 +100,5 @@ HAOYAOSHI_ADMIN_TOKEN = "tuijian20140516"
 HAOYAOSHI_ADMIN_VERIFY_URL = "http://admin.ehaoyao.com/v1/admin/verify.jsonp"
 HAOYAOSHI_DASHBOARD_USER = "haoyaoshi"
 HAOYAOSHI_ADMIN_URL = "http://admin.mall.ehaoyao.com"
+
+CACHE_EXPIRY_SEARCH_RESULTS =  60 * 30 # 30 minutes
