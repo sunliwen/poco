@@ -20,13 +20,6 @@ import action_processors
 logger = logging.getLogger(__name__)
 
 
-class APIRootView(APIView):
-    def get(self, request, format=None):
-        return Response({
-            'view-item': reverse('recommender-events', request=request, format=format),
-        })
-
-
 class BaseAPIView(APIView):
     def process(self, request, response, site_id, args):
         raise NotImplemented

@@ -23,18 +23,21 @@ mongo_client = getMongoClient()
 property_cache = PropertyCache(mongo_client)
 
 
-# TODO: highlight
-# PAGINATE_BY
-# refs: http://www.django-rest-framework.org/tutorial/5-relationships-and-hyperlinked-apis
-@api_view(('GET',))
-def api_root(request, format=None):
-    return Response({
+def reverses(request, format):
+    return {
         'search': reverse('products-search', request=request, format=format),
         'suggest': reverse('query-suggest', request=request, format=format),
         'keywords': reverse('keywords', request=request, format=format),
         #'categories': reverse('categories-list', request=request, format=format)
-    })
+    }
 
+
+# # TODO: highlight
+# # PAGINATE_BY
+# # refs: http://www.django-rest-framework.org/tutorial/5-relationships-and-hyperlinked-apis
+# @api_view(('GET',))
+# def api_root(request, format=None):
+#     return Response(reverses())
 
 
 from elasticutils import S, F

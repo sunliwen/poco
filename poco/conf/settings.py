@@ -210,6 +210,10 @@ CELERY_ACCEPT_CONTENT = ['pickle', 'json', 'msgpack', 'yaml']
 from local_settings import *
 
 
+# cache
+
+CACHE_EXPIRY_SEARCH_RESULTS = 30 * 60
+
 assert MONGODB_HOST is not None
 assert API_SERVER_PREFIX is not None
 assert API_PATH_PREFIX is not None
