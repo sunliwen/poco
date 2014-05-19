@@ -239,6 +239,7 @@ def recommended_item_redirect(request):
 
         api_key2site_id = mongo_client.getApiKey2SiteID()
         if url is None or api_key not in api_key2site_id:
+            # TODO, looks different from other error message, any way to make them consistent?
             response = HttpResponseBadRequest("wrong url")
         else:
             response = redirect(url)
