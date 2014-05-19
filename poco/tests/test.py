@@ -28,6 +28,13 @@ api_key = "6fad74ab" # haoyaoshitest
 
 api_access = api_client.APIClient(API_ROOT)
 
+def config(_API_ROOT=None, _api_key=None):
+    global API_ROOT
+    global api_key
+    if _API_ROOT is not None:
+        API_ROOT = _API_ROOT
+    if _api_key is not None:
+        api_key = _api_key
 
 def test(function, expected_result, amount=50, *args):
     print "Testing:", function.__name__, args
