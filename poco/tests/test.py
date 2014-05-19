@@ -17,7 +17,7 @@ import os
 #api_key = os.getenv('API_KEY', "6fad74ab")
 #api_key = os.getenv("API_KEY", "fb86b045") # Default to testsite001 which is leyou data
 
-API_ROOT = "http://search.tuijianbao.net/api/v1.6/"
+API_ROOT = "http://poco.ehaoyao.com/api/v1.6/"
 #api_key = "4ad6af048ec"
 api_key = "6fad74ab" # haoyaoshitest
 #api_key = "fb86b045"  #testsite001
