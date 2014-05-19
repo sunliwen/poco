@@ -207,12 +207,29 @@ BROKER_URL = None
 # celery
 CELERY_ACCEPT_CONTENT = ['pickle', 'json', 'msgpack', 'yaml']
 
-from local_settings import *
-
 
 # cache
 
 CACHE_EXPIRY_SEARCH_RESULTS = 30 * 60
+
+
+# templates
+TEMPLATE_LOADERS = (
+    'django.template.loaders.filesystem.Loader',
+    'django.template.loaders.app_directories.Loader',
+)
+
+import os.path
+TEMPLATE_DIRS = (
+    # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
+    # Always use forward slashes, even on Windows.
+    # Don't forget to use absolute paths, not relative paths.
+    os.path.join(BASE_DIR, 'templates'),
+)
+
+# in the end
+
+from local_settings import *
 
 assert MONGODB_HOST is not None
 assert API_SERVER_PREFIX is not None

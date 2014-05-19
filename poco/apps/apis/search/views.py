@@ -23,14 +23,6 @@ mongo_client = getMongoClient()
 property_cache = PropertyCache(mongo_client)
 
 
-def reverses(request, format):
-    return {
-        'search': reverse('products-search', request=request, format=format),
-        'suggest': reverse('query-suggest', request=request, format=format),
-        'keywords': reverse('keywords', request=request, format=format),
-        #'categories': reverse('categories-list', request=request, format=format)
-    }
-
 
 # # TODO: highlight
 # # PAGINATE_BY
