@@ -44,7 +44,6 @@ API调用简单范例::
     </script>
 
 
-
 如何跟踪用户搜索事件
 --------------------
 
@@ -93,6 +92,32 @@ API调用简单范例::
         假如我们点击上面第一个链接，就会向服务器发送如下的事件内容：
         {"event_type": "ClickLink", "link_type": "SearchResult", "q": "haoyaoshi", "page": "1", "item_id": "1"}
 
+
+如何跟踪用户跟踪推荐结果
+-------------------------
+
+为了统计并改进推荐展示的效果，需要跟踪用户对推荐链接的点击。
+
+需要在有推荐内容的页面添加如下代码::
+
+    假设在本页面上有若干链接指向推荐的结果，这些链接都有一个class属性"recommendation-result"。
+    <div id="recommendations">
+        <a href="" class="recommendation-result" data-item_id="001">商品1</a>
+        <a href="" class="recommendation-result" data-item_id="002">商品2</a>
+    </div>
+
+
+    那么为了跟踪对这些链接的点击，添加如下JS代码：
+        <script>
+        var p = new _poco("<API Key>", "http://<api server prefix>/api/v1.6", debug);
+        ... ...
+        p.track_links("#recommendations .recommendation-result",
+                      "RecommendationResult",
+                      {"req_id": "342-34243-3424-aaaa"});
+        ... ...
+        </script>
+    注：req_id为返回的推荐结果JSON的一个字段。
+    如果一个页面有几个不同区域，分别从不同的推荐获得结果，那么需要分别跟踪这些不同链接。
 
 
 如何跟踪热门关键词点击事件
