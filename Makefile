@@ -3,3 +3,6 @@ run:
 
 static:
 	python poco/manage.py collectstatic
+
+test:
+	python poco/manage.py test

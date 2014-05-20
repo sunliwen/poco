@@ -139,6 +139,7 @@ class ItemsSearchViewTest(BaseAPITest):
         self.assertEqual(errors[0]["message"], "no such api_key")
 
     def _test_search_empty_string(self):
+        self.clearCaches()
         body = {"api_key": self.api_key,
                 "q": ""
                 }

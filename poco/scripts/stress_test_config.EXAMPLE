@@ -1,0 +1,28 @@
+API_ROOT = "http://poco.ehaoyao.com"
+API_KEY = "6fad74ab"
+
+CONCURRENCY = 350
+REQUEST_NUM = 5000
+
+
+POST_DATA_MAP = {
+    "search": {
+     "api_path": "/public/search/",
+     "body": {
+        "q": "10g",
+        "page": 1
+     }
+    },
+    "keywords": {
+    "api_path": "/public/keywords/",
+    "body": {
+        "type": "hot",
+        "amount": 5
+    }},
+    "suggest": {
+    "api_path": "/public/suggest/",
+    "body": {
+        "q": "tang"
+    }}
+}
+

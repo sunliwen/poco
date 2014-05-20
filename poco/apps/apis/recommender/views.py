@@ -20,13 +20,6 @@ import action_processors
 logger = logging.getLogger(__name__)
 
 
-class APIRootView(APIView):
-    def get(self, request, format=None):
-        return Response({
-            'view-item': reverse('recommender-events', request=request, format=format),
-        })
-
-
 class BaseAPIView(APIView):
     def process(self, request, response, site_id, args):
         raise NotImplemented
@@ -246,6 +239,7 @@ def recommended_item_redirect(request):
 
         api_key2site_id = mongo_client.getApiKey2SiteID()
         if url is None or api_key not in api_key2site_id:
+            # TODO, looks different from other error message, any way to make them consistent?
             response = HttpResponseBadRequest("wrong url")
         else:
             response = redirect(url)
