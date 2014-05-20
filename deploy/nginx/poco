@@ -6,8 +6,8 @@ upstream poco_server_backend {
 server {
     server_name poco.ehaoyao.com en83.tuijianbao.net;
 
-    access_log /cube/log/poco_access.log;
-    error_log /cube/log/poco_error.log;
+    access_log /cube/log/nginx_poco_access.log;
+    error_log /cube/log/nginx_poco_error.log;
 
     root /cube/apps/poco/public_html;
 
