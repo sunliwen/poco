@@ -225,6 +225,33 @@ class CustomEventProcessor(BaseEventProcessor):
         return {"code": 0}
 
 
+class SearchProcessor(BaseEventProcessor):
+    action_name = "Event"
+    ap = ArgumentProcessor(
+            (("event_type", True),
+             ("user_id", True),
+             ("categories", False),
+             ("q", True))
+    )
+
+    def _process(self, site_id, args):
+        self.logAction(site_id, args, args)
+        return {"code": 0}
+
+
+class ViewCategoryProcessor(BaseEventProcessor):
+    action_name = "Event"
+    ap = ArgumentProcessor(
+            (("event_type", True),
+             ("user_id", True),
+             ("categories", True))
+    )
+
+    def _process(self, site_id, args):
+        self.logAction(site_id, args, args)
+        return {"code": 0}
+
+
 class ClickLinkProcessor(BaseEventProcessor):
     action_name = "Event"
     ap = ArgumentProcessor(
@@ -237,6 +264,12 @@ class ClickLinkProcessor(BaseEventProcessor):
 
     def _process(self, site_id, args):
         link_type = args["link_type"]
+        if link_type == "SearchResult" and not (args.has_key("q") and args.has_key("page") and args.has_key("item_id") and args.has_key("categories")):
+            return {"code": 1, "err_msg": "q, page, item_id and categories are required."}
+        elif link_type == "RecommendationResult" and not (args.has_key("req_id") and args.has_key("item_id")):
+            return {"code": 1, "err_msg": "req_id and item_id are required."}
+        elif link_type == "HotKeyword" and not (args.has_key("keyword")):
+            return {"code": 1, "err_msg": "keyword is required."}
         self.logAction(site_id, args, args)
         return {"code": 0}
 
@@ -975,7 +1008,9 @@ EVENT_TYPE2ACTION_PROCESSOR = {
     "AddOrderItem": AddOrderItemProcessor,
     "RemoveOrderItem": RemoveOrderItemProcessor,
     "PlaceOrder": PlaceOrderProcessor,
-    "ClickLink": ClickLinkProcessor
+    "ClickLink": ClickLinkProcessor,
+    "Search": SearchProcessor,
+    "ViewCategory": ViewCategoryProcessor
 }
 
 

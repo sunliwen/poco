@@ -55,9 +55,9 @@ API调用简单范例::
     var p = new _poco("<API Key>", "http://<api server prefix>/api/v1.6", debug);
     ... ...
     // 假设此次搜索没有指定分类，添加如下代码：
-    p.addEvent({"event_type": "Search", "user_id": "U1", "category_id": "null", "q": "牛黄解毒丸"})
-    // 或者如果此次搜索指定了分类1233，添加如下代码
-    p.addEvent({"event_type": "Search", "user_id": "U1", "category_id": "1233", "q": "牛黄解毒丸"})
+    p.addEvent({"event_type": "Search", "user_id": "U1", "categories": "null", "q": "牛黄解毒丸"})
+    // 或者如果此次搜索指定了分类1233和1355，添加如下代码
+    p.addEvent({"event_type": "Search", "user_id": "U1", "categories": "1233,1355", "q": "牛黄解毒丸"})
     ... ...
     p.invoke("pCallback");
 
@@ -87,10 +87,10 @@ API调用简单范例::
                       {"q": "haoyaoshi", "page": "1"});
         ... ...
         </script>
-        这次对track_links的调用将注册上面那些搜索链接的点击事件。因为我们是要跟踪的是搜索结果链接点击，所以link_type为"SearchResult"。我们还希望跟踪相应搜索所用的参数，所以将shared_params中设置q和page两个参数。这样每一个链接的点击事件都会记录查询字符串和搜索结果页的页码。
+        这次对track_links的调用将注册上面那些搜索链接的点击事件。因为我们是要跟踪的是搜索结果链接点击，所以link_type为"SearchResult"。我们还希望跟踪相应搜索所用的参数，所以将shared_params中设置q, categories和page两个参数。这样每一个链接的点击事件都会记录查询字符串，分类和搜索结果页的页码。
         当某个链接被点击后，它上面的data-item_id属性也会被搜集起来，作为事件参数的一部分。
         假如我们点击上面第一个链接，就会向服务器发送如下的事件内容：
-        {"event_type": "ClickLink", "link_type": "SearchResult", "q": "haoyaoshi", "page": "1", "item_id": "1"}
+        {"event_type": "ClickLink", "link_type": "SearchResult", "q": "haoyaoshi", "page": "1", "item_id": "1", "categories": "123,12355"}
 
 
 如何跟踪用户跟踪推荐结果
@@ -151,10 +151,10 @@ API调用简单范例::
 
 需要在分类列表页面添加如下跟踪代码::
 
-    假设本页面的category id是 1255
+    假设本页面的category id是 1255 -> 125505 （两级分类）
     var p = new _poco("<API Key>", "http://<api server prefix>/api/v1.6", debug);
     ... ...
-    p.addEvent({"event_type": "ViewCategory", "user_id": "U1", "category_id": "1255"})
+    p.addEvent({"event_type": "ViewCategory", "user_id": "U1", "categories": "1255,125505"})
     ... ...
     p.invoke("pCallback");
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import logging
 import sys
-sys.path.append("../")
+sys.path.append("../../")
 sys.path.append("pylib")
 import time
 import datetime
@@ -13,9 +13,8 @@ import os.path
 import settings
 from common.utils import getSiteDBCollection
 
-# TODO: use hamake?
 
-sys.path.insert(0, "../")
+sys.path.insert(0, "../../")
 
 
 class LoggingManager:
