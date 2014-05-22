@@ -151,10 +151,10 @@ API调用简单范例::
 
 需要在分类列表页面添加如下跟踪代码::
 
-    假设本页面的category id是 1255
+    假设本页面的category id是 1255 -> 125505 （两级分类）
     var p = new _poco("<API Key>", "http://<api server prefix>/api/v1.6", debug);
     ... ...
-    p.addEvent({"event_type": "ViewCategory", "user_id": "U1", "category_id": "1255"})
+    p.addEvent({"event_type": "ViewCategory", "user_id": "U1", "categories": ["1255", "125505"]})
     ... ...
     p.invoke("pCallback");
 
