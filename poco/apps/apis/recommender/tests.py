@@ -254,11 +254,15 @@ class EventsAPITest(BaseRecommenderTest):
         self._test_event(data, expected)
         self._test_invalid_event(data, missing_keys=["user_id", "item_id"])
 
-    def _test_ClickLink(self):
+    def _test_ClickLink_SearchResult(self):
         data = {"event_type": "ClickLink",
                   "user_id": "U1",
                   "link_type": "SearchResult",
-                  "url": "http://example.com/blahblah/"
+                  "url": "http://example.com/blahblah/",
+                  "q": "haha",
+                  "categories": "1,2,3",
+                  "page": "1",
+                  "item_id": "I255"
                 }
         expected = {
                     "behavior": "Event",
@@ -266,15 +270,101 @@ class EventsAPITest(BaseRecommenderTest):
                     "event_type": "ClickLink",
                     "link_type": "SearchResult",
                     "url": "http://example.com/blahblah/",
-                    "is_reserved": True
+                    "is_reserved": True,
+                    "q": "haha",
+                    "categories": "1,2,3",
+                    "page": "1",
+                    "item_id": "I255"
                 }
         self._test_event(data, expected)
         self._test_event(self._change_key(data, "item_id", "I5"),
                          self._change_key(expected, "item_id", "I5"))
         self._test_event(self._change_key(data, "custom_field2", "abc"),
                          self._change_key(expected, "custom_field2", "abc"))
-        self._test_invalid_event(data, missing_keys=["user_id", "link_type", "url"]
-                                       )
+        self._test_invalid_event(data, 
+                         missing_keys=["user_id", "link_type", "url", "q", "page", "item_id", "categories"])
+
+    def _test_ClickLink_RecommendationResult(self):
+        data = {"event_type": "ClickLink",
+                  "user_id": "U1",
+                  "link_type": "RecommendationResult",
+                  "url": "http://example.com/blahblah/",
+                  "req_id": "blah-blah",
+                  "item_id": "I255"
+                }
+        expected = {
+                    "behavior": "Event",
+                    "user_id": "U1",
+                    "event_type": "ClickLink",
+                    "link_type": "RecommendationResult",
+                    "url": "http://example.com/blahblah/",
+                    "is_reserved": True,
+                    "req_id": "blah-blah",
+                    "item_id": "I255"
+                }
+        self._test_event(data, expected)
+        self._test_event(self._change_key(data, "item_id", "I5"),
+                         self._change_key(expected, "item_id", "I5"))
+        self._test_event(self._change_key(data, "custom_field2", "abc"),
+                         self._change_key(expected, "custom_field2", "abc"))
+        self._test_invalid_event(data, 
+                         missing_keys=["user_id", "link_type", "url", "req_id", "item_id"])
+
+    def _test_ClickLink_HotKeyword(self):
+        data = {"event_type": "ClickLink",
+                  "user_id": "U1",
+                  "link_type": "HotKeyword",
+                  "url": "http://example.com/blahblah/",
+                  "keyword": "ganmao"
+                }
+        expected = {
+                    "behavior": "Event",
+                    "user_id": "U1",
+                    "event_type": "ClickLink",
+                    "link_type": "HotKeyword",
+                    "url": "http://example.com/blahblah/",
+                    "is_reserved": True,
+                    "keyword": "ganmao"
+                }
+        self._test_event(data, expected)
+        self._test_event(self._change_key(data, "item_id", "I5"),
+                         self._change_key(expected, "item_id", "I5"))
+        self._test_event(self._change_key(data, "custom_field2", "abc"),
+                         self._change_key(expected, "custom_field2", "abc"))
+        self._test_invalid_event(data, 
+                         missing_keys=["user_id", "link_type", "url", "keyword"])
+
+    def _test_Search(self):
+        data = {"event_type": "Search",
+                  "user_id": "U1",
+                  "categories": "1,2,3",
+                  "q": "haha"
+                }
+        expected = {
+                    "behavior": "Event",
+                    "user_id": "U1",
+                    "event_type": "Search",
+                    "categories": "1,2,3",
+                    "q": "haha",
+                    "is_reserved": True
+                }
+        self._test_event(data, expected)
+        self._test_invalid_event(data, missing_keys=["user_id", "q"])
+
+    def _test_ViewCategory(self):
+        data = {"event_type": "ViewCategory",
+                  "user_id": "U1",
+                  "categories": "1,2,3"
+                }
+        expected = {
+                    "behavior": "Event",
+                    "user_id": "U1",
+                    "event_type": "ViewCategory",
+                    "categories": "1,2,3", 
+                    "is_reserved": True
+                }
+        self._test_event(data, expected)
+        self._test_invalid_event(data, missing_keys=["user_id", "categories"])
 
     def _test_PlaceOrder(self):
         data = {"event_type": "PlaceOrder",
@@ -302,7 +392,11 @@ class EventsAPITest(BaseRecommenderTest):
         self._test_RateItem()
         self._test_AddOrderItem()
         self._test_RemoveOrderItem()
-        self._test_ClickLink()
+        self._test_ClickLink_SearchResult()
+        self._test_ClickLink_RecommendationResult()
+        self._test_ClickLink_HotKeyword()
+        self._test_Search()
+        self._test_ViewCategory()
         self._test_PlaceOrder()
 
     def test_custom_events(self):
