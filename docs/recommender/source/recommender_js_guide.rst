@@ -55,9 +55,9 @@ API调用简单范例::
     var p = new _poco("<API Key>", "http://<api server prefix>/api/v1.6", debug);
     ... ...
     // 假设此次搜索没有指定分类，添加如下代码：
-    p.addEvent({"event_type": "Search", "user_id": "U1", "category_id": "null", "q": "牛黄解毒丸"})
-    // 或者如果此次搜索指定了分类1233，添加如下代码
-    p.addEvent({"event_type": "Search", "user_id": "U1", "category_id": "1233", "q": "牛黄解毒丸"})
+    p.addEvent({"event_type": "Search", "user_id": "U1", "categories": ["null"], "q": "牛黄解毒丸"})
+    // 或者如果此次搜索指定了分类1233和1355，添加如下代码
+    p.addEvent({"event_type": "Search", "user_id": "U1", "categories": ["1233", "1355"], "q": "牛黄解毒丸"})
     ... ...
     p.invoke("pCallback");
 
