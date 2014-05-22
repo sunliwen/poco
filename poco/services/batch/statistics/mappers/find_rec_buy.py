@@ -24,7 +24,7 @@ last_user_id = None
 last_click_recs = {}
 already_viewed = {}
 for line in sys.stdin:
-    user_id, created_on, uniq_order_id, behavior, item_id, price, amount, req_id = line.strip().split("\t")
+    user_id, created_on, uniq_order_id, behavior, event_type, link_type, item_id, price, amount, req_id = line.strip().split("\t")
     created_on = float(created_on)
     if price != "0" and amount != "0":
         price = float(price.strip())
@@ -42,7 +42,8 @@ for line in sys.stdin:
 
     if behavior == "V":
         already_viewed[item_id] = created_on
-    elif behavior == "ClickRec":
+    #elif behavior == "ClickRec":
+    elif link_type == "RecommendationResult":
         if item_id in already_viewed:
             last_click_recs[item_id] = (created_on, True, req_id)
         else:

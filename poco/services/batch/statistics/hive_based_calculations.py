@@ -152,7 +152,8 @@ def calc_click_rec_by_type(site_id, connection, client):
                    "   (SELECT brl.date_str, rl.behavior "
                    "   FROM recommendation_logs rl "
                    "   JOIN backfilled_raw_logs brl ON (rl.req_id = brl.req_id) "
-                   '   WHERE brl.behavior = "ClickRec") a '
+                   #'   WHERE brl.behavior = "ClickRec") a '
+                   '    WHERE brl.event_type = "ClickLink" and brl.link_type = "RecommendationResult") a'
                    "GROUP BY date_str, behavior")
 
 
@@ -194,7 +195,7 @@ def convert_backfilled_raw_logs(work_dir, backfilled_raw_logs_path):
         uniq_order_id = row.get("uniq_order_id", "0")
         order_id = row.get("order_id", "0")
         output = [date_str, repr(hour), repr(row["created_on"]), uniq_order_id, order_id,
-                  row["filled_user_id"], row["behavior"], row["ptm_id"]]
+                  row["filled_user_id"], row["behavior"], row.get("event_type", ""), row.get("link_type", ""), row["ptm_id"]]
         if row["behavior"] == "V":
             output += [row["item_id"], "0", "0", "0"]
             output_a_row(out_f, output)
@@ -202,9 +203,11 @@ def convert_backfilled_raw_logs(work_dir, backfilled_raw_logs_path):
             for order_item in row["order_content"]:
                 output1 = output + [order_item["item_id"], str(order_item["price"]), str(order_item["amount"]), "0"]
                 output_a_row(out_f, output1)
-        elif row["behavior"] == "ClickRec":
-            output += [row["item_id"], "0", "0", row["req_id"]]
-            output_a_row(out_f, output)
+        #elif row["behavior"] == "ClickRec":
+        #    output += [row["item_id"], "0", "0", row["req_id"]]
+        #    output_a_row(out_f, output)
+        elif row["behavior"] == "Event":
+            output += [row["item_id"], "0", "0", row.get("req_id", "0")]
 
     out_f.close()
 
@@ -221,6 +224,8 @@ def load_backfilled_raw_logs(work_dir, client):
                      "order_id STRING, "
                      "filled_user_id STRING, "
                      "behavior STRING, "
+                     "event_type STRING, "
+                     "link_type STRING, "
                      "ptm_id STRING, "
                      "item_id STRING,"
                      "price FLOAT, "
@@ -295,8 +300,8 @@ def result_as_dict(result, columns):
 #        upload_statistics(site_id, connection, client, data)
 
 
-def calc_ClickRec_by_type(site_id, connection, client):
-    pass
+#def calc_ClickRec_by_type(site_id, connection, client):
+#    pass
 
 
 @log_function
@@ -446,12 +451,13 @@ def calc_click_rec_buy(site_id, connection, client):
                    "         src_req_id    STRING  "
                    " ) ")
     client.execute("INSERT OVERWRITE TABLE rec_buy "
-                   "SELECT TRANSFORM (filled_user_id, created_on, uniq_order_id, behavior, item_id, price, amount, req_id) "
+                   "SELECT TRANSFORM (filled_user_id, created_on, uniq_order_id, behavior, event_type, link_type, item_id, price, amount, req_id) "
                    "       USING 'python find_rec_buy.py' "
                    "       AS (created_on, uniq_order_id, user_id, item_id, src_req_id) "
-                   "FROM (SELECT brl.filled_user_id, brl.created_on, brl.uniq_order_id, brl.behavior, brl.item_id, brl.price, brl.amount, brl.req_id"
+                   "FROM (SELECT brl.filled_user_id, brl.created_on, brl.uniq_order_id, brl.behavior, brl.event_type, brl.link_type, brl.item_id, brl.price, brl.amount, brl.req_id"
                    "  FROM backfilled_raw_logs brl "
-                   '  WHERE brl.behavior = "ClickRec" OR brl.behavior = "PLO" OR brl.behavior="V" '
+                   #'  WHERE brl.behavior = "ClickRec" OR brl.behavior = "PLO" OR brl.behavior="V" '
+                   '  WHERE brl.link_type = "RecommendationResult" OR brl.behavior = "PLO" OR brl.behavior="V" '
                    '  ORDER BY filled_user_id, created_on) a ')
 
 
@@ -479,7 +485,8 @@ def _calc_pv_rec(client):
 def _calc_pv_v_pv_clickrec(client):
     client.execute("SELECT date_str, behavior, COUNT(*) "
                    "FROM backfilled_raw_logs brl "
-                   "WHERE behavior='V' OR behavior='ClickRec'"
+                   #"WHERE behavior='V' OR behavior='ClickRec'"
+                   "WHERE behavior='V' OR link_type='RecommendationResult'"
                    "GROUP BY date_str, behavior ")
     return [row for row in yieldClientResults(client)]
 
