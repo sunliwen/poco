@@ -153,7 +153,7 @@ def calc_click_rec_by_type(site_id, connection, client):
                    "   FROM recommendation_logs rl "
                    "   JOIN backfilled_raw_logs brl ON (rl.req_id = brl.req_id) "
                    #'   WHERE brl.behavior = "ClickRec") a '
-                   '    WHERE brl.event_type = "ClickLink" and brl.link_type = "RecommendationResult") a'
+                   '    WHERE brl.link_type = "RecommendationResult") a '
                    "GROUP BY date_str, behavior")
 
 
@@ -207,7 +207,7 @@ def convert_backfilled_raw_logs(work_dir, backfilled_raw_logs_path):
         #    output += [row["item_id"], "0", "0", row["req_id"]]
         #    output_a_row(out_f, output)
         elif row["behavior"] == "Event":
-            output += [row["item_id"], "0", "0", row.get("req_id", "0")]
+            output += [row.get("item_id", ""), "0", "0", row.get("req_id", "0")]
 
     out_f.close()
 
