@@ -34,32 +34,82 @@ def preprocess_query_str(query_str):
     return result
 
 
+def get_item_name(obj):
+    _highlight = getattr(obj, "_highlight", None)
+    if _highlight:
+        item_names = _highlight.get("item_name_standard_analyzed", None)
+        if item_names:
+            return item_names[0]
+    return obj.item_name_standard_analyzed
+
+
+# FIXME: ItemSerializer does not work correctly currently
+def serialize_items(item_list):
+    result = []
+    for item in item_list:
+        item_dict = {}
+        for field in ("item_id", "price", "market_price", "image_link",
+                      "item_link", "available", "item_group",
+                      "brand", "item_level", "item_spec", "item_comment_num",
+                      "tags", "prescription_type"):
+            val = getattr(item, field, None)
+            if val is not None:
+                item_dict[field] = val
+        item_dict["categories"] = [cat for cat in getattr(item, "categories", []) if "__" not in cat]
+        item_dict["item_name"] = get_item_name(item)
+        result.append(item_dict)
+    return result
+
+
+def construct_or_query(query_str, delimiter=","):
+    match_phrases = []
+    for keyword in query_str.split(delimiter):
+        match_phrases.append(
+                {"match_phrase": {"item_name_standard_analyzed": keyword}
+                })
+
+    query = {
+        "bool": {
+            "should": match_phrases,
+            "minimum_should_match": 1
+        }
+    }
+
+    return query
+
+
 # refs:
 # http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-dsl-bool-query.html
 def construct_query(query_str, for_filter=False):
-    splitted_keywords = " ".join(preprocess_query_str(query_str)).split(" ")
     match_phrases = []
+    splitted_keywords = " ".join(preprocess_query_str(query_str)).split(" ")
     for keyword in splitted_keywords:
         match_phrases.append(
             {"match_phrase": {"item_name_standard_analyzed": keyword}})
 
-    if for_filter:
-        query = {
-            "bool": {
-                "must": match_phrases
-            }
+    query = {
+        "bool": {
+            "must": match_phrases
         }
-    else:
-        query = {
-            "bool": {
-                "must": match_phrases,
-                #"should": [
-                #    {'match': {'item_name': {"boost": 2.0,
-                #                             'query': splitted_keywords,
-                #                             'operator': "and"}}}
-                #]
-            }
-        }
+    }
+
+    #if for_filter:
+    #    query = {
+    #        "bool": {
+    #            "must": match_phrases
+    #        }
+    #    }
+    #else:
+    #    query = {
+    #        "bool": {
+    #            "must": match_phrases,
+    #            #"should": [
+    #            #    {'match': {'item_name': {"boost": 2.0,
+    #            #                             'query': splitted_keywords,
+    #            #                             'operator': "and"}}}
+    #            #]
+    #        }
+    #    }
 
     return query
 

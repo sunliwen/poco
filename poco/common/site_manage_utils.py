@@ -73,7 +73,8 @@ MAPPINGS = {"keyword": {
                     "item_comment_num": {"type": "integer"},
                     "keywords": {"type": "string",
                                  "analyzer": "keyword"},
-                    "tags": {"type": "string", "analyzer": "keyword"}
+                    "tags": {"type": "string", "analyzer": "keyword"},
+                    "prescription_type": {"type": "string", "analyzer": "keyword"}
                 }
             }
             }

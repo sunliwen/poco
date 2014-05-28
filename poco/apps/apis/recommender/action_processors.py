@@ -20,6 +20,9 @@ from browsing_history_cache import BrowsingHistoryCache
 
 from common.utils import smart_split
 
+from apps.apis.search import es_search_functions
+from elasticutils import S, F
+
 from common.mongo_client import getMongoClient
 from common.mongo_client import SimpleRecommendationResultFilter
 from common.mongo_client import SameGroupRecommendationResultFilter
@@ -459,7 +462,8 @@ class UpdateItemProcessor(ActionProcessor):
             ("item_spec", False),
             ("item_comment_num", False),
             ("origin_place", False),
-            ("tags", False)
+            ("tags", False),
+            ("prescription_type", False)
         )
     )
 
@@ -1043,6 +1047,22 @@ class RecommenderRegistry:
 #            topn = action_processor.getTopN(site_id, args)
 
 
+class MatchAnyKeywordProcessor:
+    def __init__(self, not_log_action=True):
+        pass
+    def getTopN(self, site_id, args):
+        keywords = args.get("keywords")
+        try:
+            amount = int(args.get("amount", "5"))
+        except ValueError:
+            raise ArgumentError("amount should be an integer.")
+        s = S().indexes(es_search_functions.getESItemIndexName(site_id)).doctypes("item")
+        query = es_search_functions.construct_or_query(keywords, delimiter=",")
+        s = s.query_raw(query)
+        s = s.filter(available=True)
+        topn = [(item["item_id"], 1) for item in s[:amount]]
+        return topn
+
 
 def IfEmptyTryNextProcessor(argument_processor, action_processor_chain, post_process_filters=[], extra_args_to_log=[]):
     # TODO: action_processors should be of BaseSimpleResultRecommendationProcessor
@@ -1126,6 +1146,24 @@ recommender_registry.register("/unit/home",
                                   ]
                               ))
 
+recommender_registry.register("/unit/by_keywords",
+                              IfEmptyTryNextProcessor(
+                                 ArgumentProcessor(
+                                    (("user_id", True),
+                                    ("ref", False),
+                                    ("include_item_info", False),
+                                    ("amount", True),
+                                    ("keywords", True),
+                                    )
+                                  ),
+                                  [
+                                      (MatchAnyKeywordProcessor, {}),
+                                      (GetByBrowsingHistoryProcessor, {}),
+                                      (GetByHotIndexProcessor, [{"hot_index_type": "by_viewed"}])
+                                  ],
+                              extra_args_to_log=["keywords"]
+                              ))
+
 recommender_registry.register("/unit/item",
                               IfEmptyTryNextProcessor(
                                  ArgumentProcessor(
@@ -1146,3 +1184,4 @@ recommender_registry.register("/unit/item",
                                   ],
                                   post_process_filters=[exclude_item_id_in_args]
                               ))
+
