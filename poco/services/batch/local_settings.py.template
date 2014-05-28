@@ -1,4 +1,5 @@
 work_dir = "/cube/service/batch/work_dir"
 tac_command = "tac"
+extra_shell_path = "/usr/bin"
 mongodb_host = "localhost"
 log_dir = "/cube/service/batch/log/calc_logs"

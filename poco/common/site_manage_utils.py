@@ -177,3 +177,15 @@ def regenerate_site_token(mongo_client, site_id):
         return token
     else:
         raise SiteNotExistsError()
+
+
+def regenerate_metrics_collections(mongo_client, site_id):
+    c_traffic_metrics = mongo_client.getSiteDBCollection(site_id, "traffic_metrics")
+    c_keyword_metrics = mongo_client.getSiteDBCollection(site_id, "keyword_metrics")
+    c_traffic_metrics.remove({})
+    c_keyword_metrics.remove({})
+    c_raw_logs = mongo_client.getSiteDBCollection(site_id, "raw_logs")
+    for raw_log in c_raw_logs.find({}):
+        mongo_client.updateTrafficMetricsFromLog(site_id, raw_log)
+        mongo_client.updateKeywordMetricsFromLog(site_id, raw_log)
+

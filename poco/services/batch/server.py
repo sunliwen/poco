@@ -652,6 +652,7 @@ def workOnSiteWithRetries(site, is_manual_calculation=False, max_attempts=2):
 
 
 if __name__ == "__main__":
+    os.environ["PATH"] = "%s:%s" % (getattr(settings, "extra_shell_path", ""), os.environ["PATH"])
     while True:
         #site_ids = ["test_with_gdian_data"]
         for site in loadSites(connection):

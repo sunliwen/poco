@@ -24,7 +24,16 @@ server {
         allow 10.10.10.0/24;
         deny all;
     }
-
+    location ^~ /munin/ {
+        if ($query_string) {
+            expires max;
+        }
+        allow 127.0.0.1;
+        allow 10.10.10.0/24;
+        allow 106.187.48.235;
+        allow 106.187.44.224;
+        deny all;
+    }
     location ^~ /static/ {
         if ($query_string) {
             expires max;

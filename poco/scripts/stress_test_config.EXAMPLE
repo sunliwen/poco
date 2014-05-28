@@ -1,8 +1,8 @@
 API_ROOT = "http://poco.ehaoyao.com"
 API_KEY = "6fad74ab"
 
-CONCURRENCY = 350
-REQUEST_NUM = 5000
+CONCURRENCY = 250
+REQUEST_NUM = 10000
 
 
 POST_DATA_MAP = {
