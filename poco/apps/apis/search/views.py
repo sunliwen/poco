@@ -14,6 +14,7 @@ from django.conf import settings
 from rest_framework.views import APIView
 from rest_framework import status
 import es_search_functions
+from es_search_functions import serialize_items
 from common.mongo_client import getMongoClient
 from common.cached_result import cached_result
 from apps.apis.recommender.property_cache import PropertyCache
@@ -69,33 +70,6 @@ def get_last_cat_id(cat_id):
         return cat_ids[-1]
     else:
         return ""
-
-
-def get_item_name(obj):
-    _highlight = getattr(obj, "_highlight", None)
-    if _highlight:
-        item_names = _highlight.get("item_name_standard_analyzed", None)
-        if item_names:
-            return item_names[0]
-    return obj.item_name_standard_analyzed
-
-
-# FIXME: ItemSerializer does not work correctly currently
-def serialize_items(item_list):
-    result = []
-    for item in item_list:
-        item_dict = {}
-        for field in ("item_id", "price", "market_price", "image_link",
-                      "item_link", "available", "item_group",
-                      "brand", "item_level", "item_spec", "item_comment_num",
-                      "tags", "prescription_type"):
-            val = getattr(item, field, None)
-            if val is not None:
-                item_dict[field] = val
-        item_dict["categories"] = [cat for cat in getattr(item, "categories", []) if "__" not in cat]
-        item_dict["item_name"] = get_item_name(item)
-        result.append(item_dict)
-    return result
 
 
 class BaseAPIView(APIView):
