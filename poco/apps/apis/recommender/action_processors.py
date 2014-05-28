@@ -459,7 +459,8 @@ class UpdateItemProcessor(ActionProcessor):
             ("item_spec", False),
             ("item_comment_num", False),
             ("origin_place", False),
-            ("tags", False)
+            ("tags", False),
+            ("prescription_type", False)
         )
     )
 
