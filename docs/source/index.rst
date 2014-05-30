@@ -11,10 +11,7 @@ Poco 1.6 API 文档
 .. toctree::
    :maxdepth: 2
 
-   search_api
-   suggest_api
-   keywords_api
-
-   items_api
-   recommender_js_guide.rst
-   recommender_js_api.rst
+   events
+   search
+   recommendation
+   management_api
