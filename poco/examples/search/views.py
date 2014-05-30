@@ -66,65 +66,6 @@ def _getSubCategoriesFacets(cat_id, s):
     return result
 
 
-def v_index(request):
-    query_str = request.GET.get("q", "")
-    page_num = request.GET.get("p", "1")
-    cat = request.GET.get("cat", None)
-    op = request.GET.get("op", None)
-
-    if cat is not None and cat.strip() == "":
-        cat = None
-
-    try:
-        page_num = int(page_num)
-    except TypeError:
-        page_num = 1
-    s = S().indexes("item-index").doctypes("item")
-    query_str = query_str.strip()
-    if query_str:
-        query = construct_query(query_str)
-        s = s.query_raw(query)
-    s = s.filter(available=True)
-    s = s.highlight("item_name_standard_analyzed")
-    if cat:
-        s = s.filter(categories__in=[cat])
-        category = CATEGORY_MAP_BY_ID.get(cat, None)
-    else:
-        category = CATEGORY_TREE
-
-    if op=="u":
-        s = s.order_by("price")
-    elif op=="d":
-        s = s.order_by("-price")
-
-    sub_categories_facets = _getSubCategoriesFacets(cat, s)
-    def getLastCatID(term):
-        splitted = term.split("__")
-        if splitted:
-            return splitted[-1]
-        else:
-            return ""
-    if sub_categories_facets:
-        s = s.facet_raw(sub_categories=sub_categories_facets)
-        sub_categories_list = [(getLastCatID(facet["term"]), CATEGORY_MAP_BY_ID.get(getLastCatID(facet["term"]), {}).get("name", ""), facet["count"]) for facet in s.facet_counts().get("sub_categories", [])]
-    else:
-        sub_categories_list = []
-    
-    # TODO: redirect when category is None
-    if category is None:
-    #    redirect(
-        pass
-    else:
-        breadcrumbs = get_breadcrumbs(category)
-
-    page = Paginator(s, 12).page(page_num)
-
-    return render_to_response("index.html", 
-            {"page": page, "query_str": query_str, "category": category,
-             "sub_categories_list": sub_categories_list,
-             "breadcrumbs": breadcrumbs,
-             "op": op}, 
-            RequestContext(request))
 
 
 def v_index(request):
