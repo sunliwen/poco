@@ -3,6 +3,48 @@ Recommender JS API
 
 功能：用来在网页上集成用户行为跟踪和商品推荐功能。
 
+简明教程
+---------
+
+JsSdk Demo页面 http://search.tuijianbao.net/sdk/demo/
+
+需要在页面底部包含下面两个js文件::
+
+    <script type="text/javascript" language="javascript" charset="utf-8" src="http://search.tuijianbao.net/sdk/js/api-1.6.js"></script>
+    <script type="text/javascript" language="javascript" charset="utf-8" src="http://search.tuijianbao.net/sdk/skin/ui-1.6.js"></script>
+
+
+API调用简单范例::
+
+    <script type="text/javascript" language="javascript" >
+        // 开发时可设置debug=true，此时提供的是系统预设的模拟数据，仅供开发使用。
+        // 在正式网站上，debug要设置为false
+        var debug = true;
+        var p = new _poco("<API Key>", "http://<api server prefix>/api/v1.6", debug);
+
+        // 这些是共享参数，每次对服务器的调用都会传送这些参数。
+        p.addSharedParams({'item_id': 'K8900',
+                           'user_id': 'U123',
+                           'amount': '6'});
+
+        // 这是一个浏览商品页的事件。
+        p.addEvent({"event_type": "ViewItem"});
+
+        //这是一个用户下单事件
+        p.addEvent({"type": "PlaceOrder", "order_id": "O123", "order_content": "I123,1.50,2|I250,15.50,1"});
+
+        // 这是一个用户自定义的事件（自定义事件不能和系统内置的事件同名，详见Recommender JS API文档）
+        p.addEvent({"event_type": "CustomEvt1", "purchasing_amount": 15.0});
+
+        // 这两个是对推荐接口的请求
+        p.addRecommender({"type": "AlsoViewed"});
+        p.addRecommender({"type": "ByHotIndex", "hot_index_type": "viewed", "category_id": "C1", "brand": "B25"});
+
+        // 推荐请求的结果会回调这里设置的接口
+        p.invoke("pCallback");
+    </script>
+
+
 _poco.addSharedParams
 -------------------------
 

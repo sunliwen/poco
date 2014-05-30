@@ -3,7 +3,7 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-好药师 Poco 1.6 Search 文档
+Poco 1.6 API 文档
 ====================================
 
 目录
@@ -14,3 +14,7 @@
    search_api
    suggest_api
    keywords_api
+
+   items_api
+   recommender_js_guide.rst
+   recommender_js_api.rst

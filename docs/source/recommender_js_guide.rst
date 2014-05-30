@@ -1,4 +1,4 @@
-Recommender JS 集成操作指南
+Events JS API 集成操作指南
 ===========================
 
 
