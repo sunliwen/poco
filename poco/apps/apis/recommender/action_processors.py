@@ -518,6 +518,8 @@ class UpdateItemProcessor(ActionProcessor):
         else:
             if args["type"] != "product":
                 return {"code": 1, "err_msg": "The type of the item is expected to be 'product'"}
+            if not isinstance(args["item_id"], basestring):
+                return {"code": 1, "err_msg": "The type of item_id should be string."}
             if args["available"] is None:
                 args["available"] = True
             if args["description"] is None:
