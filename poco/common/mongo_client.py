@@ -245,9 +245,9 @@ class MongoClient:
 
     # FIXME: should also make the api_key field unique.
     # FIXME: should fetch site info from cache
-    def generateApiKey(self, site_id, site_name):
+    def generateApiKey(self, site_id, site_name, api_prefix="test-"):
         c_sites = self.connection["tjb-db"]["sites"]
-        api_key = hashlib.md5("%s:%s:%s" % (site_id, site_name, random.random())).hexdigest()[3:11]
+        api_key = api_prefix + hashlib.md5("%s:%s:%s" % (site_id, site_name, random.random())).hexdigest()[3:11]
         while c_sites.find_one({"api_key": api_key}) is not None:
             api_key = hashlib.md5("%s:%s:%s" % (site_id, site_name, random.random())).hexdigest()[3:11]
         return api_key
@@ -269,7 +269,7 @@ class MongoClient:
         site = c_sites.find_one({"site_token": site_token})
         return site
 
-    def updateSite(self, site_id, site_name, calc_interval, algorithm_type="llh"):
+    def updateSite(self, site_id, site_name, calc_interval, algorithm_type="llh", api_prefix="test-"):
         c_sites = self.getTjbDb()["sites"]
         site = c_sites.find_one({"site_id": site_id})
         if site is None:
@@ -278,7 +278,7 @@ class MongoClient:
             site = {"site_id": site_id}
         site.setdefault("last_update_ts", None)
         site.setdefault("disabledFlows", [])
-        site.setdefault("api_key", self.generateApiKey(site_id, site_name))
+        site.setdefault("api_key", self.generateApiKey(site_id, site_name, api_prefix="test-"))
         if site_name is not None:
             site["site_name"] = site_name
         site["calc_interval"] = calc_interval

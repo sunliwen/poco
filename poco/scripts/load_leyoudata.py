@@ -44,6 +44,7 @@ def run(site_id, items_path):
     answer = raw_input("Do you really want to load leyou data into site: %s? (yes to continue)" % site_id)
     api_prefix = raw_input("api_prefix:")
     api_key = raw_input("api_key:")
+    api_token = raw_input("api_token:")
     if answer == "yes":
         items = load_items(items_path)
         t1 = time.time()
@@ -59,7 +60,8 @@ def run(site_id, items_path):
             #es_client.es_index_item(site_id, item)
             #updp._updateItem(site_id, item)
             item["api_key"] = api_key
-            res = api_client("private/items/", {}, body=item)
+            res = api_client("private/items/", {}, body=item, 
+                    headers={"Authorization": "Token %s" % api_token})
             if res["code"] != 0:
                 print res
     else:

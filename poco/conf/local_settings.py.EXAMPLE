@@ -68,12 +68,12 @@ CELERYBEAT_SCHEDULE = {
         'args': (CRON_SITE_ID, )
     },
     'update_hotview_list': {
-        'task': 'recommender.tasks.update_hotview_list',
+        'task': 'apps.apis.recommender.tasks.update_hotview_list',
         'schedule': crontab(minute=01),  # every hour
         'args': (CRON_SITE_ID, )
     },
     'update_keyword_hot_view_list': {
-        'task': 'recommender.tasks.update_keyword_hot_view_list',
+        'task': 'apps.apis.recommender.tasks.update_keyword_hot_view_list',
         'schedule': crontab(minute=01),  # every hour
         'args': (CRON_SITE_ID, )
     }

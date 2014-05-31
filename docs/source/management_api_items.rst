@@ -1,5 +1,5 @@
 Items API
-==========
+=======================
 
 路径: /v1.6/private/items/
 
@@ -46,13 +46,14 @@ market_price       否                                            商品市场�
 categories         否          []                                商品分类。详细结构见下面注释
 brand              否                                            商品品牌。详细结构见下面注释
 item_level         否                                            商品星级。类型：数字
-item_spec          否                                            规格文字
+item_spec          否                                            商品规格文字
 item_comment_num   否                                            商品评论数。类型：数字
 origin_place       否                                            商品产地
 tags               否          []                                商品标签
-prescription_type                                                药品类型
 api_key            是                                            分配给用户站点的api key
 =================  ==========  ===============================   =============================================
+
+另：商品字段可提供订制。例如：prescription_type（药品类型）等等。
 
 注：
     1. categories中的元素结构如下::

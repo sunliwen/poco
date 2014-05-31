@@ -33,4 +33,5 @@ urlpatterns = patterns('',
 
     url(r'^dashboard/', include('apps.web.dashboard.urls')),
     url(r'^admin/',     include('apps.web.adminboard.urls')),
+    url(r'^example/search/',   include('examples.search.urls'))
 )

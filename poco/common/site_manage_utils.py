@@ -111,8 +111,8 @@ def mongodb_drop_items(mongo_client, site_id):
     mongo_client.getSiteDBCollection(site_id, "items").drop()
 
 
-def update_site_in_mongodb(mongo_client, site_id, site_name, calc_interval):
-    site_record = mongo_client.updateSite(site_id, site_name, calc_interval)
+def update_site_in_mongodb(mongo_client, site_id, site_name, calc_interval, api_prefix="test-"):
+    site_record = mongo_client.updateSite(site_id, site_name, calc_interval, api_prefix)
     mongodb_initialize_c_items(mongo_client, site_id)
     return site_record
 
@@ -143,11 +143,11 @@ def reset_items(site_id):
         raise SiteNotExistsError()
 
 
-def create_site(mongo_client, site_id, site_name, calc_interval):
+def create_site(mongo_client, site_id, site_name, calc_interval, api_prefix="test-"):
     if mongo_client.siteExists(site_id, use_cache=False):
         raise SiteAlreadyExistsError()
     site_record = update_site_in_mongodb(
-        mongo_client, site_id, site_name, calc_interval)
+        mongo_client, site_id, site_name, calc_interval, api_prefix)
     regenerate_site_token(mongo_client, site_id)
     # ensure mongodb indexes of site collections
     site_indexes_ensurer = mongodb_ensure_site_indexes.SiteIndexesEnsurer(
