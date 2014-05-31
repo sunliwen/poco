@@ -3,6 +3,8 @@ from __future__ import absolute_import
 DEBUG = True
 
 MONGODB_HOST = "localhost"
+# uncomment the following line to enable replica set
+#REPLICA_SET = "rs0"
 API_SERVER_PREFIX = "http://localhost:2222"
 PRINT_RAW_LOG = True
 #recommendation_deduplicate_item_names_required_set = set([])

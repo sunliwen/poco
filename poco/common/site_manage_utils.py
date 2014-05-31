@@ -136,7 +136,9 @@ def reset_items(site_id):
     if mongo_client.siteExists(site_id, use_cache=False):
         mongo_client.cleanupItems(site_id)
         es = Elasticsearch()
-        reset_es_item_index(es, site_id)
+        #reset_es_item_index(es, site_id)
+        drop_es_item_index(es, site_id)
+        create_es_item_index(es, site_id)
     else:
         raise SiteNotExistsError()
 

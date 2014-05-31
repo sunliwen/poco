@@ -776,9 +776,10 @@ class MongoClient:
 
 def getConnection():
     if(settings.REPLICA_SET):
-        return pymongo.MongoReplicaSetClient(settings.MONGODB_HOST, replicaSet=settings.REPLICA_SET)
+        #return pymongo.MongoReplicaSetClient(settings.MONGODB_HOST, replicaSet=settings.REPLICA_SET, read_preference=ReadPreference.SECONDARY)
+        return pymongo.MongoClient(settings.MONGODB_HOST, replicaSet=settings.REPLICA_SET, read_preference=ReadPreference.SECONDARY)
     else:
-        return pymongo.Connection(settings.MONGODB_HOST)
+        return pymongo.MongoClient(settings.MONGODB_HOST)
 
 
 mongo_client = MongoClient(getConnection())
