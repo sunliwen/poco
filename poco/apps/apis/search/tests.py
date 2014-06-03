@@ -576,6 +576,17 @@ class ItemsSearchViewTest(BaseAPITest):
                                           ]}
                          )
 
+@override_settings(CELERY_EAGER_PROPAGATES_EXCEPTIONS=True,
+                   CELERY_ALWAYS_EAGER=True,
+                   BROKER_BACKEND='memory',
+                   MINIMAL_KEYWORD_HOT_VIEW_LENGTH=4,
+                   MINIMAL_KEYWORD_HOT_VIEW_COUNT=1
+                   )
+class HotKeywordsTest(BaseAPITest):
+    def setUp(self):
+        super(HotKeywordsTest, self).setUp()
+        self.postItems(test_data1, None)
+
     def test_keywords(self):
         # Without calculation, we would get an empty keyword list
         body = {"api_key": self.api_key, "type": "hot"}
@@ -622,18 +633,12 @@ class ItemsSearchViewTest(BaseAPITest):
                          [u"感冒", u"牛黄", u"冲剂", u"奶粉"]
                          )
 
-        return
-
         body = {"api_key": self.api_key,
+                "type": "hot",
                 "amount": 3
                }
         response = self.api_post(reverse("keywords"), data=body)
         self.assertEqual(response.data["errors"], [])
         self.assertEqual(len(response.data["keywords"]), 3)
 
-        body = {"api_key": self.api_key,
-                "amount": 10
-               }
-        response = self.api_post(reverse("keywords"), data=body)
-        self.assertEqual(response.data["errors"], [])
-        self.assertEqual(len(response.data["keywords"]), 10)
+
