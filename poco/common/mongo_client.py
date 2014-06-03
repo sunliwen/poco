@@ -587,9 +587,12 @@ class MongoClient:
             ]
         )
         result = res.get("result", [])
-
-        topn = [record["_id"] for record in result]
-        return {"null": topn}
+        print "RES:", result
+        topn = [record["_id"] for record in result if record["count"] >= settings.MINIMAL_KEYWORD_HOT_VIEW_COUNT]
+        if len(topn) >= settings.MINIMAL_KEYWORD_HOT_VIEW_LENGTH:
+            return {"null": topn}
+        else:
+            return {"null": []}
 
     def getFromCachedResults(self, site_id, cache_key):
         c_cached_results = self.getSiteDBCollection(site_id, "cached_results")
