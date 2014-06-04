@@ -137,7 +137,7 @@ errors            为一个列表，其内容同单个商品的返回结果，�
 
 请求::
 
-    curl -X POST 'http://search.tuijianbao.net/api/v1.6/private/items/' \
+    curl -X POST 'http://poco.tuijianbao.net/api/v1.6/private/items/' \
          -H 'Content-Type: application/json' \
          -H 'Authorization: Token <site_token>' \
          -d '{
