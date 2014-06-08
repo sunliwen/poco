@@ -139,7 +139,7 @@ class RecommenderAPIView(SingleRequestAPIView):
                     {"item_name": "星月--动物音乐敲击琴",
                      "price": "79.00",
                      "market_price": "118.00",
-                     "image_link": "http://search.tuijianbao.net/static/images/160x90.gif", #TODO
+                     "image_link": "http://poco.tuijianbao.net/static/images/160x90.gif", #TODO
                      "score": 1.0,
                      "item_link": "http://example.com/products/3852023/",
                      "item_id": "3852023"
