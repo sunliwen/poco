@@ -12,9 +12,9 @@ from common.utils import sign
 
 import logging
 
-logging.basicConfig(format="%(asctime)s|%(levelname)s|%(name)s|%(message)s",
-                    level=logging.WARNING,
-                    datefmt="%Y-%m-%d %I:%M:%S")
+#logging.basicConfig(format="%(asctime)s|%(levelname)s|%(name)s|%(message)s",
+#                    level=logging.WARNING,
+#                    datefmt="%Y-%m-%d %I:%M:%S")
 
 
 class UpdateSiteError(Exception):
@@ -408,6 +408,8 @@ class MongoClient:
                 del item_in_db["available"]
                 del item_in_db["categories"]
                 del item_in_db["created_on"]
+                if "description" in item_in_db:
+                    del item_in_db["description"]
                 if "updated_on" in item_in_db:
                     del item_in_db["updated_on"]
                 if "removed_on" in item_in_db:

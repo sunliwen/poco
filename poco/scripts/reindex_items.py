@@ -3,6 +3,7 @@ from common.mongo_client import getMongoClient
 
 
 def run(site_id):
+    print "This script ignore descript field currently!"
     answer = raw_input("Do you really want to reindex items of site: %s (enter 'yes' to continue)" % site_id)
     if answer == "yes":
         mongo_client = getMongoClient()
@@ -11,6 +12,8 @@ def run(site_id):
         cnt = 0
         for item in c_items.find():
             del item["_id"]
+            if item.has_key("description"):
+                del item["description"]
             #item["categories"] = []
             es_client.es_index_item(site_id, item)
             cnt += 1
