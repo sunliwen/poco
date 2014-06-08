@@ -1113,6 +1113,8 @@ def fill_category_id_by_item_id(site_id, args):
         root_categories = [category for category in item["categories"] if category["parent_id"] == "null"]
         if len(root_categories) > 0:
             category_id = root_categories[0]["id"]
+        else:
+            category_id = None
     else:
         category_id = None
     args["category_id"] = category_id
