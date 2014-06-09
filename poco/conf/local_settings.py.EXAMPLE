@@ -107,3 +107,33 @@ CACHE_EXPIRY_SEARCH_RESULTS =  60 * 30 # 30 minutes
 
 MINIMAL_KEYWORD_HOT_VIEW_LENGTH = 15 # The minimal length of calculated keyword hot view which can replace the existing one
 MINIMAL_KEYWORD_HOT_VIEW_COUNT = 70  # The minimal count of keyword usage which can be included into the hot view list
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': True,
+    'formatters': {
+       'standard': {
+       'format': '%(asctime)s [%(levelname)s] %(name)s: %(message)s'
+       }
+    },
+    'handlers': {
+    'default': {
+       'level': 'INFO',
+       'class': 'logging.StreamHandler',
+       'formatter': "standard",
+       'stream': 'ext://sys.stdout'
+    }   
+    },
+    'loggers': {
+    '': {
+      'handlers': ['default'],
+      'level': 'INFO',
+      'propagate': True
+    },
+    'django.request': {
+      'handlers': ['default'],
+      'level': 'INFO',
+      'propagate': False
+    }
+    }
+}
