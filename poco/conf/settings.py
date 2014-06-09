@@ -55,7 +55,7 @@ INSTALLED_APPS = (
     # poco search example
     'examples.search',
 
-    'gunicorn'
+    #'gunicorn'
 )
 
 MIDDLEWARE_CLASSES = (

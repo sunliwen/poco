@@ -35,18 +35,11 @@ REDIS_CONFIGURATION = {"host": "localhost", "port": 6379, "db": 0}
 
 # Redis cache is used for both production and development
 CACHES = {
-    'default': {
-        'BACKEND': 'redis_cache.RedisCache',
-        #'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'localhost:6379',
-        'OPTIONS': {
-            'DB': '0',
-            'PARSER_CLASS': 'redis.connection.HiredisParser',
-            'CONNECTION_POOL_CLASS': 'redis.BlockingConnectionPool',
-            'CONNECTION_POOL_CLASS_KWARGS': {
-                'max_connections': 50,
-                'timeout': 20,
-            }
+    "default": {
+        "BACKEND": "redis_cache.cache.RedisCache",
+        "LOCATION": "%(host)s:%(port)s" % REDIS_CONFIGURATION,
+        "OPTIONS": {
+            "CLIENT_CLASS": "redis_cache.client.DefaultClient",
         }
     }
 }
