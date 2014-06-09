@@ -1,4 +1,4 @@
-API_ROOT = "http://poco.ehaoyao.com"
+API_ROOT = "http://master.intranet:9600"
 API_KEY = "6fad74ab"
 
 CONCURRENCY = 250
