@@ -41,7 +41,7 @@ errors
 
 请求::
 
-    curl -X GET 'http://search.tuijianbao.net/api/v1.6/public/suggest/' \
+    curl -X GET 'http://poco.tuijianbao.net/api/v1.6/public/suggest/' \
         -H 'Content-Type: application/json' \
         -d '{
             "api_key": "123456",

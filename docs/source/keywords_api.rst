@@ -34,7 +34,7 @@ errors            错误信息。正常情况下为[]。
 
 请求::
 
-    curl -X GET 'http://search.tuijianbao.net/api/v1.6/public/keywords/' \
+    curl -X GET 'http://poco.tuijianbao.net/api/v1.6/public/keywords/' \
          -H 'Content-Type: application/json' \
          -d '{
              "api_key": "123456",

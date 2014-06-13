@@ -5,12 +5,12 @@ Events API JS 集成操作指南
 简明教程
 ---------
 
-JsSdk Demo页面 http://search.tuijianbao.net/sdk/demo/
+JsSdk Demo页面 http://poco.tuijianbao.net/sdk/demo/
 
 需要在页面底部包含下面两个js文件::
 
-    <script type="text/javascript" language="javascript" charset="utf-8" src="http://search.tuijianbao.net/sdk/js/api-1.6.js"></script>
-    <script type="text/javascript" language="javascript" charset="utf-8" src="http://search.tuijianbao.net/sdk/skin/ui-1.6.js"></script>
+    <script type="text/javascript" language="javascript" charset="utf-8" src="http://poco.tuijianbao.net/sdk/js/api-1.6.js"></script>
+    <script type="text/javascript" language="javascript" charset="utf-8" src="http://poco.tuijianbao.net/sdk/skin/ui-1.6.js"></script>
 
 
 API调用简单范例::

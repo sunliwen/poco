@@ -361,6 +361,7 @@ class ProductsSearch(BaseAPIView):
     def get(self, request, format=None):
         errors = self._validate(request)
         if errors:
+            logging.debug("Search Params:%s " % request.DATA) 
             return Response({"records": [], "info": {}, "errors": errors})
         # TODO: handle the api_key
         q = request.DATA.get("q", "")

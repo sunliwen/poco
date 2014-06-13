@@ -1,0 +1,3 @@
+#!/bin/sh
+uwsgi -M --chdir=/cube/apps/poco_alt/poco --module=conf.wsgi:application --env DJANGO_SETTINGS_MODULE=conf.settings --http=127.0.0.1:9605 --processes=50 --harakiri=30 --post-buffering 1 --vacuum --home=/cube/apps/poco/env -b 32768 --uid=www-data --gid=www-data
+#uwsgi -M --max-requests=5000 --chdir=/cube/apps/poco_alt/poco --module=conf.wsgi:application --env DJANGO_SETTINGS_MODULE=conf.settings --http=127.0.0.1:9605 --processes=50 --harakiri=30 --vacuum --home=/cube/apps/poco/env -b 32768 --uid=www-data --gid=www-data
