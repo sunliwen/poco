@@ -12,9 +12,9 @@ from common.utils import sign
 
 import logging
 
-logging.basicConfig(format="%(asctime)s|%(levelname)s|%(name)s|%(message)s",
-                    level=logging.WARNING,
-                    datefmt="%Y-%m-%d %I:%M:%S")
+#logging.basicConfig(format="%(asctime)s|%(levelname)s|%(name)s|%(message)s",
+#                    level=logging.WARNING,
+#                    datefmt="%Y-%m-%d %I:%M:%S")
 
 
 class UpdateSiteError(Exception):
