@@ -36,6 +36,7 @@ ITEMS =    [{
             "available": True,
             "item_id": "I123",
             "item_name": "雀巢奶粉",
+            "item_spec": "itemspec1",
             "item_link": "http://example.com/I123/",
             "brand": "22",
             "item_level": 5,
