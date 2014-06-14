@@ -24,6 +24,9 @@ def es_index_item(site_id, item):
     item["item_name_standard_analyzed"] = item["item_name"]
     item["item_name_no_analysis"] = item["item_name"]
     item["item_name"] = " ".join(es_search_functions.preprocess_query_str(item["item_name"]))
+
+    item["tags_standard"] = item["tags"]
+
     if item.has_key("price"):
         item["price"] = float(item["price"])
     if item.has_key("market_price"):
@@ -42,6 +45,7 @@ def es_index_item(site_id, item):
     brand = item.get("brand", None)
     if brand:
         item["brand"] = brand["id"]
+        item["brand_name"] = brand.get("name", "")
 
     res = es.index(index=es_search_functions.getESItemIndexName(site_id), doc_type='item', id=item["item_id"], body=item)
 

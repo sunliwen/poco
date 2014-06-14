@@ -42,7 +42,8 @@ ITEMS =    [{
             "item_comment_num": 15,
             "origin_place": 0,
             "categories": ["12", "1202"],
-            "tags": ["老人"]
+            "tags": ["老人"],
+            "description": "描述A 描述B"
             },
             {
             "type": "product",

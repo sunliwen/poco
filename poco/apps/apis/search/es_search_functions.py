@@ -85,7 +85,12 @@ def construct_query(query_str, for_filter=False):
     splitted_keywords = " ".join(preprocess_query_str(query_str)).split(" ")
     for keyword in splitted_keywords:
         match_phrases.append(
-            {"match_phrase": {"item_name_standard_analyzed": keyword}})
+            {"multi_match": {
+                "fields": ["item_name_standard_analyzed", "description", "tags_standard", "brand_name"],
+                "query": keyword,
+                "type": "phrase"
+            }}
+        )
 
     query = {
         "bool": {
