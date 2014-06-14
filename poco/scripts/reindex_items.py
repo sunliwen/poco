@@ -1,5 +1,6 @@
 from recommender import es_client
 from common.mongo_client import getMongoClient
+from apps.apis.search.keyword_list import keyword_list
 
 
 def run(site_id):
@@ -19,6 +20,12 @@ def run(site_id):
             cnt += 1
             if (cnt % 50) == 0:
                 print "%s/%s" % (cnt, total)
+
+        # also fill whitelisted keywords
+        for record in keyword_list.fetchSuggestKeywordList(site_id):
+            if record["type"] == keyword_list.WHITE_LIST:
+                keyword_list.markKeywordsAsWhiteListed(site_id, [keyword])
+
     else:
         print "Exit without action."
         sys.exit(0)
