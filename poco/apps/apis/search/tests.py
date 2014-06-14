@@ -204,13 +204,79 @@ class ItemsSearchViewTest(BaseAPITest):
         print response
         self.assertEqual(response.data["info"]["total_result_count"], 2)
 
+    def _test_search_other_fields(self):
+        # search the description field
+        body = {"api_key": self.api_key,
+                "q": "描述A"
+                }
+        response = self.api_post(reverse("products-search"), data=body)
+        self.assertEqual(response.data["info"]["total_result_count"], 1)
+        
+        # search the tags field
+        body = {"api_key": self.api_key,
+                "q": "妇女"
+                }
+        response = self.api_post(reverse("products-search"), data=body)
+        self.assertEqual(response.data["info"]["total_result_count"], 1)
+
+        body = {"api_key": self.api_key,
+                "q": "妇"
+                }
+        response = self.api_post(reverse("products-search"), data=body)
+        self.assertEqual(response.data["info"]["total_result_count"], 1)
+
+        # search the brand field
+        body = {"api_key": self.api_key,
+                "q": "智多星"
+                }
+        response = self.api_post(reverse("products-search"), data=body)
+        self.assertEqual(response.data["info"]["total_result_count"], 1)        
+
+        # search the item_spec field
+        body = {"api_key": self.api_key,
+        "q": "itemspec1"
+        }
+        response = self.api_post(reverse("products-search"), data=body)
+        self.assertEqual(response.data["info"]["total_result_count"], 1)
+
+    #def _test_search_special_characters(self):
+    #    # post another item
+    #    item = {"type": "product",
+    #            "available": True,
+    #            "item_id": "ITEM201",
+    #            "item_name": "橄榄油(精华)（红色）",
+    #            "item_link": "http://example.com/"}
+    #    self.postItem(item)
+    #    body = {"api_key": self.api_key,
+    #            "q": "橄榄油"
+    #            }
+    #    response = self.api_post(reverse("products-search"), data=body)
+    #    self.assertEqual(response.data["info"]["total_result_count"], 1)
+
+    #    body = {"api_key": self.api_key,
+    #            "q": "精华"
+    #            }
+    #    response = self.api_post(reverse("products-search"), data=body)
+    #    self.assertEqual(response.data["info"]["total_result_count"], 1)
+
+    #    body = {"api_key": self.api_key,
+    #            "q": "（红色）"
+    #            }
+    #    response = self.api_post(reverse("products-search"), data=body)
+    #    self.assertEqual(response.data["info"]["total_result_count"], 1)
+
+    #    body = {"api_key": self.api_key,
+    #            "q": "橄榄油(精华)"
+    #            }
+    #    response = self.api_post(reverse("products-search"), data=body)
+    #    self.assertEqual(response.data["info"]["total_result_count"], 1)
+
     def _test_search1(self):
         body = {"api_key": self.api_key,
                 "q": "雀巢"
                 }
         response = self.api_post(reverse("products-search"), data=body)
         self.assertEqual(response.data["info"]["total_result_count"], 1)
-        response
 
     def _test_search2(self):
         body = {"api_key": self.api_key,
@@ -499,6 +565,7 @@ class ItemsSearchViewTest(BaseAPITest):
         self._test_search1()
         self._test_search2()
         self._test_search_pagination()
+        self._test_search_other_fields()
         #self._test_result_mode()
         self._test_search_facets_selection()
         #self._test_search_facets_of_whole_sub_tree()

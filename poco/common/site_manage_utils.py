@@ -21,6 +21,9 @@ INDEX_SETTINGS = {
                     "tokenizer": "whitespace",
                     "filter": ["my_pinyin_first_n_full"]
                 },
+                #"poco_standard": {
+                #    "type": "custom",
+                #}
             },
             "filter": {
                 "my_pinyin_first_n_full": {
@@ -61,12 +64,14 @@ MAPPINGS = {"keyword": {
                         "store": "yes",
                         "analyzer": "keyword"
                     },
+                    "description": {"type": "string"},
                     "price": {"type": "float"},
                     "market_price": {"type": "float"},
                     "image_link": {"type": "string"},
                     "item_link": {"type": "string"},
                     "categories": {"type": "string", "index_name": "category"},
                     "brand": {"type": "string"},
+                    "brand_name": {"type": "string", "analyzer": "standard"},
                     "item_level": {"type": "integer"},
                     "item_spec": {"type": "string"},
                     "origin_place": {"type": "integer"},
@@ -74,6 +79,7 @@ MAPPINGS = {"keyword": {
                     "keywords": {"type": "string",
                                  "analyzer": "keyword"},
                     "tags": {"type": "string", "analyzer": "keyword"},
+                    "tags_standard": {"type": "string", "analyzer": "standard"},
                     "prescription_type": {"type": "string", "analyzer": "keyword"}
                 }
             }

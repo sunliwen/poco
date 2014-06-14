@@ -36,13 +36,15 @@ ITEMS =    [{
             "available": True,
             "item_id": "I123",
             "item_name": "雀巢奶粉",
+            "item_spec": "itemspec1",
             "item_link": "http://example.com/I123/",
             "brand": "22",
             "item_level": 5,
             "item_comment_num": 15,
             "origin_place": 0,
             "categories": ["12", "1202"],
-            "tags": ["老人"]
+            "tags": ["老人"],
+            "description": "描述A 描述B"
             },
             {
             "type": "product",

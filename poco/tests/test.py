@@ -88,6 +88,13 @@ def post_search2():
     return res
 
 
+def post_search3(body):
+    body["api_key"] = api_key
+    res = api_access("public/search/", None,
+            body=body)
+    return res
+
+
 def post_suggest():
     res = api_access("public/suggest/", None,
             body={

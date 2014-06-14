@@ -9,7 +9,8 @@ from apps.apis.recommender.property_cache import PropertyCache
 
 
 def getESItemIndexName(site_id):
-    return "item-index-v1-%s" % site_id
+    #return "item-index-v1-%s" % site_id
+    return "item-index-v2-%s" % site_id
 
 
 def getESClient():
@@ -85,7 +86,12 @@ def construct_query(query_str, for_filter=False):
     splitted_keywords = " ".join(preprocess_query_str(query_str)).split(" ")
     for keyword in splitted_keywords:
         match_phrases.append(
-            {"match_phrase": {"item_name_standard_analyzed": keyword}})
+            {"multi_match": {
+                "fields": ["item_name_standard_analyzed", "description", "tags_standard", "brand_name", "item_spec"],
+                "query": keyword,
+                "type": "phrase"
+            }}
+        )
 
     query = {
         "bool": {
