@@ -15,10 +15,14 @@ class StressTest:
         self.config = config
 
     def run_test(self, merged_config):
-        command = 'ab -c %(CONCURRENCY)s -n %(REQUEST_NUM)s -p /tmp/STRESS_TEST_POSTFILE -T "application/json" %(API_ROOT)s/api/v1.6/public%(api_path)s' 
-        full_command = command % merged_config
         post_data = merged_config["body"]
         post_data["api_key"] = merged_config["API_KEY"]
+        merged_config["body_json"] = json.dumps(merged_config["body"])
+        curl_command = "curl -X POST '%(API_ROOT)s/api/v1.6%(api_path)s' -H 'Content-Type: application/json' -d '%(body_json)s'" % merged_config
+        print curl_command
+        os.system(curl_command)
+        command = 'ab -c %(CONCURRENCY)s -n %(REQUEST_NUM)s -p /tmp/STRESS_TEST_POSTFILE -T "application/json" %(API_ROOT)s/api/v1.6%(api_path)s' 
+        full_command = command % merged_config
         f = open("/tmp/STRESS_TEST_POSTFILE", "w")
         f.write(json.dumps(post_data))
         f.close()

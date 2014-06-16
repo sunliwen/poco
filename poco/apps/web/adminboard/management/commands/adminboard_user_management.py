@@ -1,4 +1,5 @@
 import sys
+import datetime
 import random
 import hashlib
 from django.core.management.base import BaseCommand, CommandError
@@ -24,7 +25,8 @@ def createHashedPassword(password):
 
 c_admin_users = mongo_client.getTjbDb()["admin-users"]
 
-random.seed(open("/dev/random", "rb").read(10))
+#random.seed(open("/dev/random", "rb").read(10))
+random.seed(str(datetime.datetime.now()))
 
 
 def cmd_createNewUser():

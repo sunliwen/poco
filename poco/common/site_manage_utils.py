@@ -20,10 +20,7 @@ INDEX_SETTINGS = {
                     "type": "custom",
                     "tokenizer": "whitespace",
                     "filter": ["my_pinyin_first_n_full"]
-                },
-                #"poco_standard": {
-                #    "type": "custom",
-                #}
+                }
             },
             "filter": {
                 "my_pinyin_first_n_full": {
