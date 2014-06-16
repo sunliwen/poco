@@ -44,7 +44,8 @@ ITEMS =    [{
             "origin_place": 0,
             "categories": ["12", "1202"],
             "tags": ["老人"],
-            "description": "描述A 描述B"
+            "description": "描述A 描述B",
+            "sku": "SKU10052"
             },
             {
             "type": "product",

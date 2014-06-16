@@ -232,12 +232,26 @@ class ItemsSearchViewTest(BaseAPITest):
         response = self.api_post(reverse("products-search"), data=body)
         self.assertEqual(response.data["info"]["total_result_count"], 1)        
 
-        # search the item_spec field
+        # search the sku field
         body = {"api_key": self.api_key,
-        "q": "itemspec1"
+        "q": "SKU10052"
         }
         response = self.api_post(reverse("products-search"), data=body)
         self.assertEqual(response.data["info"]["total_result_count"], 1)
+
+        # search the sku field
+        body = {"api_key": self.api_key,
+        "q": "SKU10052 奶粉"
+        }
+        response = self.api_post(reverse("products-search"), data=body)
+        self.assertEqual(response.data["info"]["total_result_count"], 0)
+
+        # search the sku field
+        body = {"api_key": self.api_key,
+        "q": "SKU100"
+        }
+        response = self.api_post(reverse("products-search"), data=body)
+        self.assertEqual(response.data["info"]["total_result_count"], 0)
 
     #def _test_search_special_characters(self):
     #    # post another item

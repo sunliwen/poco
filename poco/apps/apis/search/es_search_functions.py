@@ -10,7 +10,7 @@ from apps.apis.recommender.property_cache import PropertyCache
 
 def getESItemIndexName(site_id):
     #return "item-index-v1-%s" % site_id
-    return "item-index-v2-%s" % site_id
+    return "item-index-v3-%s" % site_id
 
 
 def getESClient():
@@ -52,7 +52,7 @@ def serialize_items(item_list):
         for field in ("item_id", "price", "market_price", "image_link",
                       "item_link", "available", "item_group",
                       "brand", "item_level", "item_spec", "item_comment_num",
-                      "tags", "prescription_type"):
+                      "tags", "prescription_type", "sku"):
             val = getattr(item, field, None)
             if val is not None:
                 item_dict[field] = val
@@ -79,6 +79,16 @@ def construct_or_query(query_str, delimiter=","):
     return query
 
 
+def add_sku_query(query, query_str):
+    keywords = [kw.strip() for kw in query_str.strip().split(" ")]
+    if len(keywords) == 1:
+        keyword = keywords[0]
+        query = {"bool": {
+            "should": [query, {"term": {"sku": keyword}}],
+            "minimum_should_match": 1
+        }}
+    return query
+
 # refs:
 # http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-dsl-bool-query.html
 def construct_query(query_str, for_filter=False):
@@ -87,7 +97,7 @@ def construct_query(query_str, for_filter=False):
     for keyword in splitted_keywords:
         match_phrases.append(
             {"multi_match": {
-                "fields": ["item_name_standard_analyzed", "description", "tags_standard", "brand_name", "item_spec"],
+                "fields": ["item_name_standard_analyzed", "description", "tags_standard", "brand_name"],
                 "query": keyword,
                 "type": "phrase"
             }}
@@ -98,7 +108,7 @@ def construct_query(query_str, for_filter=False):
             "must": match_phrases
         }
     }
-
+    query = add_sku_query(query, query_str)
     #if for_filter:
     #    query = {
     #        "bool": {
