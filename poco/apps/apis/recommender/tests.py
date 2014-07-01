@@ -620,6 +620,23 @@ class ItemsAPITest(BaseRecommenderTest):
         self._test_multiple_products_posting_invalid_items(c_items, items_to_post)
         self._test_multiple_products_posting_valid_items(c_items, items_to_post)
 
+    def test_stock(self):
+        c_items = self.mongo_client.getSiteDBCollection(self.TEST_SITE_ID, "items")
+        self.assertEqual(c_items.count(), 0)
+        item_to_post = test_data1.getItems(["I123"])[0]
+        item_to_post["api_key"] = self.api_key
+
+        stock = 5
+        item_to_post["stock"] = stock
+        response = self.api_post(reverse("recommender-items"), data=item_to_post,
+                                  expected_status_code=200,
+                                  **{"HTTP_AUTHORIZATION": "Token %s" % self.site_token}
+                                  )
+        self.assertEqual(response.data["code"], 0)
+        items = [item for item in c_items.find({})]
+        self.assertEqual(len(items), 1)
+        self.assertEqual(items[0]["stock"], stock)
+
     def test_prescription_type(self):
         c_items = self.mongo_client.getSiteDBCollection(self.TEST_SITE_ID, "items")
         self.assertEqual(c_items.count(), 0)
