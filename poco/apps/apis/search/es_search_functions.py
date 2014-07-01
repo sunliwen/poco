@@ -97,7 +97,7 @@ def construct_query(query_str, for_filter=False):
     for keyword in splitted_keywords:
         match_phrases.append(
             {"multi_match": {
-                "fields": ["item_name_standard_analyzed", "description", "tags_standard", "brand_name"],
+                "fields": ["item_name_standard_analyzed^1000", "brand_name^100", "tags_standard^10", "description"],
                 "query": keyword,
                 "type": "phrase"
             }}
