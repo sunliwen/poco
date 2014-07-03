@@ -1358,6 +1358,30 @@ class HotIndexTest(BaseRecommenderTest):
                               "item_id": [recommended_item["item_id"]],
                               "api_key": [self.api_key]})
 
+        ## If we make an item not available
+        item = test_data1.getItems(item_ids=["I123"])[0]
+        item["available"] = False
+        response = self.postItem(item)
+        self.assertEqual(response.data["code"], 0, "Unexpected response: %s" % response.data)
+        self.assertEqual(self.get_item("I123")["available"], False)
+        ## the unavailable item should not show up in result
+        response = self.api_get(reverse("recommender-recommender"),
+                    data={"api_key": self.api_key,
+                          "type": "ByHotIndex",
+                          "hot_index_type": "by_viewed",
+                          "user_id": "U1",
+                          "amount": 5
+          })
+        self.assertEqual(response.data["code"], 0)
+        self.assertEqual([item["item_id"] for item in response.data["topn"]],
+                         ["I126", "I124", "I125"])
+        ## let's turn available back
+        item = test_data1.getItems(item_ids=["I123"])[0]
+        item["available"] = True
+        response = self.postItem(item)
+        self.assertEqual(response.data["code"], 0, "Unexpected response: %s" % response.data)
+        self.assertEqual(self.get_item("I123")["available"], True)
+
         # TOPN of a certain toplevel category
         response = self.api_get(reverse("recommender-recommender"),
                     data={"api_key": self.api_key,
