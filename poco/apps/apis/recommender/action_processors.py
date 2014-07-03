@@ -534,6 +534,10 @@ class UpdateItemProcessor(ActionProcessor):
                 del args["market_price"]
             if args["categories"] is None:
                 args["categories"] = []
+            if args["stock"] is None:
+                args["stock"] = 0
+            if not isinstance(args["stock"], int):
+                return {"code": 1, "err_msg": "The type of stock should be integer."}
             err_response = self._validateCategories(args)
             if err_response:
                 return err_response
