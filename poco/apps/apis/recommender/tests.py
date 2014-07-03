@@ -626,8 +626,8 @@ class ItemsAPITest(BaseRecommenderTest):
         item_to_post = test_data1.getItems(["I123"])[0]
         item_to_post["api_key"] = self.api_key
 
-        stock = 5
-        item_to_post["stock"] = stock
+        stock1 = 5
+        item_to_post["stock"] = stock1
         response = self.api_post(reverse("recommender-items"), data=item_to_post,
                                   expected_status_code=200,
                                   **{"HTTP_AUTHORIZATION": "Token %s" % self.site_token}
@@ -635,7 +635,28 @@ class ItemsAPITest(BaseRecommenderTest):
         self.assertEqual(response.data["code"], 0)
         items = [item for item in c_items.find({})]
         self.assertEqual(len(items), 1)
-        self.assertEqual(items[0]["stock"], stock)
+        self.assertEqual(items[0]["stock"], stock1)
+
+        stock2 = "0"
+        item_to_post["stock"] = stock2
+        response = self.api_post(reverse("recommender-items"), data=item_to_post,
+                                  expected_status_code=200,
+                                  **{"HTTP_AUTHORIZATION": "Token %s" % self.site_token}
+                                  )
+        self.assertEqual(response.data["code"], 1)
+        items = [item for item in c_items.find({})]
+        self.assertEqual(len(items), 1)
+        self.assertEqual(items[0]["stock"], stock1)
+
+        del item_to_post["stock"]
+        response = self.api_post(reverse("recommender-items"), data=item_to_post,
+                                  expected_status_code=200,
+                                  **{"HTTP_AUTHORIZATION": "Token %s" % self.site_token}
+                                  )
+        self.assertEqual(response.data["code"], 0)
+        items = [item for item in c_items.find({})]
+        self.assertEqual(len(items), 1)
+        self.assertEqual(items[0]["stock"], 0)
 
     def test_prescription_type(self):
         c_items = self.mongo_client.getSiteDBCollection(self.TEST_SITE_ID, "items")
