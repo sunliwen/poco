@@ -31,7 +31,8 @@ for id, brand in BRANDS.items():
     brand["id"] = id
 
 
-ITEMS =    [{
+ITEMS = []
+ITEMS.append({
             "type": "product",
             "available": True,
             "item_id": "I123",
@@ -45,9 +46,10 @@ ITEMS =    [{
             "categories": ["12", "1202"],
             "tags": ["老人"],
             "description": "描述A 描述B",
-            "sku": "SKU10052"
-            },
-            {
+            "sku": "SKU10052",
+            "stock": 10,
+            })
+ITEMS += [{
             "type": "product",
             "item_id": "I124",
             "item_name": "能恩超级",
@@ -57,7 +59,9 @@ ITEMS =    [{
             "item_comment_num": 10,
             "origin_place": 1,
             "categories": ["12", "1201", "120101"],
-            "tags": ["小孩", "妇女"]},
+            "tags": ["小孩", "妇女"],
+            "stock": 10,
+            },
             {
             "type": "product",
             "item_id": "I125",
@@ -68,7 +72,9 @@ ITEMS =    [{
             "item_comment_num": 10,
             "origin_place": 0,
             "categories":["12", "1201", "120102"],
-            "tags": ["老人", "小孩"]},
+            "tags": ["老人", "小孩"],
+            "stock": 10,
+            },
             {
             "type": "product",
             "item_id": "I126",
@@ -79,7 +85,8 @@ ITEMS =    [{
             "item_comment_num": 10,
             "origin_place": 0,
             "categories":["15", "1501"],
-            "tags": ["小孩"]}
+            "tags": ["小孩"],
+            "stock": 10}
             ]
 
 def getItems(item_ids=None):
@@ -89,5 +96,5 @@ def getItems(item_ids=None):
             copied_item = copy.deepcopy(item)
             copied_item["categories"] = [CATEGORIES[category_id] for category_id in copied_item["categories"]]
             copied_item["brand"] = BRANDS[copied_item["brand"]]
-        result.append(copied_item)
+            result.append(copied_item)
     return result

@@ -21,16 +21,20 @@ class UpdateSiteError(Exception):
     pass
 
 
-class SimpleRecommendationResultFilter:
+class BaseRecommendationResultFilter(object):
     def is_allowed(self, item_dict):
-        return item_dict["available"]
+        return item_dict["available"] and item_dict["stock"] > 0
+
+
+class SimpleRecommendationResultFilter(BaseRecommendationResultFilter):
+    pass
 
 
 HOT_INDEX_ALL_ITEMS = 0
 
 
 # Now we intepret items which do not belong to any group in a default group.
-class SameGroupRecommendationResultFilter:
+class SameGroupRecommendationResultFilter(BaseRecommendationResultFilter):
     def getCatId(self, category):
         if isinstance(category, basestring):
             cat_id = category
@@ -57,7 +61,7 @@ class SameGroupRecommendationResultFilter:
             self.allowed_category_groups = set([])
 
     def is_allowed(self, item_dict):
-        if not item_dict["available"]:
+        if not super(SameGroupRecommendationResultFilter, self).is_allowed(item_dict):
             return False
         category_groups = self.mongo_client.getCategoryGroups(self.site_id)
         if len(item_dict["categories"]) == 0:

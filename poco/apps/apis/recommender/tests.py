@@ -715,6 +715,36 @@ class RecommenderTest(BaseRecommenderTest):
         response = self._recommender("U1", type=recommend_type, item_id="I123", amount=5)
         self.assertEqual([item["item_id"] for item in response.data["topn"]], ["I124", "I125"])
 
+        # if we make I124 stock to 0
+        item = test_data1.getItems(item_ids=["I124"])[0]
+        item["stock"] = 0
+        response = self.postItem(item)
+        self.assertEqual(response.data["code"], 0, "Unexpected response: %s" % response.data)
+        response = self._recommender("U1", type=recommend_type, item_id="I123", amount=5)
+        self.assertEqual([item["item_id"] for item in response.data["topn"]], ["I125"])
+        # turn stock back
+        ## let's turn stock back
+        item = test_data1.getItems(item_ids=["I124"])[0]
+        item["stock"] = 8
+        response = self.postItem(item)
+        self.assertEqual(response.data["code"], 0, "Unexpected response: %s" % response.data)
+        self.assertEqual(self.get_item("I124")["stock"], 8)
+
+        # if we make I124 not available
+        item = test_data1.getItems(item_ids=["I124"])[0]
+        item["available"] = False
+        response = self.postItem(item)
+        self.assertEqual(response.data["code"], 0, "Unexpected response: %s" % response.data)
+        response = self._recommender("U1", type=recommend_type, item_id="I123", amount=5)
+        self.assertEqual([item["item_id"] for item in response.data["topn"]], ["I125"])
+        # turn stock back
+        ## let's turn stock back
+        item = test_data1.getItems(item_ids=["I124"])[0]
+        item["available"] = True
+        response = self.postItem(item)
+        self.assertEqual(response.data["code"], 0, "Unexpected response: %s" % response.data)
+        self.assertEqual(self.get_item("I124")["available"], True)
+
     def test_also_viewed(self):
         self._test_recommenders_with_one_item_id_as_input("V", "AlsoViewed")
 
@@ -1402,6 +1432,30 @@ class HotIndexTest(BaseRecommenderTest):
         response = self.postItem(item)
         self.assertEqual(response.data["code"], 0, "Unexpected response: %s" % response.data)
         self.assertEqual(self.get_item("I123")["available"], True)
+
+        ## If we make an item stock=0
+        item = test_data1.getItems(item_ids=["I124"])[0]
+        item["stock"] = 0
+        response = self.postItem(item)
+        self.assertEqual(response.data["code"], 0, "Unexpected response: %s" % response.data)
+        self.assertEqual(self.get_item("I124")["stock"], 0)
+        ## the unavailable item should not show up in result
+        response = self.api_get(reverse("recommender-recommender"),
+                    data={"api_key": self.api_key,
+                          "type": "ByHotIndex",
+                          "hot_index_type": "by_viewed",
+                          "user_id": "U1",
+                          "amount": 5
+          })
+        self.assertEqual(response.data["code"], 0)
+        self.assertEqual([item["item_id"] for item in response.data["topn"]],
+                         ["I126", "I123", "I125"])
+        ## let's turn stock back
+        item = test_data1.getItems(item_ids=["I124"])[0]
+        item["stock"] = 8
+        response = self.postItem(item)
+        self.assertEqual(response.data["code"], 0, "Unexpected response: %s" % response.data)
+        self.assertEqual(self.get_item("I124")["stock"], 8)
 
         # TOPN of a certain toplevel category
         response = self.api_get(reverse("recommender-recommender"),
