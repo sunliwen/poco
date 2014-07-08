@@ -1058,6 +1058,10 @@ class RecommenderRegistry:
 class MatchAnyKeywordProcessor:
     def __init__(self, not_log_action=True):
         pass
+
+    def getRecommendationResultFilter(self, site_id, args):
+        return SimpleRecommendationResultFilter()
+
     def getTopN(self, site_id, args):
         keywords = args.get("keywords")
         try:

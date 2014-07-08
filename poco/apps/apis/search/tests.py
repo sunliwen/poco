@@ -291,6 +291,8 @@ class ItemsSearchViewTest(BaseAPITest):
                 }
         response = self.api_post(reverse("products-search"), data=body)
         self.assertEqual(response.data["info"]["total_result_count"], 1)
+        # stock field should be included
+        self.assertEqual(response.data["records"][0].has_key("stock"), True)
 
     def _test_search2(self):
         body = {"api_key": self.api_key,
@@ -298,6 +300,7 @@ class ItemsSearchViewTest(BaseAPITest):
                 }
         response = self.api_post(reverse("products-search"), data=body)
         self.assertEqual(response.data["info"]["total_result_count"], 2)
+
 
     def _test_search_pagination(self):
         # Invalid per_page
