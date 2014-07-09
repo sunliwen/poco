@@ -23,7 +23,7 @@ class UpdateSiteError(Exception):
 
 class BaseRecommendationResultFilter(object):
     def is_allowed(self, item_dict):
-        return item_dict["available"] and item_dict["stock"] > 0
+        return item_dict["available"] and item_dict.get("stock", 0) > 0
 
 
 class SimpleRecommendationResultFilter(BaseRecommendationResultFilter):
