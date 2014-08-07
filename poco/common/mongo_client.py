@@ -539,9 +539,12 @@ class MongoClient:
         else:
             brand = brand.get("id", None)
         c_traffic_metrics.update({"item_id": item["item_id"]},
-                                 {"item_id": item["item_id"],
-                                  "categories": categories,
-                                  "brand": brand},
+                                 {"$set": {
+                                      "item_id": item["item_id"],
+                                      "categories": categories,
+                                      "brand": brand
+                                     }
+                                  },
                                   upsert=True
                                  )
 
@@ -690,6 +693,7 @@ class MongoClient:
         prefix = self.HOT_INDEX_TYPE2INDEX_PREFIX[hot_index_type]
         last_7_days_attr_names = self.getLast7DaysAttributeNames(prefix, today)
         c_traffic_metrics = getSiteDBCollection(self.connection, site_id, "traffic_metrics")
+        c_items = getSiteDBCollection(self.connection, site_id, "items")
         res = c_traffic_metrics.aggregate(
             [
             {"$project": {
@@ -715,16 +719,19 @@ class MongoClient:
         topn_by_brands = {}
         topn_overall = []
         for record in result:
+            item_in_db = c_items.find_one({"item_id": record["item_id"]})
+            if item_in_db is None or not item_in_db["available"]:
+                continue
             topn_entry = (record["item_id"], record["total_views"]/ highest_views)
-            if len(topn_overall) < 10:
+            if len(topn_overall) < 30:
                 topn_overall.append(topn_entry)
             for category_id in record.get("categories", []):
                 topn_of_category = topn_by_categories.setdefault(category_id, [])
-                if len(topn_of_category) < 10:
+                if len(topn_of_category) < 30:
                     topn_of_category.append(topn_entry)
             if record.has_key("brand"):
                 topn_of_brand = topn_by_brands.setdefault(record["brand"], [])
-                if len(topn_of_brand) < 10:
+                if len(topn_of_brand) < 30:
                     topn_of_brand.append(topn_entry)
 
         c_cached_hot_view = getSiteDBCollection(self.connection, site_id, "cached_hot_view")
@@ -733,6 +740,11 @@ class MongoClient:
                                  {"hot_index_type": hot_index_type, "category_id": None, "brand": None, "result": topn_overall},
                                  upsert=True)
         for category_id, topn in topn_by_categories.items():
+            if len(topn) < 15:
+                # add some items to fill the place
+                item_list = c_items.find({"categories.id": str(category_id), "available": True}).limit(20)
+                existing_item_ids = [it[0] for it in topn]
+                topn += [(item["item_id"], 1.0/highest_views) for item in item_list if item["item_id"] not in existing_item_ids]
             c_cached_hot_view.update({"hot_index_type": hot_index_type, "category_id": category_id, "brand": None},
                                      {"hot_index_type": hot_index_type, "category_id": category_id, "brand": None, "result": topn},
                                      upsert=True)
