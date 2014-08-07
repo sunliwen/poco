@@ -6,7 +6,11 @@ upstream poco_server_backend {
 server {
     server_name poco.ehaoyao.com en83.tuijianbao.net;
 
+    log_format custom '$remote_addr - $remote_user [$time_local]  '
+                           '"$request" $status $body_bytes_sent '
+                           '"$http_referer" "$http_user_agent" "$request_time" "$upstream_response_time"';
     access_log /cube/log/nginx_poco_access.log;
+    access_log /cube/log/nginx_poco_access.custom.log custom;
     error_log /cube/log/nginx_poco_error.log;
 
     root /cube/apps/poco/public_html;
