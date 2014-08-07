@@ -25,6 +25,8 @@ import jieba
 
 
 def preprocess_query_str(query_str):
+    # ignore "(", ")"
+    query_str = query_str.replace("(", "").replace(")", "")
     result = []
     keywords = [keyword for keyword in query_str.split(
         " ") if keyword.strip() != ""]
