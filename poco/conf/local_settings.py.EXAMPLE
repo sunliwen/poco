@@ -37,7 +37,7 @@ REDIS_CONFIGURATION = {"host": "localhost", "port": 6379, "db": 0}
 CACHES = {
     "default": {
         "BACKEND": "redis_cache.cache.RedisCache",
-        "LOCATION": "%(host)s:%(port)s" % REDIS_CONFIGURATION,
+        "LOCATION": "%(host)s:%(port)s:%(db)s" % REDIS_CONFIGURATION,
         "OPTIONS": {
             "CLIENT_CLASS": "redis_cache.client.DefaultClient",
         }
