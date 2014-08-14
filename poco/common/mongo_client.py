@@ -9,6 +9,7 @@ from django.core.cache import get_cache
 from pymongo.read_preferences import ReadPreference
 from common.utils import getSiteDBName, getSiteDB, getSiteDBCollection
 from common.utils import sign
+from common.utils import PropertyUtil
 
 import logging
 
@@ -302,11 +303,20 @@ class MongoClient:
 
     def updateProperty(self, site_id, property):
         c_properties = getSiteDBCollection(self.connection, site_id, "properties")
-        prop_in_db = c_properties.find_one({"id": property["id"]})
+        pid, ptype = property['id'], property['type']
+        prop_in_db = c_properties.find_one({"id": pid})
+        purge_cache = False
         if prop_in_db is None:
             prop_in_db = {}
+            purge_cache = True
         else:
+            property_attrs = PropertyUtil.get_attribute_names().get(ptype, [])
+            if any([prop_in_db.get(pa, '') != property.get(pa, '') for pa in property_attrs]):
+                # purge the the property cache
+                purge_cache = True
             prop_in_db = {"_id": prop_in_db["_id"]}
+        if purge_cache:
+            get_cache('default').delete(PropertyUtil.get_cache_key(site_id, ptype, pid))
         prop_in_db.update(property)
         c_properties.save(prop_in_db)
 
