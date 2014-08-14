@@ -201,3 +201,22 @@ def get_ip(request):
         ip = request.META.get("REMOTE_ADDR", "")
     return ip
 
+class PropertyUtil:
+    @staticmethod
+    def get_attribute_names():
+        """
+        get the property-attribute_names map
+        """
+        return {'category': ('name', 'parent_id', 'type'),
+                'brand': ('name', 'type')}
+
+    @staticmethod
+    def get_cache_key(site_id, property_type, pid):
+        """
+        """
+        return "property-cache-%s-%s-%s" % (site_id, property_type, pid)
+    
+def get_search_cache_key_prefix(site_id):
+    """
+    """
+    return 'search-result-cache-%s' % site_id
