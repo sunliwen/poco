@@ -1,5 +1,7 @@
 from django.core.cache import get_cache
 
+from common.utils import PropertyUtil
+
 
 class PropertyCache:
     EXPIRY_TIME = 3600
@@ -8,7 +10,7 @@ class PropertyCache:
         self.mongo_client = mongo_client
 
     def get_cache_key(self, site_id, property_type, id):
-        return "property-cache-%s-%s-%s" % (site_id, property_type, id)
+        return PropertyUtil.get_cache_key(site_id, property_type, id)
 
     def get_name(self, site_id, property_type, id):
         prop = self.get(site_id, property_type, id)
