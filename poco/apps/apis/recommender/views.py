@@ -5,12 +5,10 @@ import uuid
 
 from django.shortcuts import render, redirect
 from django.http import HttpResponse, HttpResponseBadRequest
-from django.core.cache import get_cache
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from common.poco_token_auth import PocoTokenAuthentication
 from common.poco_token_auth import TokenMatchAPIKeyPermission
-from common.utils import PropertyUtil, get_search_cache_key_prefix
 
 from action_processors import mongo_client
 import action_processors
@@ -257,25 +255,3 @@ def recommended_item_redirect(request):
                 }
             action_processors.logWriter.writeEntry(site_id, log_content)
         return response
-
-class CacheAPIView(BaseAPIView):
-    authentication_classes = (PocoTokenAuthentication, )
-    permission_classes = (TokenMatchAPIKeyPermission,)
-
-    def getActionProcessor(self, args):
-        raise NotImplemented
-
-    def process_post(self, request, response, site_id, args):
-        flush = args.get('flush', '')
-        if flush not in ('all', 'search'):
-            return {"code": 1, "err_msg": "flush=%s is not allowed. " % flush}
-        ch = get_cache('default')
-        # flush search cache
-        cache_key_pattern = '%s-*' % get_search_cache_key_prefix(site_id)
-        ch.delete_pattern(cache_key_pattern)
-        if flush == 'all':
-            for ptype in ('category', 'brand'):
-                ch.delete_pattern(PropertyUtil.get_cache_key(site_id, ptype, '*'))
-        return {"code": 0}
-
-
