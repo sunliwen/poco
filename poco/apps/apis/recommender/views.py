@@ -270,7 +270,7 @@ class CacheAPIView(BaseAPIView):
         if action != 'clear':
             return {"code": 1, "err_msg": "action=%s is not allowed. " % action}
         if action_type not in ('all', 'search'):
-            return {"code": 1, "err_msg": "type=%s is not allowed. " % flush}
+            return {"code": 1, "err_msg": "type=%s is not allowed. " % action_type}
         if action_type == 'all':
             get_cache('default').delete_pattern('%s*' % CacheUtil.get_cache_key_prefix(site_id))
         else:

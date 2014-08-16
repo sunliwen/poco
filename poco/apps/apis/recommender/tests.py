@@ -824,6 +824,20 @@ class CacheAPITest(BaseRecommenderTest):
         self.assertEqual(len(ch.keys(cache_key_pattern)), 0)
         for ptype in ('category', 'brand'):
             self.assertEqual(len(ch.keys(CacheUtil.get_property_key(site_id, ptype, '*'))), 0)
+            
+        # bad request test
+        invalid_flush_search_param = {'action': 'spam', 'type': 'search', 'api_key': self.api_key}
+        response = self.api_post(reverse("recommender-cache"), data=invalid_flush_search_param,
+                                  expected_status_code=200,
+                                  **{"HTTP_AUTHORIZATION": "Token %s" % self.site_token}
+                                  )
+        self.assertEqual(response.data["code"], 1)
+        invalid_flush_search_param = {'action': 'clear', 'type': 'egg', 'api_key': self.api_key}
+        response = self.api_post(reverse("recommender-cache"), data=invalid_flush_search_param,
+                                  expected_status_code=200,
+                                  **{"HTTP_AUTHORIZATION": "Token %s" % self.site_token}
+                                  )
+        self.assertEqual(response.data["code"], 1)
 
 
 @override_settings(CELERY_EAGER_PROPAGATES_EXCEPTIONS=True,
