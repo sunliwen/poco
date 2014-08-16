@@ -227,7 +227,7 @@ TEMPLATE_DIRS = (
     os.path.join(BASE_DIR, 'templates'),
 )
 
-DASHBOARD_AUTH = 'apps.web.dashboard.views.default_login_required'
+DASHBOARD_AUTH = 'apps.web.dashboard.views.haoyaoshi_login_required'
 
 # in the end
 
