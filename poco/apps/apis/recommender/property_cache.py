@@ -1,6 +1,6 @@
 from django.core.cache import get_cache
 
-from common.utils import PropertyUtil
+from common.utils import CacheUtil
 
 
 class PropertyCache:
@@ -10,7 +10,9 @@ class PropertyCache:
         self.mongo_client = mongo_client
 
     def get_cache_key(self, site_id, property_type, id):
-        return PropertyUtil.get_cache_key(site_id, property_type, id)
+        return CacheUtil.get_property_key(site_id,
+                                          property_type,
+                                          id)
 
     def get_name(self, site_id, property_type, id):
         prop = self.get(site_id, property_type, id)

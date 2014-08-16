@@ -10,7 +10,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from common.poco_token_auth import PocoTokenAuthentication
 from common.poco_token_auth import TokenMatchAPIKeyPermission
-from common.utils import PropertyUtil, get_search_cache_key_prefix
+from common.utils import CacheUtil
 
 from action_processors import mongo_client
 import action_processors
@@ -266,16 +266,15 @@ class CacheAPIView(BaseAPIView):
         raise NotImplemented
 
     def process_post(self, request, response, site_id, args):
-        flush = args.get('flush', '')
-        if flush not in ('all', 'search'):
-            return {"code": 1, "err_msg": "flush=%s is not allowed. " % flush}
-        ch = get_cache('default')
-        # flush search cache
-        cache_key_pattern = '%s-*' % get_search_cache_key_prefix(site_id)
-        ch.delete_pattern(cache_key_pattern)
-        if flush == 'all':
-            for ptype in ('category', 'brand'):
-                ch.delete_pattern(PropertyUtil.get_cache_key(site_id, ptype, '*'))
+        action, action_type = args.get('action', ''), args.get('type', '')
+        if action != 'clear':
+            return {"code": 1, "err_msg": "action=%s is not allowed. " % action}
+        if action_type not in ('all', 'search'):
+            return {"code": 1, "err_msg": "type=%s is not allowed. " % flush}
+        if action_type == 'all':
+            get_cache('default').delete_pattern('%s*' % CacheUtil.get_cache_key_prefix(site_id))
+        else:
+            get_cache('default').delete_pattern(CacheUtil.get_search_key(site_id, '*'))
         return {"code": 0}
 
 

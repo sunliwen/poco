@@ -12,7 +12,7 @@ from django.http import HttpResponseRedirect, HttpResponseBadRequest
 from common.test_utils import BaseAPITest
 from common import site_manage_utils
 from common import test_data1
-from common.utils import PropertyUtil, get_search_cache_key_prefix
+from common.utils import CacheUtil
 from apps.apis.search import es_search_functions
 from apps.apis.search.keyword_list import keyword_list
 
@@ -695,8 +695,6 @@ class ItemsAPITest(BaseRecommenderTest):
         item_to_post = test_data1.getItems(["I123"])[0]
         item_to_post["api_key"] = self.api_key
 
-        prescription_type = "Blah blah"
-        item_to_post["prescription_type"] = prescription_type
         response = self.api_post(reverse("recommender-items"), data=item_to_post,
                                   expected_status_code=200,
                                   **{"HTTP_AUTHORIZATION": "Token %s" % self.site_token}
@@ -715,7 +713,7 @@ class ItemsAPITest(BaseRecommenderTest):
                                           "api_key": self.api_key}))
         # check both category in cache
         for cat in cats:
-            ck = PropertyUtil.get_cache_key(self.TEST_SITE_ID, cat['type'], cat['id'])
+            ck = CacheUtil.get_property_key(self.TEST_SITE_ID, cat['type'], cat['id'])
             self.assertEqual(ch.get(ck)['id'], cat['id'])
             self.assertEqual(ch.get(ck)['name'], cat['name'].decode('utf8'))
         response = self.api_post(reverse("recommender-items"), data=item_to_post,
@@ -726,7 +724,7 @@ class ItemsAPITest(BaseRecommenderTest):
         # /recommender/items the same item will not purge cache
         cats = item_to_post['categories']
         for cat in cats:
-            ck = PropertyUtil.get_cache_key(self.TEST_SITE_ID, cat['type'], cat['id'])
+            ck = CacheUtil.get_property_key(self.TEST_SITE_ID, cat['type'], cat['id'])
             self.assertEqual(ch.get(ck)['id'], cat['id'])
             self.assertEqual(ch.get(ck)['name'], cat['name'].decode('utf8'))
 
@@ -737,11 +735,11 @@ class ItemsAPITest(BaseRecommenderTest):
                                   **{"HTTP_AUTHORIZATION": "Token %s" % self.site_token}
                                   )
         self.assertEqual(response.data["code"], 0)
-        cks = [PropertyUtil.get_cache_key(self.TEST_SITE_ID, cat['type'], cat['id']) for cat in cats]
+        cks = [CacheUtil.get_property_key(self.TEST_SITE_ID, cat['type'], cat['id']) for cat in cats]
         self.assertNotEqual(ch.get(cks[0]), None)
         self.assertEqual(ch.get(cks[1]), None)
         
-        bk = PropertyUtil.get_cache_key(self.TEST_SITE_ID, 'brand', item_to_post['brand']['id'])
+        bk = CacheUtil.get_property_key(self.TEST_SITE_ID, 'brand', item_to_post['brand']['id'])
         self.assertEqual(ch.get(bk)['name'], item_to_post['brand']['name'].decode('utf8'))
 
         #update brand name will purge the brand cache
@@ -765,8 +763,6 @@ class CacheAPITest(BaseRecommenderTest):
         item_to_post = test_data1.getItems(["I123"])[0]
         item_to_post["api_key"] = self.api_key
 
-        prescription_type = "Blah blah"
-        item_to_post["prescription_type"] = prescription_type
         response = self.api_post(reverse("recommender-items"), data=item_to_post,
                                   expected_status_code=200,
                                   **{"HTTP_AUTHORIZATION": "Token %s" % self.site_token}
@@ -784,13 +780,13 @@ class CacheAPITest(BaseRecommenderTest):
                          data=json.dumps({"q": "", 
                                           #"filters": {"categories": [cat['id'] for cat in cats]}, 
                                           "api_key": self.api_key}))
-        cache_key_pattern = '%s-*' % get_search_cache_key_prefix(site_id)
+        cache_key_pattern = CacheUtil.get_search_key(site_id, '*')
         self.assertNotEqual(len(ch.keys(cache_key_pattern)), 0)
         for ptype in ('category', 'brand'):
-            self.assertNotEqual(len(ch.keys(PropertyUtil.get_cache_key(site_id, ptype, '*'))), 0)
+            self.assertNotEqual(len(ch.keys(CacheUtil.get_property_key(site_id, ptype, '*'))), 0)
         
-        flush_search_param = {'flush': 'search', 'api_key': self.api_key}
-        flush_all_param = {'flush': 'all', 'api_key': self.api_key}
+        flush_search_param = {'action': 'clear', 'type': 'search', 'api_key': self.api_key}
+        flush_all_param = {'action': 'clear', 'type': 'all', 'api_key': self.api_key}
         response = self.api_post(reverse("recommender-cache"), data=flush_search_param,
                                   expected_status_code=200,
                                   **{"HTTP_AUTHORIZATION": "Token %s" % self.site_token}
@@ -798,7 +794,7 @@ class CacheAPITest(BaseRecommenderTest):
         self.assertEqual(response.data["code"], 0)
         self.assertEqual(len(ch.keys(cache_key_pattern)), 0)
         for ptype in ('category', 'brand'):
-            self.assertNotEqual(len(ch.keys(PropertyUtil.get_cache_key(site_id, ptype, '*'))), 0)
+            self.assertNotEqual(len(ch.keys(CacheUtil.get_property_key(site_id, ptype, '*'))), 0)
 
         response = self.api_post(reverse("recommender-cache"), data=flush_all_param,
                                   expected_status_code=200,
@@ -807,7 +803,7 @@ class CacheAPITest(BaseRecommenderTest):
         self.assertEqual(response.data["code"], 0)
         self.assertEqual(len(ch.keys(cache_key_pattern)), 0)
         for ptype in ('category', 'brand'):
-            self.assertEqual(len(ch.keys(PropertyUtil.get_cache_key(site_id, ptype, '*'))), 0)
+            self.assertEqual(len(ch.keys(CacheUtil.get_property_key(site_id, ptype, '*'))), 0)
 
         # fill the cache again
         res = self.client.post(reverse("products-search"),
@@ -815,10 +811,10 @@ class CacheAPITest(BaseRecommenderTest):
                          data=json.dumps({"q": "", 
                                           "filters": {"categories": [cat['id'] for cat in cats]}, 
                                           "api_key": self.api_key}))
-        cache_key_pattern = '%s-*' % get_search_cache_key_prefix(site_id)
+        cache_key_pattern = CacheUtil.get_search_key(site_id, '*')
         self.assertNotEqual(len(ch.keys(cache_key_pattern)), 0)
         for ptype in ('category', 'brand'):
-            self.assertNotEqual(len(ch.keys(PropertyUtil.get_cache_key(site_id, ptype, '*'))), 0)
+            self.assertNotEqual(len(ch.keys(CacheUtil.get_property_key(site_id, ptype, '*'))), 0)
         # flush all directly
         response = self.api_post(reverse("recommender-cache"), data=flush_all_param,
                                   expected_status_code=200,
@@ -827,7 +823,7 @@ class CacheAPITest(BaseRecommenderTest):
         self.assertEqual(response.data["code"], 0)
         self.assertEqual(len(ch.keys(cache_key_pattern)), 0)
         for ptype in ('category', 'brand'):
-            self.assertEqual(len(ch.keys(PropertyUtil.get_cache_key(site_id, ptype, '*'))), 0)
+            self.assertEqual(len(ch.keys(CacheUtil.get_property_key(site_id, ptype, '*'))), 0)
 
 
 @override_settings(CELERY_EAGER_PROPAGATES_EXCEPTIONS=True,
