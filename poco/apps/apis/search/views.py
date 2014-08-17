@@ -505,11 +505,24 @@ class Keywords(BaseAPIView):
         category_id = args.get("category_id", "null")
         amount = args.get("amount", 5)
         site_id = self.getSiteID(args["api_key"])
-        keywords = cached_result.get("KeywordHotView", site_id, (category_id, ))
-        if keywords is None:
-            keywords = []
-        return Response({"keywords": keywords[:amount], "errors": []})
 
+        # fetch preset hotwords
+        keywords = []
+        hotwords_record = mongo_client.getRecommandList(site_id, 'search_hotwords')
+        if hotwords_record:
+            keywords = hotwords_record['keywords'].split(',')
+        keywords_count = len(keywords)
+        if keywords_count < amount:
+            # not enough records preset, fetch from cache
+            keywords_set = set(keywords)
+            cached_keywords = cached_result.get("KeywordHotView", site_id, (category_id, ))
+            for keyword in cached_keywords and cached_keywords or []:
+                if not keyword in keywords_set:
+                    keywords.append(keyword)
+                    keywords_count = keywords_count + 1
+                    if keywords_count >= amount:
+                        break
+        return Response({"keywords": keywords[:amount], "errors": []})
 
 class QuerySuggest(BaseAPIView):
     def _validate(self, args):

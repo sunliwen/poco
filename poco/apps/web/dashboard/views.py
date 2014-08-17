@@ -830,6 +830,17 @@ def items(request, api_key):
    )
 
 @login_required
+def recommand(request, api_key):
+   user_name = request.session.get("user_name", None)
+   _checkUserAccessSite(user_name, api_key)
+   return render_to_response("dashboard/recommand.html", {
+       "page_name": "推荐",
+       "user_name": user_name,
+       "api_key":api_key 
+       }, context_instance=RequestContext(request)
+   )
+
+@login_required
 def ajax_item(request, api_key, item_id):
     user_name = request.session.get("user_name", None)
     #api_key = request.GET.get("api_key", None)
@@ -1010,6 +1021,42 @@ def ajax_update_category_groups2(request):
     category_groups_src = request.GET.get("category_groups_src", '');
     is_succ, msg = updateCategoryGroups(connection, site['site_id'], category_groups_src)
     result = {"is_succ": is_succ, "msg": msg}
+    return HttpResponse(json.dumps(result))
+
+@login_required
+def ajax_recommand_list(request):
+    user_name = request.session.get("user_name", None)
+    recommand_type = request.GET.get("recommand_type", None)
+    api_key = request.GET.get("api_key", None)
+    _checkUserAccessSite(user_name, api_key)
+    connection = mongo_client.connection
+    c_sites = connection["tjb-db"]["sites"]
+    site = c_sites.find_one({"api_key": api_key})
+    recommand_record = mongo_client.getRecommandList(site['site_id'],
+                                                     recommand_type)
+    print recommand_type, recommand_record
+    if not recommand_record:
+        hotwords = ''
+    else:
+        hotwords = recommand_record['keywords']
+    return HttpResponse(json.dumps(hotwords))
+
+
+@login_required
+def ajax_update_recommand_list(request):
+    user_name = request.session.get("user_name", None)
+    api_key = request.POST.get("api_key", None)
+    _checkUserAccessSite(user_name, api_key)
+    connection = mongo_client.connection
+    c_sites = connection["tjb-db"]["sites"]
+    site = c_sites.find_one({"api_key": api_key})
+    hotwords = request.POST.get("hotwords", '').encode('utf8');
+    hotwords = hotwords.replace('，', ',')
+    recommand_type = request.POST.get("recommand_type", '');
+    result = {"is_succ": True,
+              "msg": mongo_client.updateRecommandList(site['site_id'],
+                                                      recommand_type,
+                                                      hotwords)}
     return HttpResponse(json.dumps(result))
 
 @login_required

@@ -725,4 +725,37 @@ class HotKeywordsTest(BaseAPITest):
         self.assertEqual(response.data["errors"], [])
         self.assertEqual(len(response.data["keywords"]), 3)
 
+        # test result after preset keywords
+        self.mongo_client.updateRecommandList(self.TEST_SITE_ID,
+                                              'search_hotwords',
+                                              '测试,中文,热词')
+
+        body = {"api_key": self.api_key,
+                "type": "hot",
+                "amount": 3
+               }
+        response = self.api_post(reverse("keywords"), data=body)
+        self.assertEqual(response.data["errors"], [])
+        self.assertEqual(response.data["keywords"],
+                         [u"测试", u"中文", u"热词"]
+                         #[u"感冒", u"牛黄", u"冲剂", u"奶粉"]
+                         )
+        body = {"api_key": self.api_key,
+                "type": "hot",
+                "amount": 4
+               }
+        response = self.api_post(reverse("keywords"), data=body)
+        self.assertEqual(response.data["errors"], [])
+        self.assertEqual(response.data["keywords"],
+                         [u"测试", u"中文", u"热词", u"感冒"]
+                         )
+        self.mongo_client.updateRecommandList(self.TEST_SITE_ID,
+                                              'search_hotwords',
+                                              '测试,感冒,中文')
+        response = self.api_post(reverse("keywords"), data=body)
+        self.assertEqual(response.data["errors"], [])
+        self.assertEqual(response.data["keywords"],
+                         [u"测试", u"感冒", u"中文", u"牛黄"]
+                         )
+
 
