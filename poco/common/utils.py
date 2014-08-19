@@ -1,4 +1,5 @@
 import datetime
+from rest_framework.views import exception_handler
 
 
 def getSiteDBName(site_id):
@@ -201,3 +202,18 @@ def get_ip(request):
         ip = request.META.get("REMOTE_ADDR", "")
     return ip
 
+def custom_exception_handler(exc):
+    # Call REST framework's default exception handler first,
+    # to get the standard error response.
+    response = exception_handler(exc)
+
+    # Now add the HTTP status code to the response.
+    if response is not None:
+        if response.data.has_key('detail'):
+            response.data['message'] = response.data['detail']
+            del(response.data['detail'])
+        else:
+            response.data['message'] = 'UNKNOWN_ERROR'
+        response.data['code'] = 99
+
+    return response

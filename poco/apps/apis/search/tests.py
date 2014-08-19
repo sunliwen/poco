@@ -609,7 +609,8 @@ class ItemsSearchViewTest(BaseAPITest):
         self.assertEqual(response.data["errors"], [])
         self.assertEqual(response.data, 
                          {"errors": [],
-                          "suggestions": []
+                          "suggestions": [],
+                          "code": 1
                          })
 
         # let's move some keywords as white listed.
@@ -625,7 +626,8 @@ class ItemsSearchViewTest(BaseAPITest):
         self.assertEqual(response.data["errors"], [])
         self.assertEqual(response.data, 
                          {"errors": [],
-                          "suggestions": [{"count": 1, "type": "completion", "value": u"童话"}]
+                          "suggestions": [{"count": 1, "type": "completion", "value": u"童话"}],
+                          "code": 1
                          })
         
         keyword_list.markKeywordsAsWhiteListed(self.TEST_SITE_ID, all_keywords)
@@ -640,7 +642,8 @@ class ItemsSearchViewTest(BaseAPITest):
         self.assertEqual(response.data, 
                          {"errors": [],
                           "suggestions": [{'count': 1, 'type': 'more_keyword', 'value': u'能恩 超级'},
-                                          {'count': 1, 'type': 'more_keyword', 'value': u'能恩 奶粉'}]
+                                          {'count': 1, 'type': 'more_keyword', 'value': u'能恩 奶粉'}],
+                          "code": 1
                          })
 
         body = {"api_key": self.api_key,
@@ -657,8 +660,9 @@ class ItemsSearchViewTest(BaseAPITest):
                                            'field_name': 'categories'}, 
                                           {'count': 1, 'type': 'more_keyword', 'value': u'奶粉 雀巢'},
                                           {'count': 1, 'type': 'more_keyword', 'value': u'奶粉 能恩'}
-                                          ]}
-                         )
+                                          ],
+                          "code": 1
+                         })
 
 @override_settings(CELERY_EAGER_PROPAGATES_EXCEPTIONS=True,
                    CELERY_ALWAYS_EAGER=True,

@@ -449,7 +449,8 @@ class ProductsSearch(BaseAPIView):
                          "total_result_count": paginator.count,
                          "facets": facets_result
                       },
-                      "errors": []
+                      "errors": [],
+                      "code": 1
                     }
             django_cache.set(search_cache_key, json.dumps(result), settings.CACHE_EXPIRY_SEARCH_RESULTS)
 
@@ -508,7 +509,7 @@ class Keywords(BaseAPIView):
         keywords = cached_result.get("KeywordHotView", site_id, (category_id, ))
         if keywords is None:
             keywords = []
-        return Response({"keywords": keywords[:amount], "errors": []})
+        return Response({"keywords": keywords[:amount], "errors": [], "code": 1})
 
 
 class QuerySuggest(BaseAPIView):
@@ -558,4 +559,4 @@ class QuerySuggest(BaseAPIView):
             return Response({"records": [], "info": {}, 
                              "errors": [{"code": "UNKNOWN_ERROR", 
                                         "message": "Unknown error, please try later."}]})
-        return Response({"suggestions": suggested_texts, "errors": []})
+        return Response({"suggestions": suggested_texts, "errors": [], "code": 1})
