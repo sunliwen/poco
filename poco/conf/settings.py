@@ -200,6 +200,7 @@ API_SERVER_PREFIX = None
 API_PATH_PREFIX = None
 #MEMCACHED_HOSTS = None
 BROKER_URL = None
+DEFAULT_RECOMMEND_TYPE='ByHotIndex'
 # this should be a dictionary. set([site_id])
 #recommendation_deduplicate_item_names_required_set = None
 
@@ -226,6 +227,9 @@ TEMPLATE_DIRS = (
     # Don't forget to use absolute paths, not relative paths.
     os.path.join(BASE_DIR, 'templates'),
 )
+
+
+
 
 # in the end
 

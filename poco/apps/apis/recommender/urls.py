@@ -23,6 +23,9 @@ def recommender_patterns():
                                            url(r'^public/recommender/redirect/?$',
                                                views.recommended_item_redirect,
                                                name="recommender-redirect"),
+                                           url(r'^private/recommender/?$',
+                                               views.StickRecommendAPIView.as_view(),
+                                               name="recommender-stick"),
                                            ))
 
 

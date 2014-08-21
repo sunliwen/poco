@@ -255,3 +255,28 @@ def recommended_item_redirect(request):
                 }
             action_processors.logWriter.writeEntry(site_id, log_content)
         return response
+
+class StickRecommendAPIView(BaseAPIView):
+    authentication_classes = (PocoTokenAuthentication, )
+    permission_classes = (TokenMatchAPIKeyPermission,)
+
+    def process_post(self, request, response, site_id, args):
+        recommender_types = action_processors.recommender_registry.getRecommenderTypes()
+
+        rtype = args.get("type", None)
+        if not (rtype in recommender_types):
+            return {"code": 1, "err_msg": "'type' can only be one of '%s'" % '|'.join(recommender_types)}
+
+        action = args.get('action', None)
+        if not (action == 'stick_items'):
+            return {"code": 1, "err_msg": "'action' can only be 'stick_items'"}
+
+        item_ids = args.get('item_ids', [])
+        if (not isinstance(item_ids, list)) or isinstance(item_ids, basestring):
+            return {"code": 1, "err_msg": "'item_ids' can only be item_id list"}
+        mongo_client.updateManualRecommendList(site_id,
+                                               rtype,
+                                               item_ids)
+        return {"code": 0}
+
+
