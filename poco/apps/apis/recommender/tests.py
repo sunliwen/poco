@@ -1550,12 +1550,6 @@ class HotIndexTest(BaseRecommenderTest):
                          ["I126"])
 
 class StickRecommendAPITest(BaseRecommenderTest):
-    #def test_items_with_tags(self):
-    #    raise NotImplemented
-
-    #def test_no_categories_provided(self):
-    #    raise NotImplemented
-
     def _assertKWList(self, list_type, expected):
         self.assertEqual(set([(keyword_record["keyword"], keyword_record["count"]) 
                 for keyword_record in self.mongo_client.getSuggestKeywordList(self.TEST_SITE_ID, list_type)]), expected)
@@ -1602,3 +1596,66 @@ class StickRecommendAPITest(BaseRecommenderTest):
 
         self.assertEquals(recommends['content'], item_ids)
                                                        
+class CustomizeRecommendAPITest(BaseRecommenderTest):
+    def _assertKWList(self, list_type, expected):
+        self.assertEqual(set([(keyword_record["keyword"], keyword_record["count"]) 
+                for keyword_record in self.mongo_client.getSuggestKeywordList(self.TEST_SITE_ID, list_type)]), expected)
+
+    def test_update_stick_recommend_list(self):
+        data = {'action': 'wrong-action',
+                'type': 'com-type',
+                'item_ids': 'hahah',
+                'api_key': self.api_key}
+        response = self.api_post(reverse("recommender-customize"),
+                                 data=data,
+                                 expected_status_code=200,
+                                 **{"HTTP_AUTHORIZATION": "Token %s" % self.site_token})
+        self.assertEqual(response.data["code"], 1)
+        self.assertTrue(response.data["err_msg"].startswith("'action' can only be "))
+
+        data['action'] = 'set_recommender_items'
+        response = self.api_post(reverse("recommender-customize"),
+                                 data=data,
+                                 expected_status_code=200,
+                                 **{"HTTP_AUTHORIZATION": "Token %s" % self.site_token})
+        self.assertEqual(response.data["code"], 1)
+        self.assertTrue(response.data["err_msg"].startswith("'item_ids' can only be item_id list"))
+
+        item_ids = ['I12%d' % i for i in range(10)]
+        data['item_ids'] = item_ids
+        response = self.api_post(reverse("recommender-customize"),
+                                 data=data,
+                                 expected_status_code=200,
+                                 **{"HTTP_AUTHORIZATION": "Token %s" % self.site_token})
+        self.assertEqual(response.data["code"], 0)
+
+        data['action'] = 'get_recommender_items'
+        response = self.api_post(reverse("recommender-customize"),
+                                 data=data,
+                                 expected_status_code=200,
+                                 **{"HTTP_AUTHORIZATION": "Token %s" % self.site_token})
+        self.assertEqual(response.data["code"], 0)
+        self.assertEquals(response.data['data']['item_ids'],
+                          item_ids)
+        print response
+        data['action'] = 'list_recommender_types'
+        response = self.api_post(reverse("recommender-customize"),
+                                 data=data,
+                                 expected_status_code=200,
+                                 **{"HTTP_AUTHORIZATION": "Token %s" % self.site_token})
+        self.assertEqual(response.data["code"], 0)
+        print response
+        self.assertEquals(response.data['data'][0]['type'],
+                          'customlist_com-type')
+
+        #test customize search
+        response = self.api_get(reverse("recommender-recommender"),
+                    data={"api_key": self.api_key,
+                          "type": "CustomList",
+                          "customize_type": "com-type1",
+                          "user_id": "U1",
+                          "brand": "23",
+                          "amount": 10
+                          })
+         
+        
