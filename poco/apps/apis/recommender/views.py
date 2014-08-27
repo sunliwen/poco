@@ -286,6 +286,9 @@ class CustomizeRecommendAPIView(BaseAPIView):
     def get_recommend_record_type(self, rtype):
         return 'customlist_%s' % rtype
         
+    def get_recommend_type(self, rtype):
+        return rtype[len('customlist_'):]
+        
 
     def set_recommender_items(self, site_id, args):
         item_ids = args.get('item_ids', [])
@@ -313,7 +316,7 @@ class CustomizeRecommendAPIView(BaseAPIView):
         data = []
         rtypes = mongo_client.getCustomizeRecommenderTypes(site_id);
         for rtype in rtypes:
-            data.append({'type': rtype['type'],
+            data.append({'type': self.get_recommend_type(rtype['type']),
                          'display_name': rtype['content']['display_name']})
         return {"code": 0, 'err_msg': 0, 'data': data}
 

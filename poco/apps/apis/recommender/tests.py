@@ -1618,7 +1618,7 @@ class CustomizeRecommendAPITest(BaseRecommenderTest):
                                  **{"HTTP_AUTHORIZATION": "Token %s" % self.site_token})
         self.assertEqual(response.data["code"], 0)
         self.assertEquals(response.data['data'][0]['type'],
-                          'customlist_com-type')
+                          'com-type')
 
         #test customize search
         response = self.api_get(reverse("recommender-recommender"),
