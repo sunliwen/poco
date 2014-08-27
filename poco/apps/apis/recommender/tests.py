@@ -736,10 +736,9 @@ class RecommenderTest(BaseRecommenderTest):
         self.assertEqual(response.data["code"], 1)
         # items without similarities
         response = self._recommender("U1", type=recommend_type, item_id="I5000", amount=5)
-        self.assertEqual(len([item["item_id"] for item in response.data["topn"]]), 4)
+        self.assertEqual([item["item_id"] for item in response.data["topn"]], [])
         response = self._recommender("U1", type=recommend_type, item_id="I123", amount=5)
-        self.assertEqual([item["item_id"] for item in response.data["topn"]][:2], ["I124", "I125"])
-        self.assertEqual(len([item["item_id"] for item in response.data["topn"]]), 5)
+        self.assertEqual([item["item_id"] for item in response.data["topn"]], ["I124", "I125"])
         for item in response.data["topn"]:
             self.assertEqual(item.has_key("stock"), True)
 
@@ -748,10 +747,9 @@ class RecommenderTest(BaseRecommenderTest):
                                                     recommend_type,
                                                     ['I126', 'I125'])
         response = self._recommender("U1", type=recommend_type, item_id="I123", amount=5)
-        self.assertEqual([item["item_id"] for item in response.data["topn"]][:2], ["I125", "I124"])
+        self.assertEqual([item["item_id"] for item in response.data["topn"]], ["I125", "I124"])
         for item in response.data["topn"]:
             self.assertEqual(item.has_key("stock"), True)
-        return
         # if we make I124 stock to 0
         item = test_data1.getItems(item_ids=["I124"])[0]
         item["stock"] = 0
@@ -888,9 +886,12 @@ class GetByBrowsingHistoryTest(BaseRecommenderTest):
                          ["I126", "I123", "I124", "I125"])
 
         # But the ByBrowsingHistory still should return no result
+        rtype = settings.DEFAULT_RECOMMEND_TYPE
+        settings.DEFAULT_RECOMMEND_TYPE = ''
         response = self._recommender("U1", type="ByBrowsingHistory", amount=5)
         self.assertEqual([item["item_id"] for item in response.data["topn"]], 
                         [])
+        settings.DEFAULT_RECOMMEND_TYPE = rtype
 
     def test_GetByBrowsingHistory(self):
         self.insert_item_similarities("V", "I123",

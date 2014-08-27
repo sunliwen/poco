@@ -228,9 +228,6 @@ TEMPLATE_DIRS = (
     os.path.join(BASE_DIR, 'templates'),
 )
 
-
-
-
 # in the end
 
 from local_settings import *

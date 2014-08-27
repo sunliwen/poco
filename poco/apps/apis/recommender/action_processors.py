@@ -748,31 +748,16 @@ class BaseSimpleResultRecommendationProcessor(BaseRecommendationProcessor):
         ref = self._getRef(args)
         topn = self.getTopN(site_id, args)  # return TopN list
         self.reOrderTopN(site_id, args, topn)
-        excluded_recommendation_item_names = self.getExcludedRecommendationItemNames(site_id)
-        amount = int(args.get('amount', '5'))
-        default_topn = []
-        if (len(topn) < amount) and (args['type'] != settings.DEFAULT_RECOMMEND_TYPE):
-            default_topn = mongo_client.getHotViewList(site_id,
-                                                       'by_viewed')
-            # merge
-            topn_set = set([item[0] for item in topn])
-            miss_amount = amount-len(topn)
-            default_topn = [item for item in default_topn if item[0] not in topn_set][:miss_amount]
-            default_topn, _ = mongo_client.convertTopNFormat(site_id, req_id, ref,
-                    SimpleRecommendationResultFilter(), default_topn,
-                    miss_amount, include_item_info, url_converter=self.getRedirectUrlFor,
-                    excluded_recommendation_items=self.getExcludedRecommendationItems(),
-                    deduplicate_item_names_required=self.isDeduplicateItemNamesRequired(site_id),
-                    excluded_recommendation_item_names=excluded_recommendation_item_names)
+
         # apply filter
         result_filter = self.getRecommendationResultFilter(site_id, args)
+        excluded_recommendation_item_names = self.getExcludedRecommendationItemNames(site_id)
         topn, recommended_item_names = mongo_client.convertTopNFormat(site_id, req_id, ref, result_filter, topn,
                     amount, include_item_info, url_converter=self.getRedirectUrlFor,
                     excluded_recommendation_items=self.getExcludedRecommendationItems(),
                     deduplicate_item_names_required=self.isDeduplicateItemNamesRequired(site_id),
                     excluded_recommendation_item_names=excluded_recommendation_item_names)
 
-        topn = topn + default_topn
         self.postprocessTopN(topn)
         recommended_items = self._extractRecommendedItems(topn)
         self.logAction(site_id, args, self.getRecommendationLog(args, req_id, recommended_items))
@@ -802,6 +787,7 @@ class BaseSimilarityProcessor(BaseSimpleResultRecommendationProcessor):
 
     def getTopN(self, site_id, args):
         return mongo_client.getSimilaritiesForItem(site_id, self.similarity_type, args["item_id"])
+
 
 class GetByEachPurchasedItemProcessor(BaseByEachItemProcessor):
     action_name = "RecEPI"
