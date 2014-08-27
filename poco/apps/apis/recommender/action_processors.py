@@ -1022,6 +1022,30 @@ class GetByPurchasingHistoryProcessor(BaseSimpleResultRecommendationProcessor):
         else:
             return mongo_client.recommend_based_on_purchasing_history(site_id, user_id)
 
+class GetCustomizeRecommend(BaseSimpleResultRecommendationProcessor):
+    action_name = "CustomList"
+    similarity_type = "CST"
+    ap = ArgumentProcessor(
+            (
+                ("ref", False),
+                ("user_id", True),
+                ("include_item_info", False),  # no, not include; yes, include
+                ("type", True),
+                ("customize_type", True),
+                ("amount", True),
+            )
+        )
+
+    def getRecommendationResultFilter(self, site_id, args):
+        return SimpleRecommendationResultFilter()
+
+    def getTopN(self, site_id, args):
+        rtype = 'customlist_%s' % args.get('customize_type', '')
+        recommend_data = mongo_client.getManualRecommendList(site_id, rtype)
+        if recommend_data:
+            return [[item, 0.5] for item in recommend_data['content']['item_ids']]
+        return []
+
 
 logWriter = LogWriter()
 
@@ -1160,6 +1184,7 @@ recommender_registry.register("UltimatelyBought", GetUltimatelyBoughtProcessor)
 recommender_registry.register("ByPurchasingHistory", GetByPurchasingHistoryProcessor)
 recommender_registry.register("ByShoppingCart", GetByShoppingCartProcessor)
 recommender_registry.register("ByHotIndex", GetByHotIndexProcessor)
+recommender_registry.register("CustomList", GetCustomizeRecommend)
 recommender_registry.register("/unit/home",
                               IfEmptyTryNextProcessor(
                                  ArgumentProcessor(

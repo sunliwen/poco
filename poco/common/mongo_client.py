@@ -808,6 +808,13 @@ class MongoClient:
                                         'type': list_type},
                                        upsert=True)
 
+    def getCustomizeRecommenderTypes(self, site_id):
+        c_manual_recommend_list = self.getSiteDBCollection(site_id, "manual_recommand_list")
+        rsts = c_manual_recommend_list.find({'type': {'$regex': 'customlist_'}})
+        #return [i for i in c_manual_recommend_list.find()]
+        return [i for i in rsts]
+
+
 def getConnection():
     if(settings.REPLICA_SET):
         #return pymongo.MongoReplicaSetClient(settings.MONGODB_HOST, replicaSet=settings.REPLICA_SET, read_preference=ReadPreference.SECONDARY)
