@@ -798,18 +798,18 @@ class MongoClient:
     def getManualRecommendList(self, site_id, list_type):
         if not list_type:
             return []
-        c_manual_recommend_list = self.getSiteDBCollection(site_id, "manual_recommand_list")
+        c_manual_recommend_list = self.getSiteDBCollection(site_id, "manual_recemmand_list")
         return c_manual_recommend_list.find_one({'type': list_type})
 
     def updateManualRecommendList(self, site_id, list_type, content):
-        c_manual_recommend_list = self.getSiteDBCollection(site_id, "manual_recommand_list")
+        c_manual_recommend_list = self.getSiteDBCollection(site_id, "manual_recemmand_list")
         c_manual_recommend_list.update({'type': list_type},
                                        {'content': content,
                                         'type': list_type},
                                        upsert=True)
 
     def getCustomizeRecommenderTypes(self, site_id):
-        c_manual_recommend_list = self.getSiteDBCollection(site_id, "manual_recommand_list")
+        c_manual_recommend_list = self.getSiteDBCollection(site_id, "manual_recemmand_list")
         rsts = c_manual_recommend_list.find({'type': {'$regex': 'customlist_'}})
         #return [i for i in c_manual_recommend_list.find()]
         return [i for i in rsts]

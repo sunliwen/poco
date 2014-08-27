@@ -1041,10 +1041,19 @@ class GetCustomizeRecommend(BaseSimpleResultRecommendationProcessor):
 
     def getTopN(self, site_id, args):
         rtype = 'customlist_%s' % args.get('customize_type', '')
+        amount = int(args.get('amount', 5))
         recommend_data = mongo_client.getManualRecommendList(site_id, rtype)
+        topn = []
         if recommend_data:
-            return [[item, 0.5] for item in recommend_data['content']['item_ids']]
-        return []
+            topn = [[item, 0.5] for item in recommend_data['content']['item_ids']]
+        if len(topn) < amount:
+            default_topn = mongo_client.getHotViewList(site_id,
+                                                       'by_viewed')
+            topn_set = set([item[0] for item in topn])
+            miss_amount = amount-len(topn)
+            default_topn = [item for item in default_topn if item[0] not in topn_set][:miss_amount]
+            topn = topn + default_topn
+        return topn
 
 
 logWriter = LogWriter()
