@@ -9,7 +9,7 @@ from common import api_client
 
 import os
 
-#API_ROOT = "http://0.0.0.0:2222/api/v1.6/"
+API_ROOT = "http://0.0.0.0:2222/api/v1.6/"
 #api_key = "BB"
 #api_key = "api_haoyaoshi"
 #site_token = "blahblah"
