@@ -7,6 +7,7 @@ PRODUCTS = [
             "item_id": "I123",
             "item_name": "产品1234",
             "item_link": "",
+            "stock": 0,
             "brand": {
                 "type": "brand",
                 "id": "22",
@@ -34,6 +35,7 @@ PRODUCTS = [
             "item_id": "I124",
             "item_name": "能恩超级",
             "item_link": "",
+            "stock": 1,
             "brand": {
                 "type": "brand",
                 "id": "23",
@@ -58,9 +60,10 @@ PRODUCTS = [
             ]},
             {
             "type": "product",
-            "item_id": "I124",
+            "item_id": "I126",
             "item_name": "能恩米粉",
             "item_link": "",
+            "stock": 0,
             "brand": {
                 "type": "brand",
                 "id": "23",

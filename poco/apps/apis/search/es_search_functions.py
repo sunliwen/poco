@@ -112,13 +112,15 @@ def construct_query(query_str, for_filter=False):
     }
     query = add_sku_query(query, query_str)
 
-    query = {"custom_score": {
-        "query": query,
-        "params": {
-            "empty_stock_penalty": 0.5
-        },
-        "script": "_score * (doc['stock']==0?empty_stock_penalty:1)"
-    }}
+    #query = {"custom_score": {
+    #    "query": query,
+    #    "params": {
+    #        "empty_stock_penalty": 0.5
+    #    },
+    #    "script": "_score * (doc['stock']==0?empty_stock_penalty:1)"
+    #}}
+
+
     #if for_filter:
     #    query = {
     #        "bool": {

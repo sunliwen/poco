@@ -12,6 +12,68 @@ from common import test_data1
 from apps.apis.recommender.tasks import update_keyword_hot_view_list
 
 
+@override_settings(CELERY_EAGER_PROPAGATES_EXCEPTIONS=True,
+                   CELERY_ALWAYS_EAGER=True,
+                   BROKER_BACKEND='memory')
+class ItemsSearchViewSortByStockTest(BaseAPITest):
+    def test_search2(self):
+        # if both items has stock, the one match better should be the first
+        items = [{"type": "product",
+                  "item_id": "I123",
+                  "item_name": "超级tian能恩",
+                  "item_link": "abc",
+                  "available": True,
+                  "stock": 1
+                 },
+                 {"type": "product",
+                                   "item_id": "I124",
+                                   "item_name": "能恩",
+                                   "item_link": "abc",
+                                   "stock": 1,
+                                   "available": True
+                                  },
+                 ]
+        class A:
+            def getItems(*args):
+                return items
+        self.postItems(A(), None)
+
+        body = {"api_key": self.api_key,
+                "q": "能恩"
+                }
+        response = self.api_post(reverse("products-search"), data=body)
+        self.assertEqual(response.data["info"]["total_result_count"], 2)
+        self.assertEqual([rec["item_id"] for rec in response.data["records"]], ["I124", "I123"])        
+    
+    def test_search(self):
+        items = [{"type": "product",
+                  "item_id": "I123",
+                  "item_name": "超级tian能恩",
+                  "item_link": "abc",
+                  "available": True,
+                  "stock": 1
+                 },
+                 {"type": "product",
+                                   "item_id": "I124",
+                                   "item_name": "能恩",
+                                   "item_link": "abc",
+                                   "stock": 0,
+                                   "available": True
+                                  },
+                 ]
+        class A:
+            def getItems(*args):
+                return items
+        self.postItems(A(), None)
+
+        body = {"api_key": self.api_key,
+                "q": "能恩"
+                }
+        response = self.api_post(reverse("products-search"), data=body)
+        self.assertEqual(response.data["info"]["total_result_count"], 2)
+        self.assertEqual([rec["item_id"] for rec in response.data["records"]], ["I123", "I124"])
+
+
 # refs: http://stackoverflow.com/questions/4055860/unit-testing-with-django-celery
 # refs: http://docs.celeryproject.org/en/2.5/django/unit-testing.html
 @override_settings(CELERY_EAGER_PROPAGATES_EXCEPTIONS=True,

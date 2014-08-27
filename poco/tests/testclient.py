@@ -17,9 +17,9 @@ import os
 #api_key = os.getenv('API_KEY', "6fad74ab")
 #api_key = os.getenv("API_KEY", "fb86b045") # Default to testsite001 which is leyou data
 
-API_ROOT = "http://poco.ehaoyao.com/api/v1.6/"
+#API_ROOT = "http://poco.ehaoyao.com/api/v1.6/"
 #api_key = "4ad6af048ec"
-api_key = "6fad74ab" # haoyaoshitest
+#api_key = "6fad74ab" # haoyaoshitest
 #api_key = "fb86b045"  #testsite001
 
 #api_key = "a4b4dc8a" # poco_internal_test
@@ -28,13 +28,18 @@ api_key = "6fad74ab" # haoyaoshitest
 
 api_access = api_client.APIClient(API_ROOT)
 
-def config(_API_ROOT=None, _api_key=None):
+
+def config(_API_ROOT=None, _api_key=None, _site_token=None):
     global API_ROOT
     global api_key
+    global site_token
     if _API_ROOT is not None:
         API_ROOT = _API_ROOT
     if _api_key is not None:
         api_key = _api_key
+    if _site_token is not None:
+        site_token = _site_token
+
 
 def test(function, expected_result, amount=50, *args):
     print "Testing:", function.__name__, args
