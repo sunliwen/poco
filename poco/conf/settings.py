@@ -227,6 +227,8 @@ TEMPLATE_DIRS = (
     os.path.join(BASE_DIR, 'templates'),
 )
 
+DASHBOARD_AUTH = 'apps.web.dashboard.views.default_login_required'
+
 # in the end
 
 from local_settings import *

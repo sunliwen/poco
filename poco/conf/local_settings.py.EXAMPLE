@@ -47,6 +47,8 @@ CACHES = {
 
 SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 
+DASHBOARD_AUTH = 'apps.web.dashboard.views.haoyaoshi_login_required'
+
 CELERY_TIMEZONE = 'Asia/Shanghai'
 
 

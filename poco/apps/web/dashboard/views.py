@@ -11,6 +11,7 @@ from django.template.loader import render_to_string
 from django.core.urlresolvers import reverse
 from django.shortcuts import redirect
 from django.template import RequestContext
+from django.utils import importlib
 import pymongo
 from common.mongo_client import getMongoClient
 import random
@@ -110,12 +111,12 @@ def convertColumn(row, column_name):
     else:
         row[column_name] = None
 
-#def login_required(callable):
-#    def method(*args,**kws):
-#        if not args[0].session.has_key("user_name"):
-#            return redirect(reverse("dashboard-login"))
-#        return callable(*args,**kws)
-#    return method
+def default_login_required(callable):
+    def method(*args,**kws):
+        if not args[0].session.has_key("user_name"):
+            return redirect(reverse("dashboard-login"))
+        return callable(*args,**kws)
+    return method
 
 
 class MockAPIClient:
@@ -159,7 +160,7 @@ haoyaoshi_auth = HaoyaoshiAuthentication(APIClient(settings.HAOYAOSHI_ADMIN_VERI
 
 
 
-def login_required(callable):
+def haoyaoshi_login_required(callable):
     def method(*args,**kws):
         request = args[0]
         haoyaoshi_uid = request.COOKIES.get("COOKIE_ADMIN_USER_ID", None)
@@ -183,6 +184,22 @@ def login_required(callable):
 
     return method
 
+
+
+def login_required(callable):
+    """
+    """
+    dashboard_auth = settings.DASHBOARD_AUTH
+    module_path, method_name = dashboard_auth.rsplit('.', 1)
+    try:
+        module = importlib.import_module(module_path)
+        login_check_method = getattr(module, method_name)
+        return login_check_method(callable)
+    except:
+        logging.getLogger("Dashboard").critical("login_required in settings can't be imported: %s" % dashboard_auth)
+    # here we return the username-password check
+    return default_login_required(callable)
+    
 
 # handlers with this decorator will only be available for admin users
 # other users (not logged in or normal user) will receive a 404 error.
