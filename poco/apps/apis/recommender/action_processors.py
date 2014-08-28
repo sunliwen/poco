@@ -726,8 +726,10 @@ class BaseSimpleResultRecommendationProcessor(BaseRecommendationProcessor):
         else:
             return None
 
-    def reOrderTopN(self, site_id, args, topn):
-        manual_list = mongo_client.getManualRecommendList(site_id, args.get('type', ''))
+    def reOrderTopN(self, site_id, topn):
+        manual_list = mongo_client.getStickRecommendList(
+            site_id,
+            self.recommender_type)
         if not (manual_list and manual_list.get('content', [])):
             return
         item_order_list = manual_list['content'] + [item[0] for item in topn]
@@ -747,7 +749,7 @@ class BaseSimpleResultRecommendationProcessor(BaseRecommendationProcessor):
         # append ref parameters
         ref = self._getRef(args)
         topn = self.getTopN(site_id, args)  # return TopN list
-        self.reOrderTopN(site_id, args, topn)
+        self.reOrderTopN(site_id, topn)
 
         # apply filter
         result_filter = self.getRecommendationResultFilter(site_id, args)
@@ -775,7 +777,6 @@ class BaseSimilarityProcessor(BaseSimpleResultRecommendationProcessor):
             ("item_id", True),
             ("include_item_info", False),  # no, not include; yes, include
             ("amount", True),
-            ("type", True),
             ("ref", False),  # appendix to item_link
         )
     )
@@ -879,7 +880,6 @@ class GetUltimatelyBoughtProcessor(BaseSimpleResultRecommendationProcessor):
             ("ref", False),
             ("item_id", True),
             ("include_item_info", False),  # no, not include; yes, include
-            ("type", True),
             ("amount", True)
         )
     )
@@ -908,7 +908,6 @@ class GetByBrowsingHistoryProcessor(BaseSimpleResultRecommendationProcessor):
                 ("ref", False),
                 #("browsing_history", False),
                 ("include_item_info", False),  # no, not include; yes, include
-                ("type", True),
                 ("amount", True),
             )
         )
@@ -939,7 +938,6 @@ class GetByHotIndexProcessor(BaseSimpleResultRecommendationProcessor):
                 ("category_id", False),
                 ("brand", False),
                 ("include_item_info", False),  # no, not include; yes, include
-                ("type", True),
                 ("amount", True),
             )
         )
@@ -974,7 +972,6 @@ class GetByShoppingCartProcessor(BaseSimpleResultRecommendationProcessor):
                 ("ref", False),
                 ("shopping_cart", False),
                 ("include_item_info", False),  # no, not include; yes, include
-                ("type", True),
                 ("amount", True),
             )
         )
@@ -1007,7 +1004,6 @@ class GetByPurchasingHistoryProcessor(BaseSimpleResultRecommendationProcessor):
                 ("user_id", True),
                 ("ref", False),
                 ("include_item_info", False),  # no, not include; yes, include
-                ("type", True),
                 ("amount", True),
             )
         )
@@ -1030,7 +1026,6 @@ class GetCustomizeRecommend(BaseSimpleResultRecommendationProcessor):
                 ("ref", False),
                 ("user_id", True),
                 ("include_item_info", False),  # no, not include; yes, include
-                ("type", True),
                 ("customize_type", True),
                 ("amount", True),
             )
@@ -1040,9 +1035,9 @@ class GetCustomizeRecommend(BaseSimpleResultRecommendationProcessor):
         return SimpleRecommendationResultFilter()
 
     def getTopN(self, site_id, args):
-        rtype = 'customlist_%s' % args.get('customize_type', '')
+        rtype = args.get('customize_type', '')
         amount = int(args.get('amount', 5))
-        recommend_data = mongo_client.getManualRecommendList(site_id, rtype)
+        recommend_data = mongo_client.getCustomizeRecommendList(site_id, rtype)
         topn = []
         if recommend_data:
             topn = [[item, 0.5] for item in recommend_data['content']['item_ids']]
@@ -1146,6 +1141,7 @@ def IfEmptyTryNextProcessor(argument_processor, action_processor_chain, post_pro
             topn = []
             for action_processor_class, extra_args_pipe in self.action_processor_chain:
                 action_processor = action_processor_class(not_log_action=True)
+                action_processor.recommender_type = self.recommender_type
                 args = copy.deepcopy(args)
                 for extra_args_filler in extra_args_pipe:
                     if isinstance(extra_args_filler, dict):

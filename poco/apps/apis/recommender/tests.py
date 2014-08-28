@@ -716,9 +716,9 @@ class RecommenderTest(BaseRecommenderTest):
             self.assertEqual(item.has_key("stock"), True)
 
         # if we change the recommender order, the result will be reordered
-        self.mongo_client.updateManualRecommendList(self.TEST_SITE_ID,
-                                                    recommend_type,
-                                                    ['I126', 'I125'])
+        self.mongo_client.updateStickRecommendList(self.TEST_SITE_ID,
+                                                   recommend_type,
+                                                   ['I126', 'I125'])
         response = self._recommender("U1", type=recommend_type, item_id="I123", amount=5)
         self.assertEqual([item["item_id"] for item in response.data["topn"]], ["I125", "I124"])
         for item in response.data["topn"]:
@@ -1562,7 +1562,7 @@ class StickRecommendAPITest(BaseRecommenderTest):
         self.assertEqual(response.data["code"], 0)
 
         # check data in mongodb
-        recommends =  self.mongo_client.getManualRecommendList(self.TEST_SITE_ID,
+        recommends =  self.mongo_client.getStickRecommendList(self.TEST_SITE_ID,
                                                                data['type'])
 
         self.assertEquals(recommends['content'], item_ids)
