@@ -572,6 +572,21 @@ class ItemsSearchViewTest(BaseAPITest):
                         ],
                 })
 
+    def _test_custom_exception_handler(self):
+        body = json.dumps({"api_key": self.api_key,
+                           "q": "",
+                           "facets": {}})
+        # normal request works well
+        response = self.client.post(reverse("products-search"),
+                                    data=body,
+                                    content_type='application/json')
+        self.assertEqual(json.loads(response.content)["info"]["facets"], {})
+        
+        response = self.client.post(reverse("products-search"),
+                                    data=body.replace('facets', 'facets\t'),
+                                    content_type='application/json')
+        self.assertEqual(json.loads(response.content)["code"], 99)
+
     def test_search(self):
         # TODO: highlight; sort_fields
         self._test_no_such_api_key()
@@ -586,6 +601,7 @@ class ItemsSearchViewTest(BaseAPITest):
         #self._test_result_mode()
         self._test_search_facets_selection()
         #self._test_search_facets_of_whole_sub_tree()
+        self._test_custom_exception_handler()
 
     def _assertKWList(self, list_type, expected):
         keywords = set([keyword_record["keyword"] for keyword_record in self.mongo_client.getSuggestKeywordList(self.TEST_SITE_ID, list_type)])
