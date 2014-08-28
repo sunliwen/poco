@@ -634,6 +634,21 @@ class ItemsSearchViewTest(BaseAPITest):
                         ],
                 })
 
+    def _test_custom_exception_handler(self):
+        body = json.dumps({"api_key": self.api_key,
+                           "q": "",
+                           "facets": {}})
+        # normal request works well
+        response = self.client.post(reverse("products-search"),
+                                    data=body,
+                                    content_type='application/json')
+        self.assertEqual(json.loads(response.content)["info"]["facets"], {})
+        
+        response = self.client.post(reverse("products-search"),
+                                    data=body.replace('facets', 'facets\t'),
+                                    content_type='application/json')
+        self.assertEqual(json.loads(response.content)["code"], 99)
+
     def test_search(self):
         # TODO: highlight; sort_fields
         self._test_no_such_api_key()
@@ -648,6 +663,7 @@ class ItemsSearchViewTest(BaseAPITest):
         #self._test_result_mode()
         self._test_search_facets_selection()
         #self._test_search_facets_of_whole_sub_tree()
+        self._test_custom_exception_handler()
 
     def _assertKWList(self, list_type, expected):
         keywords = set([keyword_record["keyword"] for keyword_record in self.mongo_client.getSuggestKeywordList(self.TEST_SITE_ID, list_type)])
@@ -671,7 +687,8 @@ class ItemsSearchViewTest(BaseAPITest):
         self.assertEqual(response.data["errors"], [])
         self.assertEqual(response.data, 
                          {"errors": [],
-                          "suggestions": []
+                          "suggestions": [],
+                          "code": 1
                          })
 
         # let's move some keywords as white listed.
@@ -687,7 +704,8 @@ class ItemsSearchViewTest(BaseAPITest):
         self.assertEqual(response.data["errors"], [])
         self.assertEqual(response.data, 
                          {"errors": [],
-                          "suggestions": [{"count": 1, "type": "completion", "value": u"童话"}]
+                          "suggestions": [{"count": 1, "type": "completion", "value": u"童话"}],
+                          "code": 1
                          })
         
         keyword_list.markKeywordsAsWhiteListed(self.TEST_SITE_ID, all_keywords)
@@ -702,7 +720,8 @@ class ItemsSearchViewTest(BaseAPITest):
         self.assertEqual(response.data, 
                          {"errors": [],
                           "suggestions": [{'count': 1, 'type': 'more_keyword', 'value': u'能恩 超级'},
-                                          {'count': 1, 'type': 'more_keyword', 'value': u'能恩 奶粉'}]
+                                          {'count': 1, 'type': 'more_keyword', 'value': u'能恩 奶粉'}],
+                          "code": 1
                          })
 
         body = {"api_key": self.api_key,
@@ -719,8 +738,9 @@ class ItemsSearchViewTest(BaseAPITest):
                                            'field_name': 'categories'}, 
                                           {'count': 1, 'type': 'more_keyword', 'value': u'奶粉 雀巢'},
                                           {'count': 1, 'type': 'more_keyword', 'value': u'奶粉 能恩'}
-                                          ]}
-                         )
+                                          ],
+                          "code": 1
+                         })
 
 @override_settings(CELERY_EAGER_PROPAGATES_EXCEPTIONS=True,
                    CELERY_ALWAYS_EAGER=True,

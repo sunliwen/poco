@@ -176,7 +176,8 @@ REST_FRAMEWORK = {
         'rest_framework.renderers.UnicodeJSONRenderer',
         'rest_framework.renderers.JSONPRenderer',
         'rest_framework.renderers.BrowsableAPIRenderer',
-    )
+    ),
+    'EXCEPTION_HANDLER': 'common.utils.custom_exception_handler'
 }
 
 
