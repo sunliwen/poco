@@ -17,6 +17,7 @@ import es_search_functions
 from es_search_functions import serialize_items
 from common.mongo_client import getMongoClient
 from common.cached_result import cached_result
+from common.utils import CacheUtil
 from apps.apis.recommender.property_cache import PropertyCache
 
 
@@ -367,7 +368,8 @@ class ProductsSearch(BaseAPIView):
         return True, search_config
 
     def _getSearchCacheKey(self, site_id, search_data):
-        return "search-result-cache-%s-%s" % (site_id, hashlib.md5(repr(dict(search_data))).hexdigest())
+        return CacheUtil.get_search_key(site_id,
+                                        hashlib.md5(repr(dict(search_data))).hexdigest())
 
     # refs: http://www.django-rest-framework.org/api-guide/pagination
     def get(self, request, format=None):

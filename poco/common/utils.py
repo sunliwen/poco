@@ -201,3 +201,19 @@ def get_ip(request):
         ip = request.META.get("REMOTE_ADDR", "")
     return ip
 
+class CacheUtil:
+    @staticmethod
+    def get_cache_key_prefix(site_id):
+        return "cache-%s" % site_id
+
+    @staticmethod
+    def get_search_key(site_id, query_hash):
+        return '%s-search-result-%s' % (CacheUtil.get_cache_key_prefix(site_id),
+                                        query_hash)
+
+    @staticmethod
+    def get_property_key(site_id, property_type, pid):
+        return "%s-property-%s-%s" % (CacheUtil.get_cache_key_prefix(site_id),
+                                      property_type,
+                                      pid)
+

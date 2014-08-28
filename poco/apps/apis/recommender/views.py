@@ -5,10 +5,12 @@ import uuid
 
 from django.shortcuts import render, redirect
 from django.http import HttpResponse, HttpResponseBadRequest
+from django.core.cache import get_cache
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from common.poco_token_auth import PocoTokenAuthentication
 from common.poco_token_auth import TokenMatchAPIKeyPermission
+from common.utils import CacheUtil
 
 from action_processors import mongo_client
 import action_processors
@@ -255,3 +257,24 @@ def recommended_item_redirect(request):
                 }
             action_processors.logWriter.writeEntry(site_id, log_content)
         return response
+
+class CacheAPIView(BaseAPIView):
+    authentication_classes = (PocoTokenAuthentication, )
+    permission_classes = (TokenMatchAPIKeyPermission,)
+
+    def getActionProcessor(self, args):
+        raise NotImplemented
+
+    def process_post(self, request, response, site_id, args):
+        action, action_type = args.get('action', ''), args.get('type', '')
+        if action != 'clear':
+            return {"code": 1, "err_msg": "action=%s is not allowed. " % action}
+        if action_type not in ('all', 'search'):
+            return {"code": 1, "err_msg": "type=%s is not allowed. " % action_type}
+        if action_type == 'all':
+            get_cache('default').delete_pattern('%s*' % CacheUtil.get_cache_key_prefix(site_id))
+        else:
+            get_cache('default').delete_pattern(CacheUtil.get_search_key(site_id, '*'))
+        return {"code": 0}
+
+
