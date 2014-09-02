@@ -517,9 +517,31 @@ class Keywords(BaseAPIView):
         category_id = args.get("category_id", "null")
         amount = args.get("amount", 5)
         site_id = self.getSiteID(args["api_key"])
-        keywords = cached_result.get("KeywordHotView", site_id, (category_id, ))
+        keywords = cached_result.get("KeywordHotView",
+                                     site_id,
+                                     (category_id, ))
         if keywords is None:
             keywords = []
+            # 1. get from manual hot keywords
+            hotwords_record = mongo_client.getHotKeywordList(site_id,
+                                                             'keyword_hot_view_%s' % category_id)
+            if hotwords_record:
+                keywords = hotwords_record['keywords']
+            # 2. if we didn't get enough keywords
+            # get from the auto keyword hot view list
+            keywords_set = set(keywords)
+            cached_keywords = cached_result.get("AutoKeywordHotView",
+                                                site_id,
+                                                (category_id, ))
+            for keyword in cached_keywords and cached_keywords or []:
+                if not keyword in keywords_set:
+                    keywords.append(keyword)
+            # update cache
+            if keywords:
+                cached_result.set("KeywordHotView",
+                                  site_id,
+                                  (category_id, ),
+                                  keywords)
         return Response({"keywords": keywords[:amount], "errors": []})
 
 

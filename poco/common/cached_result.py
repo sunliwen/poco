@@ -30,5 +30,10 @@ class CachedResult:
                 self._setDjangoCache(full_cache_key, cached_result)
         return cached_result
 
+    def delete(self, cache_type, site_id, cache_key_tuple):
+        cache = get_cache("default")
+        full_cache_key = self._getFullCacheKey(cache_type, site_id, cache_key_tuple)
+        self.mongo_client.deleteCachedResults(site_id, full_cache_key)
+        cache.delete(full_cache_key)
 
 cached_result = CachedResult(getMongoClient())

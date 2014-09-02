@@ -8,4 +8,5 @@
    :maxdepth: 2
 
    management_api_items
+   management_api_keywords
 

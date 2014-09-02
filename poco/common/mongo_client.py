@@ -618,6 +618,10 @@ class MongoClient:
                                 {"cache_key": cache_key, "result": result},
                                 upsert=True)
 
+    def deleteCachedResults(self, site_id, cache_key):
+        c_cached_results = self.getSiteDBCollection(site_id, "cached_results")
+        c_cached_results.remove({"cache_key": cache_key})
+
     # TODO: should use pub/sub to handle this
     def updateTrafficMetricsFromLog(self, site_id, raw_log):
         c_traffic_metrics = getSiteDBCollection(self.connection, site_id, "traffic_metrics")
@@ -794,6 +798,23 @@ class MongoClient:
             return c_suggest_keyword_list.find().sort("count", -1)
         else:
             return c_suggest_keyword_list.find({"type": list_type}).sort("count", -1)
+
+    def updateHotKeywordList(self, site_id, list_type, keywords):
+        c_hot_keyword_list = self.getSiteDBCollection(site_id,
+                                                      "hot_keyword_list")
+        c_hot_keyword_list.update({"type": list_type},
+                              {'keywords': keywords,
+                               "type": list_type},
+                              upsert=True)
+        
+
+    def getHotKeywordList(self, site_id, list_type):
+        if not list_type:
+            return []
+        c_hot_keyword_list = self.getSiteDBCollection(site_id,
+                                                      "hot_keyword_list")
+        return c_hot_keyword_list.find_one({"type": list_type})
+
 
 def getConnection():
     if(settings.REPLICA_SET):
