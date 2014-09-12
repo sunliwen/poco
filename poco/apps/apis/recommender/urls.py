@@ -23,6 +23,12 @@ def recommender_patterns():
                                            url(r'^public/recommender/redirect/?$',
                                                views.recommended_item_redirect,
                                                name="recommender-redirect"),
+                                           url(r'^private/stick_lists/?$',
+                                               views.RecommendStickListsAPIView.as_view(),
+                                               name="recommender-stick_lists"),
+                                           url(r'^private/recommender/custom_lists/?$',
+                                               views.RecommendCustomListsAPIView.as_view(),
+                                               name="recommender-custom_lists"),
                                            ))
 
 

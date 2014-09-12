@@ -683,7 +683,6 @@ class ItemsAPITest(BaseRecommenderTest):
                          data=json.dumps({"q": "", 
                                           "filters": {"prescription_type": [prescription_type]}, 
                                           "api_key": self.api_key}))
-        print res.data
         self.assertEqual(res.data["errors"], [])
         self.assertEqual(res.data["records"][0]["item_id"], "I123")
         self.assertEqual(res.data["records"][0]["prescription_type"], prescription_type)
@@ -711,12 +710,19 @@ class RecommenderTest(BaseRecommenderTest):
         # items without similarities
         response = self._recommender("U1", type=recommend_type, item_id="I5000", amount=5)
         self.assertEqual([item["item_id"] for item in response.data["topn"]], [])
-        # item I123
         response = self._recommender("U1", type=recommend_type, item_id="I123", amount=5)
         self.assertEqual([item["item_id"] for item in response.data["topn"]], ["I124", "I125"])
         for item in response.data["topn"]:
             self.assertEqual(item.has_key("stock"), True)
 
+        # if we change the recommender order, the result will be reordered
+        self.mongo_client.updateRecommendStickLists(self.TEST_SITE_ID,
+                                                    recommend_type,
+                                                    ['I126', 'I125'])
+        response = self._recommender("U1", type=recommend_type, item_id="I123", amount=5)
+        self.assertEqual([item["item_id"] for item in response.data["topn"]], ["I125", "I124"])
+        for item in response.data["topn"]:
+            self.assertEqual(item.has_key("stock"), True)
         # if we make I124 stock to 0
         item = test_data1.getItems(item_ids=["I124"])[0]
         item["stock"] = 0
@@ -1513,3 +1519,141 @@ class HotIndexTest(BaseRecommenderTest):
         self.assertEqual(response.data["code"], 0)
         self.assertEqual([item["item_id"] for item in response.data["topn"]],
                          ["I126"])
+
+class RecommendStickListsAPITest(BaseRecommenderTest):
+    def _assertKWList(self, list_type, expected):
+        self.assertEqual(set([(keyword_record["keyword"], keyword_record["count"]) 
+                for keyword_record in self.mongo_client.getSuggestKeywordList(self.TEST_SITE_ID, list_type)]), expected)
+
+    def test_update_stick_recommend_list(self):
+        data = {'type': 'wrong-type',
+                'item_ids': 'hahah',
+                'api_key': self.api_key}
+        response = self.api_post(reverse("recommender-stick_lists"),
+                                 data=data,
+                                 expected_status_code=200,
+                                 **{"HTTP_AUTHORIZATION": "Token %s" % self.site_token})
+        self.assertEqual(response.data["code"], 1)
+        self.assertTrue(response.data["err_msg"].startswith("'type' can only be one of "))
+
+        data['type'] = 'ByHotIndex'
+        response = self.api_post(reverse("recommender-stick_lists"),
+                                 data=data,
+                                 expected_status_code=200,
+                                 **{"HTTP_AUTHORIZATION": "Token %s" % self.site_token})
+        self.assertEqual(response.data["code"], 1)
+        self.assertTrue(response.data["err_msg"].startswith("'item_ids' can only be item_id list"))
+
+        item_ids = ['I%d' % i for i in range(10)]
+        data['item_ids'] = item_ids
+        response = self.api_post(reverse("recommender-stick_lists"),
+                                 data=data,
+                                 expected_status_code=200,
+                                 **{"HTTP_AUTHORIZATION": "Token %s" % self.site_token})
+        self.assertEqual(response.data["code"], 0)
+
+        # check data in mongodb
+        recommends =  self.mongo_client.getRecommendStickLists(self.TEST_SITE_ID,
+                                                               data['type'])
+
+        self.assertEquals(recommends['content'], item_ids)
+                                                       
+@override_settings(CELERY_EAGER_PROPAGATES_EXCEPTIONS=True,
+                   CELERY_ALWAYS_EAGER=True,
+                   BROKER_BACKEND='memory')
+class RecommendCustomListsAPITest(BaseRecommenderTest):
+    def setUp(self):
+        super(RecommendCustomListsAPITest, self).setUp()
+        self.postItems(test_data1, None)
+
+    def test_recommend_custom_lists(self):
+        data = {'action': 'wrong-action',
+                'type': 'com-type',
+                'item_ids': 'hahah',
+                'api_key': self.api_key}
+        response = self.api_post(reverse("recommender-custom_lists"),
+                                 data=data,
+                                 expected_status_code=200,
+                                 **{"HTTP_AUTHORIZATION": "Token %s" % self.site_token})
+        self.assertEqual(response.data["code"], 1)
+        self.assertTrue(response.data["err_msg"].startswith("'action' can only be "))
+
+        data['action'] = 'set_recommender_items'
+        response = self.api_post(reverse("recommender-custom_lists"),
+                                 data=data,
+                                 expected_status_code=200,
+                                 **{"HTTP_AUTHORIZATION": "Token %s" % self.site_token})
+        self.assertEqual(response.data["code"], 1)
+        self.assertTrue(response.data["err_msg"].startswith("'item_ids' can only be item_id list"))
+
+        item_ids = ['I12%d' % i for i in range(5)]
+        data['item_ids'] = item_ids
+        response = self.api_post(reverse("recommender-custom_lists"),
+                                 data=data,
+                                 expected_status_code=200,
+                                 **{"HTTP_AUTHORIZATION": "Token %s" % self.site_token})
+        self.assertEqual(response.data["code"], 0)
+
+        data['action'] = 'get_recommender_items'
+        response = self.api_post(reverse("recommender-custom_lists"),
+                                 data=data,
+                                 expected_status_code=200,
+                                 **{"HTTP_AUTHORIZATION": "Token %s" % self.site_token})
+        self.assertEqual(response.data["code"], 0)
+        self.assertEquals(response.data['data']['item_ids'],
+                          item_ids)
+        data['action'] = 'list_recommender_types'
+        response = self.api_post(reverse("recommender-custom_lists"),
+                                 data=data,
+                                 expected_status_code=200,
+                                 **{"HTTP_AUTHORIZATION": "Token %s" % self.site_token})
+        self.assertEqual(response.data["code"], 0)
+        self.assertEquals(response.data['data'][0]['type'],
+                          'com-type')
+
+        #test customlists search
+        response = self.api_get(reverse("recommender-recommender"),
+                    data={"api_key": self.api_key,
+                          "type": "CustomLists",
+                          "custom_type": "com-type1",
+                          "user_id": "U1",
+                          "brand": "23",
+                          "amount": 10
+                          })
+        self.assertEqual(response.data["code"], 0)
+        self.assertEqual(response.data['topn'], [])
+
+        response = self.api_get(reverse("recommender-recommender"),
+                    data={"api_key": self.api_key,
+                          "type": "CustomLists",
+                          "custom_type": "com-type",
+                          "user_id": "U1",
+                          "brand": "23",
+                          "amount": 10
+                          })
+        self.assertEqual(response.data["code"], 0)
+        self.assertEqual([item["item_id"] for item in response.data["topn"]],
+                         ['I123', 'I124'])
+        # test fill by default value
+        # view items
+        self._viewItem("U1", "I123", 3)
+        self._viewItem("U2", "I124", 2)
+        self._viewItem("U3", "I125", 1)
+        self._viewItem("U5", "I126", 5)
+
+        tasks.update_hotview_list.delay(self.TEST_SITE_ID)
+        get_cache("default").clear()
+
+        response = self.api_get(reverse("recommender-recommender"),
+                    data={"api_key": self.api_key,
+                          "type": "CustomLists",
+                          "custom_type": "com-type",
+                          "user_id": "U1",
+                          "brand": "23",
+                          "amount": 10
+                          })
+        self.assertEqual(response.data["code"], 0)
+        self.assertEqual([item["item_id"] for item in response.data["topn"]],
+                         ['I123', 'I124', 'I126', 'I125'])
+
+        
