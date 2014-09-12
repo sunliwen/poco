@@ -8,6 +8,6 @@
    :maxdepth: 2
 
    management_api_items
-   management_api_recommend
-   management_api_customize_recommend
+   management_api_recommend_stick_lists
+   management_api_recommend_custom_lists
 

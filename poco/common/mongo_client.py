@@ -795,7 +795,7 @@ class MongoClient:
         else:
             return c_suggest_keyword_list.find({"type": list_type}).sort("count", -1)
 
-    def getStickRecommendList(self, site_id, list_type):
+    def getRecommendStickLists(self, site_id, list_type):
         if not list_type:
             return []
         c_stick_recommend_list = self.getSiteDBCollection(
@@ -803,7 +803,7 @@ class MongoClient:
             "stick_recommend_list")
         return c_stick_recommend_list.find_one({'type': list_type})
 
-    def updateStickRecommendList(self, site_id, list_type, content):
+    def updateRecommendStickLists(self, site_id, list_type, content):
         c_stick_recommend_list = self.getSiteDBCollection(
             site_id,
             "stick_recommend_list")
@@ -812,28 +812,28 @@ class MongoClient:
                                         'type': list_type},
                                        upsert=True)
 
-    def getCustomizeRecommendList(self, site_id, list_type):
+    def getRecommendCustomLists(self, site_id, list_type):
         if not list_type:
             return []
-        c_customize_recommend_list = self.getSiteDBCollection(
+        c_recommend_custom_list = self.getSiteDBCollection(
             site_id,
-            "customize_recommend_list")
-        return c_customize_recommend_list.find_one({'type': list_type})
+            "recommend_custom_list")
+        return c_recommend_custom_list.find_one({'type': list_type})
         
-    def updateCustomizeRecommendList(self, site_id, list_type, content):
-        c_customize_recommend_list = self.getSiteDBCollection(
+    def updateRecommendCustomLists(self, site_id, list_type, content):
+        c_recommend_custom_list = self.getSiteDBCollection(
             site_id,
-            "customize_recommend_list")
-        c_customize_recommend_list.update({'type': list_type},
-                                          {'content': content,
-                                           'type': list_type},
-                                          upsert=True)
+            "recommend_custom_list")
+        c_recommend_custom_list.update({'type': list_type},
+                                       {'content': content,
+                                        'type': list_type},
+                                       upsert=True)
         
-    def getCustomizeRecommenderTypes(self, site_id):
-        c_manual_recommend_list = self.getSiteDBCollection(
+    def getRecommenderCustomTypes(self, site_id):
+        c_recommend_custom_list = self.getSiteDBCollection(
             site_id,
-            "customize_recommend_list")
-        rsts = c_manual_recommend_list.find()
+            "recommend_custom_list")
+        rsts = c_recommend_custom_list.find()
         return [i for i in rsts]
             
 

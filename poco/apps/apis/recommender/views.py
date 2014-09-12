@@ -256,7 +256,7 @@ def recommended_item_redirect(request):
             action_processors.logWriter.writeEntry(site_id, log_content)
         return response
 
-class StickRecommendAPIView(BaseAPIView):
+class RecommendStickListsAPIView(BaseAPIView):
     authentication_classes = (PocoTokenAuthentication, )
     permission_classes = (TokenMatchAPIKeyPermission,)
 
@@ -267,19 +267,15 @@ class StickRecommendAPIView(BaseAPIView):
         if not (rtype in recommender_types):
             return {"code": 1, "err_msg": "'type' can only be one of '%s'" % '|'.join(recommender_types)}
 
-        action = args.get('action', None)
-        if not (action == 'stick_items'):
-            return {"code": 1, "err_msg": "'action' can only be 'stick_items'"}
-
         item_ids = args.get('item_ids', [])
         if (not isinstance(item_ids, list)) or isinstance(item_ids, basestring):
             return {"code": 1, "err_msg": "'item_ids' can only be item_id list"}
-        mongo_client.updateStickRecommendList(site_id,
-                                              rtype,
-                                              item_ids)
+        mongo_client.updateRecommendStickLists(site_id,
+                                               rtype,
+                                               item_ids)
         return {"code": 0}
 
-class CustomizeRecommendAPIView(BaseAPIView):
+class RecommendCustomListsAPIView(BaseAPIView):
     authentication_classes = (PocoTokenAuthentication, )
     permission_classes = (TokenMatchAPIKeyPermission,)
 
@@ -288,7 +284,7 @@ class CustomizeRecommendAPIView(BaseAPIView):
         if (not isinstance(item_ids, list)) or isinstance(item_ids, basestring):
             return {"code": 1, "err_msg": "'item_ids' can only be item_id list"}
         rtype = args['type']
-        mongo_client.updateCustomizeRecommendList(
+        mongo_client.updateRecommendCustomLists(
             site_id,
             rtype,
             {'item_ids': item_ids,
@@ -297,8 +293,8 @@ class CustomizeRecommendAPIView(BaseAPIView):
         return {"code": 0}
 
     def get_recommender_items(self, site_id, args):
-        recommend_data = mongo_client.getCustomizeRecommendList(site_id,
-                                                                args['type'])
+        recommend_data = mongo_client.getRecommendCustomLists(site_id,
+                                                              args['type'])
         if recommend_data:
             return {'code': 0,
                     'err_msg': '',
@@ -307,7 +303,7 @@ class CustomizeRecommendAPIView(BaseAPIView):
 
     def list_recommender_types(self, site_id, args):
         data = []
-        rtypes = mongo_client.getCustomizeRecommenderTypes(site_id);
+        rtypes = mongo_client.getRecommenderCustomTypes(site_id);
         for rtype in rtypes:
             data.append({'type': rtype['type'],
                          'display_name': rtype['content']['display_name']})

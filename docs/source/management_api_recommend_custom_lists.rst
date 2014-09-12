@@ -1,7 +1,7 @@
-Customize Recommender API
+Recommender Custom Lists API
 =======================
 
-路径: /v1.6/private/recommender/customize
+路径: /v1.6/private/recommender/custom_lists
 
 HTTP方法: POST
 
@@ -23,7 +23,7 @@ Items API为非公开api，需要authentication之后才能使用。
     "Token 3693cbdc-358c-41e1-a81e-8279d5b28847"
 
 
-Customize Recommender
+Recommender Custom Lists
 ---------
 
 通用传入参数

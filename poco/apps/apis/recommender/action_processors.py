@@ -727,7 +727,7 @@ class BaseSimpleResultRecommendationProcessor(BaseRecommendationProcessor):
             return None
 
     def reOrderTopN(self, site_id, topn):
-        manual_list = mongo_client.getStickRecommendList(
+        manual_list = mongo_client.getRecommendStickLists(
             site_id,
             self.recommender_type)
         if not (manual_list and manual_list.get('content', [])):
@@ -1018,15 +1018,15 @@ class GetByPurchasingHistoryProcessor(BaseSimpleResultRecommendationProcessor):
         else:
             return mongo_client.recommend_based_on_purchasing_history(site_id, user_id)
 
-class GetCustomizeRecommend(BaseSimpleResultRecommendationProcessor):
-    action_name = "CustomList"
+class GetCustomListsRecommend(BaseSimpleResultRecommendationProcessor):
+    action_name = "CustomLists"
     similarity_type = "CST"
     ap = ArgumentProcessor(
             (
                 ("ref", False),
                 ("user_id", True),
                 ("include_item_info", False),  # no, not include; yes, include
-                ("customize_type", True),
+                ("custom_type", True),
                 ("amount", True),
             )
         )
@@ -1035,9 +1035,9 @@ class GetCustomizeRecommend(BaseSimpleResultRecommendationProcessor):
         return SimpleRecommendationResultFilter()
 
     def getTopN(self, site_id, args):
-        rtype = args.get('customize_type', '')
+        rtype = args.get('custom_type', '')
         amount = int(args.get('amount', 5))
-        recommend_data = mongo_client.getCustomizeRecommendList(site_id, rtype)
+        recommend_data = mongo_client.getRecommendCustomLists(site_id, rtype)
         topn = []
         if recommend_data:
             topn = [[item, 0.5] for item in recommend_data['content']['item_ids']]
@@ -1189,7 +1189,7 @@ recommender_registry.register("UltimatelyBought", GetUltimatelyBoughtProcessor)
 recommender_registry.register("ByPurchasingHistory", GetByPurchasingHistoryProcessor)
 recommender_registry.register("ByShoppingCart", GetByShoppingCartProcessor)
 recommender_registry.register("ByHotIndex", GetByHotIndexProcessor)
-recommender_registry.register("CustomList", GetCustomizeRecommend)
+recommender_registry.register("CustomLists", GetCustomListsRecommend)
 recommender_registry.register("/unit/home",
                               IfEmptyTryNextProcessor(
                                  ArgumentProcessor(
