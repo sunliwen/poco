@@ -1021,7 +1021,7 @@ class GetByPurchasingHistoryProcessor(BaseSimpleResultRecommendationProcessor):
             return mongo_client.recommend_based_on_purchasing_history(site_id, user_id)
 
 class GetCustomListsRecommend(BaseSimpleResultRecommendationProcessor):
-    action_name = "CustomLists"
+    action_name = "CustomList"
     similarity_type = "CST"
     ap = ArgumentProcessor(
             (
@@ -1191,7 +1191,7 @@ recommender_registry.register("UltimatelyBought", GetUltimatelyBoughtProcessor)
 recommender_registry.register("ByPurchasingHistory", GetByPurchasingHistoryProcessor)
 recommender_registry.register("ByShoppingCart", GetByShoppingCartProcessor)
 recommender_registry.register("ByHotIndex", GetByHotIndexProcessor)
-recommender_registry.register("CustomLists", GetCustomListsRecommend)
+recommender_registry.register("CustomList", GetCustomListsRecommend)
 recommender_registry.register("/unit/home",
                               IfEmptyTryNextProcessor(
                                  ArgumentProcessor(

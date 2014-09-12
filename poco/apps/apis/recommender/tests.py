@@ -1617,7 +1617,7 @@ class RecommendCustomListsAPITest(BaseRecommenderTest):
         #test customlists search
         response = self.api_get(reverse("recommender-recommender"),
                     data={"api_key": self.api_key,
-                          "type": "CustomLists",
+                          "type": "CustomList",
                           "custom_type": "com-type1",
                           "user_id": "U1",
                           "brand": "23",
@@ -1628,7 +1628,7 @@ class RecommendCustomListsAPITest(BaseRecommenderTest):
 
         response = self.api_get(reverse("recommender-recommender"),
                     data={"api_key": self.api_key,
-                          "type": "CustomLists",
+                          "type": "CustomList",
                           "custom_type": "com-type",
                           "user_id": "U1",
                           "brand": "23",
@@ -1649,7 +1649,7 @@ class RecommendCustomListsAPITest(BaseRecommenderTest):
 
         response = self.api_get(reverse("recommender-recommender"),
                     data={"api_key": self.api_key,
-                          "type": "CustomLists",
+                          "type": "CustomList",
                           "custom_type": "com-type",
                           "user_id": "U1",
                           "brand": "23",
