@@ -1,5 +1,5 @@
 Recommender Custom Lists API
-=======================
+============================
 
 路径: /v1.6/private/recommender/custom_lists
 
@@ -7,6 +7,8 @@ HTTP方法: POST
 
 功能：
     用来添加、更新人工订制推荐列表；支持列出所有人工推荐类型供后台集成。
+
+    这里添加的列表，可以以推荐API中"CustomList"类型的形式推荐给用户。
 
 Authentication
 ---------------
@@ -24,7 +26,7 @@ Items API为非公开api，需要authentication之后才能使用。
 
 
 Recommender Custom Lists
----------
+-------------------------
 
 通用传入参数
 ^^^^^^^^^^^^^^
