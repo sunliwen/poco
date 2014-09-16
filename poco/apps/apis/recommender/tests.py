@@ -12,6 +12,7 @@ from django.http import HttpResponseRedirect, HttpResponseBadRequest
 from common.test_utils import BaseAPITest
 from common import site_manage_utils
 from common import test_data1
+from common.recommender_cache import RecommenderCache
 from apps.apis.search import es_search_functions
 from apps.apis.search.keyword_list import keyword_list
 
@@ -60,6 +61,16 @@ class BaseRecommenderTest(BaseAPITest):
                       "order_content": order_content
                       })
 
+    def _addOrderItem(self, user_id, item_id, ptm_id):
+        self.api_get(reverse("recommender-events"),
+                     data = {"event_type": "AddOrderItem",
+                             "user_id": user_id,
+                             "item_id": item_id,
+                             "ptm_id": ptm_id,
+                             "api_key": self.api_key
+                         })
+
+
     def get_last_n_raw_logs(self, n=1):
         c_raw_logs = self.mongo_client.getSiteDBCollection(self.TEST_SITE_ID, "raw_logs")
         rset = c_raw_logs.find().sort([("$natural", -1)])
@@ -84,6 +95,11 @@ class BaseRecommenderTest(BaseAPITest):
                   "mostSimilarItems": mostSimilarItems}
         c_item_similarities.insert(record)
 
+    def delete_item_similarities(self, similarity_type, item_id):
+        c_item_similarities =  self.mongo_client.getSiteDBCollection(
+                    self.TEST_SITE_ID, "item_similarities_%s" % similarity_type)
+        record = {"item_id": item_id}
+        c_item_similarities.remove(record)
 
 #@override_settings(CELERY_EAGER_PROPAGATES_EXCEPTIONS=True,
 #                   CELERY_ALWAYS_EAGER=True,
@@ -114,7 +130,6 @@ class EventsAPITest(BaseRecommenderTest):
         raw_logs = self.get_last_n_raw_logs(n=None)
         self.assertEqual(response.data["code"], 0, "Invalid response: %s" % response.data)
         self.assertEqual(len(raw_logs), initial_raw_log_num + 1)
-        #print raw_logs[0]
         self.assertSeveralKeys(raw_logs[0],
                 expected)
         self.assertEquals(raw_logs[0]["ptm_id"], self.get_ptm_id(response))
@@ -715,10 +730,13 @@ class RecommenderTest(BaseRecommenderTest):
         for item in response.data["topn"]:
             self.assertEqual(item.has_key("stock"), True)
 
-        # if we change the recommender order, the result will be reordered
+        # if we change the recommender order, the result will be reordered after we clear the cache
         self.mongo_client.updateRecommendStickLists(self.TEST_SITE_ID,
                                                     recommend_type,
                                                     ['I126', 'I125'])
+        response = self._recommender("U1", type=recommend_type, item_id="I123", amount=5)
+        self.assertEqual([item["item_id"] for item in response.data["topn"]], ["I124", "I125"])
+        RecommenderCache.delRecommenderCacheResult(self.TEST_SITE_ID, (action_name, "I123"))
         response = self._recommender("U1", type=recommend_type, item_id="I123", amount=5)
         self.assertEqual([item["item_id"] for item in response.data["topn"]], ["I125", "I124"])
         for item in response.data["topn"]:
@@ -780,6 +798,19 @@ class RecommenderTest(BaseRecommenderTest):
         response = self._recommender("U1", type="UltimatelyBought", item_id="I123", amount=5)
         self.assertEqual([item["item_id"] for item in response.data["topn"]], ["I126", "I125"])
 
+        # delete result in mongodb, cache works
+        self.delete_item_similarities("UltimatelyBought", "I123")
+        response = self._recommender("U1", type="UltimatelyBought", item_id="I5000", amount=5)
+        self.assertEqual([item["item_id"] for item in response.data["topn"]], [])
+        response = self._recommender("U1", type="UltimatelyBought", item_id="I123", amount=5)
+        self.assertEqual([item["item_id"] for item in response.data["topn"]], ["I126", "I125"])
+
+        self.delete_item_similarities("UltimatelyBought", "I124")
+        response = self._recommender("U1", type="UltimatelyBought", item_id="I5000", amount=5)
+        self.assertEqual([item["item_id"] for item in response.data["topn"]], [])
+        response = self._recommender("U1", type="UltimatelyBought", item_id="I123", amount=5)
+        self.assertEqual([item["item_id"] for item in response.data["topn"]], ["I126", "I125"])
+
     def test_by_purchasing_history(self):
         self.insert_item_similarities("PLO", "I123",
                     [["I124", 0.9725],
@@ -800,6 +831,15 @@ class RecommenderTest(BaseRecommenderTest):
         response = self._recommender("U1", type="ByPurchasingHistory", amount=5)
         self.assertEqual([item["item_id"] for item in response.data["topn"]], ["I125", "I126"])
 
+        # if we remove item similarities, the cache will work 
+        self.delete_item_similarities("PLO", "I124")
+        response = self._recommender("U1", type="ByPurchasingHistory", amount=5)
+        self.assertEqual([item["item_id"] for item in response.data["topn"]], ["I125", "I126"])
+
+        self._placeOrder("U1", "I123,3.50,2")
+        response = self._recommender("U1", type="ByPurchasingHistory", amount=5)
+        self.assertEqual([item["item_id"] for item in response.data["topn"]], ["I125"])
+
     def test_by_shopping_cart(self):
         response = self._recommender("U1", type="ByShoppingCart", shopping_cart="I123,I124", amount=5)
         self.assertEqual(response.data["topn"], [])
@@ -817,8 +857,29 @@ class RecommenderTest(BaseRecommenderTest):
         response = self._recommender("U1", type="ByShoppingCart", amount=5)
         self.assertEqual(response.data["topn"], [])
 
+        ptm_id = self.get_ptm_id(response)
+        self._addOrderItem("U1", "I123", ptm_id)
+        self._addOrderItem("U1", "I124", ptm_id)
+
         response = self._recommender("U1", type="ByShoppingCart", shopping_cart="I123,I124", amount=5)
         self.assertEqual([item["item_id"] for item in response.data["topn"]], ["I125", "I126"])
+
+        # delete result in mongodb, cache works
+        self.delete_item_similarities("BuyTogether", "I123")
+        response = self._recommender("U1", type="ByShoppingCart", shopping_cart="I123,I124", amount=5)
+        self.assertEqual([item["item_id"] for item in response.data["topn"]], ["I125", "I126"])
+        self.delete_item_similarities("BuyTogether", "I124")
+        response = self._recommender("U1", type="ByShoppingCart", shopping_cart="I123,I124", amount=5)
+        self.assertEqual([item["item_id"] for item in response.data["topn"]], ["I125", "I126"])
+        self.delete_item_similarities("PLO", "I123")
+        response = self._recommender("U1", type="ByShoppingCart", shopping_cart="I123,I124", amount=5)
+        self.assertEqual([item["item_id"] for item in response.data["topn"]], ["I125", "I126"])
+
+        # addOrderItem will purge cache, result in mongodb works
+        ptm_id = self.get_ptm_id(response)
+        self._addOrderItem("U1", "I123", ptm_id)
+        response = self._recommender("U1", type="ByShoppingCart", shopping_cart="I123,I124", amount=5)
+        self.assertEqual([item["item_id"] for item in response.data["topn"]], [])
 
 
 @override_settings(CELERY_EAGER_PROPAGATES_EXCEPTIONS=True,
@@ -900,6 +961,13 @@ class GetByBrowsingHistoryTest(BaseRecommenderTest):
         self.assertEqual(last_raw_log["behavior"], "RecBOBH")
         self.assertEqual(last_raw_log["browsing_history"], ["K300", "K301", "I123", "I124"])
 
+        # test recommend cache related
+        self.delete_item_similarities("V", "I124")
+        self.delete_item_similarities("V", "I125")
+        response = self._recommender("U1", type="ByBrowsingHistory", amount=5)
+        self.assertEqual([item["item_id"] for item in response.data["topn"]], 
+                        ["I125", "I126"], "Unexpected Response: %s" % response.data)
+
 
     def test_view_item_affects_browsing_history(self):
         browsing_history_cache = self.get_browsing_history_cache()
@@ -965,7 +1033,6 @@ class AdUnitTest(BaseRecommenderTest):
                         [])
         # But we can match items /unit/by_keywords
         response = self._recommender("U1", type="/unit/by_keywords", amount=5, keywords="雀巢,能恩")
-        print response.data
         self.assertEqual(set([item["item_id"] for item in response.data["topn"]]), 
                         set(["I123", "I124", "I125"]))
         # by if valid keywords, no result
@@ -1107,7 +1174,6 @@ class AdUnitTest(BaseRecommenderTest):
                         [])
         # Also not /unit/home
         response = self._recommender("U1", type="/unit/home", amount=5)
-        print "RP:", response.data
         self.assertEqual([item["item_id"] for item in response.data["topn"]], 
                         [])
 

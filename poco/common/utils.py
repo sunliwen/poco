@@ -1,4 +1,5 @@
 import datetime
+from common.recommender_cache import RecommenderCache
 
 
 def getSiteDBName(site_id):
@@ -55,6 +56,8 @@ class UploadItemSimilarities:
         self.connection = connection
         self.last_item1 = None
         self.last_rows = []
+        self.type = type
+        self.site_id = site_id
         self.item_similarities = getSiteDBCollection(self.connection, site_id,
                         "item_similarities_%s" % type)
 
@@ -70,6 +73,8 @@ class UploadItemSimilarities:
     def updateSimOneRow(self):
         self.item_similarities.update({"item_id": self.last_item1},
                 {"item_id": self.last_item1, "mostSimilarItems": self.last_rows}, upsert=True)
+        RecommenderCache.delRecommenderCacheResult(self.site_id, (self.type, self.last_item1))
+
         self.last_item1 = self.item_id1
         self.last_rows = []
 

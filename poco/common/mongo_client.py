@@ -9,6 +9,7 @@ from django.core.cache import get_cache
 from pymongo.read_preferences import ReadPreference
 from common.utils import getSiteDBName, getSiteDB, getSiteDBCollection
 from common.utils import sign
+from common.recommender_cache import RecommenderCache
 
 import logging
 
@@ -181,6 +182,9 @@ class MongoClient:
         ph_in_db["purchasing_history"] = purchasing_history
         c_purchasing_history = getSiteDBCollection(self.connection, site_id, "purchasing_history")
         c_purchasing_history.save(ph_in_db)
+        # delete the by purchasing history recommender cache
+        # see apps/apis/recommender/action_processors.py, class GetByPurchasingHistoryProcessor
+        RecommenderCache.delRecommenderCacheResult(site_id, ("RecPH", user_id))
 
     def recommend_based_on_purchasing_history(self, site_id, user_id):
         purchasing_history = self.getPurchasingHistory(site_id, user_id)["purchasing_history"]
@@ -521,6 +525,10 @@ class MongoClient:
                             }
                             },
                            upsert=True)
+            # delete the browsing history recommendation cache
+            # see apps/apis/recommender/action_processors.py
+            # class GetByBrowsingHistoryProcessor
+            RecommenderCache.delRecommenderCacheResult(site_id, ("RecBOBH", ptm_id))
 
     def getBrowsingHistory(self, site_id, ptm_id):
         c_visitors = getSiteDBCollection(self.connection, site_id, "visitors")
@@ -828,6 +836,9 @@ class MongoClient:
                                        {'content': content,
                                         'type': list_type},
                                        upsert=True)
+        # delete the customlist recommender cache
+        # see apps/apis/recommender/action_processors.py, class GetCustomListsRecommend
+        RecommenderCache.delRecommenderCacheResult(site_id, ('CustomLists', list_type))
         
     def getRecommenderCustomTypes(self, site_id):
         c_recommend_custom_list = self.getSiteDBCollection(

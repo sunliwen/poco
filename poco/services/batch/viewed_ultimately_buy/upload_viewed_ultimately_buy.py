@@ -1,6 +1,7 @@
 from common.utils import getSiteDBCollection
 from common.utils import sign
 
+from common.recommender_cache import RecommenderCache
 
 def updateRecord(connection, site_id, item_view_times_map, last_item_id1, last_rows):
     last_rows.sort(lambda a, b: sign(b[1] - a[1]))
@@ -20,6 +21,9 @@ def updateRecord(connection, site_id, item_view_times_map, last_item_id1, last_r
     c_viewed_ultimately_buys.update(
         {"item_id": last_item_id1}, content_dict, upsert=True)
 
+    # clear the ultimatelybought recommend cache, see apps/apis/recommender/action_processors.py,
+    # class GetUltimatelyBoughtProcessor class
+    RecommenderCache.delRecommenderCacheResult(site_id, ('RecVUB', last_item_id1))
 
 def upload_viewed_ultimately_buy(connection, site_id, item_view_times_path,
                                  view_buy_pairs_counted_path):
