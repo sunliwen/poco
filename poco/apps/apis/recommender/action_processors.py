@@ -732,9 +732,10 @@ class BaseSimpleResultRecommendationProcessor(BaseRecommendationProcessor):
             site_id,
             self.recommender_type)
         if not (manual_list and manual_list.get('content', [])):
-            return
-        item_order_list = manual_list['content'] + [item[0] for item in topn]
-        topn.sort(lambda item_i, item_j: item_order_list.index(item_i[0]) - item_order_list.index(item_j[0]))
+            return topn
+        manual_set = set(manual_list['content'])
+        manual_topn = [[item_id, 0.5] for item_id in manual_list['content']]
+        return manual_topn + [item for item in topn if item[0] not in manual_set]
 
         
     def _process(self, site_id, args):
@@ -750,7 +751,7 @@ class BaseSimpleResultRecommendationProcessor(BaseRecommendationProcessor):
         # append ref parameters
         ref = self._getRef(args)
         topn = self.getTopN(site_id, args)  # return TopN list
-        self.reOrderTopN(site_id, topn)
+        topn = self.reOrderTopN(site_id, topn)
 
         # apply filter
         result_filter = self.getRecommendationResultFilter(site_id, args)

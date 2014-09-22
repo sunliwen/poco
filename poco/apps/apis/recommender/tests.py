@@ -720,7 +720,8 @@ class RecommenderTest(BaseRecommenderTest):
                                                     recommend_type,
                                                     ['I126', 'I125'])
         response = self._recommender("U1", type=recommend_type, item_id="I123", amount=5)
-        self.assertEqual([item["item_id"] for item in response.data["topn"]], ["I125", "I124"])
+        self.assertEqual([item["item_id"] for item in response.data["topn"]],
+                         ["I126", "I125", "I124"])
         for item in response.data["topn"]:
             self.assertEqual(item.has_key("stock"), True)
         # if we make I124 stock to 0
@@ -729,7 +730,8 @@ class RecommenderTest(BaseRecommenderTest):
         response = self.postItem(item)
         self.assertEqual(response.data["code"], 0, "Unexpected response: %s" % response.data)
         response = self._recommender("U1", type=recommend_type, item_id="I123", amount=5)
-        self.assertEqual([item["item_id"] for item in response.data["topn"]], ["I125"])
+        self.assertEqual([item["item_id"] for item in response.data["topn"]],
+                         ["I126", "I125"])
         # turn stock back
         ## let's turn stock back
         item = test_data1.getItems(item_ids=["I124"])[0]
@@ -744,7 +746,8 @@ class RecommenderTest(BaseRecommenderTest):
         response = self.postItem(item)
         self.assertEqual(response.data["code"], 0, "Unexpected response: %s" % response.data)
         response = self._recommender("U1", type=recommend_type, item_id="I123", amount=5)
-        self.assertEqual([item["item_id"] for item in response.data["topn"]], ["I125"])
+        self.assertEqual([item["item_id"] for item in response.data["topn"]],
+                         ["I126", "I125"])
         # turn stock back
         ## let's turn stock back
         item = test_data1.getItems(item_ids=["I124"])[0]
