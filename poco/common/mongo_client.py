@@ -799,21 +799,19 @@ class MongoClient:
         else:
             return c_suggest_keyword_list.find({"type": list_type}).sort("count", -1)
 
-    def updateHotKeywordList(self, site_id, list_type, keywords):
-        c_hot_keyword_list = self.getSiteDBCollection(site_id,
-                                                      "hot_keyword_list")
-        c_hot_keyword_list.update({"type": list_type},
-                              {'keywords': keywords,
-                               "type": list_type},
-                              upsert=True)
-        
-
-    def getHotKeywordList(self, site_id, list_type):
+    def updateStickedKeywordList(self, site_id, list_type, keywords):
+        c_sticked_keyword_list = self.getSiteDBCollection(site_id,
+                                                          "sticked_keyword_list")
+        c_sticked_keyword_list.update({"type": list_type},
+                                      {'keywords': keywords,
+                                       "type": list_type},
+                                      upsert=True)
+    def getStickedKeywordList(self, site_id, list_type):
         if not list_type:
             return []
-        c_hot_keyword_list = self.getSiteDBCollection(site_id,
-                                                      "hot_keyword_list")
-        return c_hot_keyword_list.find_one({"type": list_type})
+        c_sticked_keyword_list = self.getSiteDBCollection(site_id,
+                                                          "sticked_keyword_list")
+        return c_sticked_keyword_list.find_one({"type": list_type})
 
 
 def getConnection():

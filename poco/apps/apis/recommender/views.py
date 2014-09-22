@@ -137,25 +137,25 @@ class KeywordAPIView(BaseAPIView):
 
     def process_post(self, request, response, site_id, args):
         rtype = args.get("type", None)
-        legal_types = ('keyword_hot_view', )
+        legal_types = ('hot', )
         if not (rtype in legal_types):
             return {"code": 1,
                     "err_msg": "'type' can only be one of '%s'" % '|'.join(legal_types)}
             
         action = args.get('action', None)
-        if not (action == 'update_keyword'):
-            return {"code": 1, "err_msg": "'action' can only be 'update_keyword'"}
+        if not (action == 'stick'):
+            return {"code": 1, "err_msg": "'action' can only be 'stick'"}
 
         category_id = str(args.get("category_id", "null"))
         keywords = args.get('keywords', [])
         if (not isinstance(keywords, list)):
             return {"code": 1,
                     "err_msg": "'keywords' can only be keyword list"}
-        mongo_client.updateHotKeywordList(site_id,
-                                          "%s_%s" % (rtype, category_id),
-                                          keywords)
+        mongo_client.updateStickedKeywordList(site_id,
+                                              "%s_%s" % (rtype, category_id),
+                                              keywords)
         # purge the keywordhotview cache
-        cached_result.delete('KeywordHotView', site_id, (category_id, ))
+        cached_result.delete('KeywordSticked', site_id, (category_id, ))
         return {"code": 0}
 
 

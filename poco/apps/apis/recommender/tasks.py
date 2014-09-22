@@ -33,7 +33,7 @@ def update_keyword_hot_view_list(site_id):
         if len(topn) > 0:
             cached_result.set("AutoKeywordHotView", site_id, (category_id, ), topn)
             # purge the KeywordHotView
-            cached_result.delete("KeywordHotView", site_id, (category_id, ))
+            cached_result.delete("KeywordSticked", site_id, (category_id, ))
 
 def update_visitor_cache(mongo_client, site_id, content):
     if content["behavior"] == "V":
