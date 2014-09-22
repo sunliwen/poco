@@ -7,6 +7,8 @@ from django.conf import settings
 import es_client
 from browsing_history_cache import BrowsingHistoryCache
 
+from common.recommender_cache import RecommenderCache
+
 
 @shared_task
 def process_item_update_queue(item_update_queue):
@@ -61,6 +63,11 @@ def _write_log(site_id, content, is_update_visitor_cache=True):
     # check & update user purchasing history
     if content["behavior"] == "PLO":
         mongo_client.updateUserPurchasingHistory(site_id=site_id, user_id=content["user_id"])
+    # delete the shopping cart recommender cache
+    # apps/apis/recommender/action_processor.py class GetByShoppingCartProcessor
+    elif content['behavior'] == 'ASC':
+        RecommenderCache.delRecommenderCacheResult(site_id, ('RecSC', content['user_id'], content['ptm_id']))
+        
 
 @shared_task
 def write_log(site_id, content):

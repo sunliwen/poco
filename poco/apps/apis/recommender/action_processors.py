@@ -30,6 +30,8 @@ from common.mongo_client import SameGroupRecommendationResultFilter
 from tasks import process_item_update_queue
 from tasks import write_log
 
+from common.recommender_cache import RecommenderCache
+
 
 #logging.basicConfig(format="%(asctime)s|%(levelname)s|%(name)s|%(message)s",
 #                    level=logging.WARNING,
@@ -384,6 +386,7 @@ class AddOrderItemProcessor(BaseEventProcessor):
         (("event_type", True),
          ("user_id", True),
          ("item_id", True),
+         ('ptm_id', False)
         )
     )
 
@@ -718,6 +721,43 @@ class BaseSimpleResultRecommendationProcessor(BaseRecommendationProcessor):
     def postprocessTopN(self, topn):
         return
 
+    # return the cache key fields.
+    # If this returns None, then we will not lookup in cache
+    def getCacheKeyTuple(self, args):
+        if self.action_name is None:
+            return []
+        cache_key_fields = self.getCacheKeyFields()
+        cache_key_tuple = []
+        if cache_key_fields is not None:
+            cache_key_tuple.append(self.__class__.action_name)
+            for cache_key_field in cache_key_fields:
+                cache_key = args.get(cache_key_field, None)
+                if cache_key is None:
+                    cache_key_tuple[:] = []
+                    break
+                cache_key_tuple.append(cache_key)
+        return cache_key_tuple
+
+    def getCacheKeyFields(self):
+        return None
+
+    def getTopNWithCache(self, site_id, args):
+        # look up cache first
+        cache_key_tuple = self.getCacheKeyTuple(args)
+        if cache_key_tuple:
+            topn = RecommenderCache.getRecommenderCacheResult(site_id, cache_key_tuple)
+            if topn is not None:
+                return topn
+        topn = self.getTopN(site_id, args)
+        self.reOrderTopN(site_id, topn)
+        # add topn to cache if possible
+        if cache_key_tuple:
+            RecommenderCache.setRecommenderCacheResult(site_id,
+                                                       cache_key_tuple,
+                                                       topn)
+        return topn
+        
+
     def getTopN(self, site_id, args):
         raise NotImplemented
 
@@ -749,8 +789,7 @@ class BaseSimpleResultRecommendationProcessor(BaseRecommendationProcessor):
         req_id = self.generateReqId()
         # append ref parameters
         ref = self._getRef(args)
-        topn = self.getTopN(site_id, args)  # return TopN list
-        self.reOrderTopN(site_id, topn)
+        topn = self.getTopNWithCache(site_id, args)
 
         # apply filter
         result_filter = self.getRecommendationResultFilter(site_id, args)
@@ -786,6 +825,9 @@ class BaseSimilarityProcessor(BaseSimpleResultRecommendationProcessor):
         log = BaseSimpleResultRecommendationProcessor.getRecommendationLog(self, args, req_id, recommended_items)
         log["item_id"] = args["item_id"]
         return log
+
+    def getCacheKeyTuple(self, args):
+        return (self.similarity_type, args['item_id'])
 
     def getTopN(self, site_id, args):
         return mongo_client.getSimilaritiesForItem(site_id, self.similarity_type, args["item_id"])
@@ -893,6 +935,9 @@ class GetUltimatelyBoughtProcessor(BaseSimpleResultRecommendationProcessor):
         log["item_id"] = args["item_id"]
         return log
 
+    def getCacheKeyFields(self):
+        return ('item_id', )
+
     def getTopN(self, site_id, args):
         return mongo_client.getSimilaritiesForViewedUltimatelyBuy(site_id, args["item_id"])
 
@@ -918,8 +963,11 @@ class GetByBrowsingHistoryProcessor(BaseSimpleResultRecommendationProcessor):
 
     def getRecommendationLog(self, args, req_id, recommended_items):
         log = BaseSimpleResultRecommendationProcessor.getRecommendationLog(self, args, req_id, recommended_items)
-        log["browsing_history"] = args["browsing_history"]
+        log["browsing_history"] = args.get("browsing_history", [])
         return log
+
+    def getCacheKeyFields(self):
+        return ('ptm_id', )
 
     def getTopN(self, site_id, args):
         ptm_id = args["ptm_id"]
@@ -988,6 +1036,9 @@ class GetByShoppingCartProcessor(BaseSimpleResultRecommendationProcessor):
             log["shopping_cart"] = args["shopping_cart"].split(",")
         return log
 
+    def getCacheKeyFields(self):
+        return ('user_id', 'ptm_id')
+
     def getTopN(self, site_id, args):
         shopping_cart = args["shopping_cart"]
         if shopping_cart == None:
@@ -1012,6 +1063,12 @@ class GetByPurchasingHistoryProcessor(BaseSimpleResultRecommendationProcessor):
     def getRecommendationResultFilter(self, site_id, args):
         return SimpleRecommendationResultFilter()
 
+    def getCacheKeyTuple(self, args):
+        user_id = args["user_id"]
+        if user_id == "null":
+            return []
+        return [self.__class__.action_name, user_id]
+
     def getTopN(self, site_id, args):
         user_id = args["user_id"]
         if user_id == "null":
@@ -1034,6 +1091,9 @@ class GetCustomListsRecommend(BaseSimpleResultRecommendationProcessor):
 
     def getRecommendationResultFilter(self, site_id, args):
         return SimpleRecommendationResultFilter()
+
+    def getCacheKeyFields(self):
+        return ('custom_type', )
 
     def getTopN(self, site_id, args):
         rtype = args.get('custom_type', '')
@@ -1106,7 +1166,7 @@ class MatchAnyKeywordProcessor:
     def getRecommendationResultFilter(self, site_id, args):
         return SimpleRecommendationResultFilter()
 
-    def getTopN(self, site_id, args):
+    def getTopNWithCache(self, site_id, args):
         keywords = args.get("keywords")
         try:
             amount = int(args.get("amount", "5"))
@@ -1118,7 +1178,6 @@ class MatchAnyKeywordProcessor:
         s = s.filter(available=True)
         topn = [(item["item_id"], 1) for item in s[:amount]]
         return topn
-
 
 def IfEmptyTryNextProcessor(argument_processor, action_processor_chain, post_process_filters=[], extra_args_to_log=[]):
     # TODO: action_processors should be of BaseSimpleResultRecommendationProcessor
@@ -1138,7 +1197,7 @@ def IfEmptyTryNextProcessor(argument_processor, action_processor_chain, post_pro
         def getRecommendationResultFilter(self, site_id, args):
             return SimpleRecommendationResultFilter()
 
-        def getTopN(self, site_id, args):
+        def getTopNWithCache(self, site_id, args):
             topn = []
             for action_processor_class, extra_args_pipe in self.action_processor_chain:
                 action_processor = action_processor_class(not_log_action=True)
@@ -1149,7 +1208,7 @@ def IfEmptyTryNextProcessor(argument_processor, action_processor_chain, post_pro
                         args.update(extra_args_filler)
                     else:
                         extra_args_filler(site_id, args)
-                topn = action_processor.getTopN(site_id, args)
+                topn = action_processor.getTopNWithCache(site_id, args)
                 if len(topn) > 0:
                     break
             for filter in post_process_filters:

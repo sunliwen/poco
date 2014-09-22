@@ -202,7 +202,7 @@ API_PATH_PREFIX = None
 BROKER_URL = None
 # this should be a dictionary. set([site_id])
 #recommendation_deduplicate_item_names_required_set = None
-
+RECOMMENDER_CACHE_EXPIRY_TIME = 7200
 
 # celery
 CELERY_ACCEPT_CONTENT = ['pickle', 'json', 'msgpack', 'yaml']
