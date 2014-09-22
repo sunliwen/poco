@@ -13,11 +13,12 @@ from common.test_utils import BaseAPITest
 from common import site_manage_utils
 from common import test_data1
 from common.recommender_cache import RecommenderCache
+from common import utils
 from apps.apis.search import es_search_functions
 from apps.apis.search.keyword_list import keyword_list
 
 import tasks
-
+from services.batch.viewed_ultimately_buy import upload_viewed_ultimately_buy
 
 class BaseRecommenderTest(BaseAPITest):
 
@@ -736,7 +737,23 @@ class RecommenderTest(BaseRecommenderTest):
                                                     ['I126', 'I125'])
         response = self._recommender("U1", type=recommend_type, item_id="I123", amount=5)
         self.assertEqual([item["item_id"] for item in response.data["topn"]], ["I124", "I125"])
-        RecommenderCache.delRecommenderCacheResult(self.TEST_SITE_ID, (action_name, "I123"))
+        # try to clean the cache
+        uis = utils.UploadItemSimilarities(self.mongo_client.connection,
+                                           self.TEST_SITE_ID,
+                                           action_name)
+        uis.last_item1 = "I123"
+        uis.item_id1 = "I123"
+        uis.updateSimOneRow()
+        self.delete_item_similarities(action_name, "I123")
+        self.delete_item_similarities(action_name, "I124")
+        self.insert_item_similarities(action_name, "I123",
+                    [["I124", 0.9725],
+                     ["I125", 0.8023]])
+        self.insert_item_similarities(action_name, "I124",
+                    [["I125", 0.9725],
+                     ["I126", 0.7050]])
+        
+
         response = self._recommender("U1", type=recommend_type, item_id="I123", amount=5)
         self.assertEqual([item["item_id"] for item in response.data["topn"]], ["I125", "I124"])
         for item in response.data["topn"]:
@@ -810,6 +827,24 @@ class RecommenderTest(BaseRecommenderTest):
         self.assertEqual([item["item_id"] for item in response.data["topn"]], [])
         response = self._recommender("U1", type="UltimatelyBought", item_id="I123", amount=5)
         self.assertEqual([item["item_id"] for item in response.data["topn"]], ["I126", "I125"])
+
+
+        # calc ultimately bought, cache will be purged
+        upload_viewed_ultimately_buy.updateRecord(self.mongo_client.connection,
+                                                  self.TEST_SITE_ID,
+                                                  {"I123": 100},
+                                                  "I123",
+                                                  [])
+        response = self._recommender("U1", type="UltimatelyBought", item_id="I123", amount=5)
+        self.assertEqual([item["item_id"] for item in response.data["topn"]], [])
+
+        upload_viewed_ultimately_buy.updateRecord(self.mongo_client.connection,
+                                                  self.TEST_SITE_ID,
+                                                  {"I124": 100},
+                                                  "I124",
+                                                  [])
+        response = self._recommender("U1", type="UltimatelyBought", item_id="I124", amount=5)
+        self.assertEqual([item["item_id"] for item in response.data["topn"]], [])
 
     def test_by_purchasing_history(self):
         self.insert_item_similarities("PLO", "I123",
