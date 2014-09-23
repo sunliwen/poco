@@ -465,7 +465,8 @@ class UpdateItemProcessor(ActionProcessor):
             ("tags", False),
             ("prescription_type", False),
             ("sku", False),
-            ("stock", False)
+            ("stock", False),
+            ("factory", False)
         )
     )
 
@@ -726,6 +727,17 @@ class BaseSimpleResultRecommendationProcessor(BaseRecommendationProcessor):
         else:
             return None
 
+    def reOrderTopN(self, site_id, topn):
+        manual_list = mongo_client.getRecommendStickLists(
+            site_id,
+            self.recommender_type)
+        if not (manual_list and manual_list.get('content', [])):
+            return topn
+        manual_set = set(manual_list['content'])
+        manual_topn = [[item_id, 0.5] for item_id in manual_list['content']]
+        return manual_topn + [item for item in topn if item[0] not in manual_set]
+
+        
     def _process(self, site_id, args):
         self.recommended_items = None
         self.recommended_item_names = None
@@ -739,6 +751,7 @@ class BaseSimpleResultRecommendationProcessor(BaseRecommendationProcessor):
         # append ref parameters
         ref = self._getRef(args)
         topn = self.getTopN(site_id, args)  # return TopN list
+        topn = self.reOrderTopN(site_id, topn)
 
         # apply filter
         result_filter = self.getRecommendationResultFilter(site_id, args)
@@ -1007,6 +1020,38 @@ class GetByPurchasingHistoryProcessor(BaseSimpleResultRecommendationProcessor):
         else:
             return mongo_client.recommend_based_on_purchasing_history(site_id, user_id)
 
+class GetCustomListsRecommend(BaseSimpleResultRecommendationProcessor):
+    action_name = "CustomList"
+    similarity_type = "CST"
+    ap = ArgumentProcessor(
+            (
+                ("ref", False),
+                ("user_id", True),
+                ("include_item_info", False),  # no, not include; yes, include
+                ("custom_type", True),
+                ("amount", True),
+            )
+        )
+
+    def getRecommendationResultFilter(self, site_id, args):
+        return SimpleRecommendationResultFilter()
+
+    def getTopN(self, site_id, args):
+        rtype = args.get('custom_type', '')
+        amount = int(args.get('amount', 5))
+        recommend_data = mongo_client.getRecommendCustomLists(site_id, rtype)
+        topn = []
+        if recommend_data:
+            topn = [[item, 0.5] for item in recommend_data['content']['item_ids']]
+        if len(topn) < amount:
+            default_topn = mongo_client.getHotViewList(site_id,
+                                                       'by_viewed')
+            topn_set = set([item[0] for item in topn])
+            miss_amount = amount-len(topn)
+            default_topn = [item for item in default_topn if item[0] not in topn_set][:miss_amount]
+            topn = topn + default_topn
+        return topn
+
 
 logWriter = LogWriter()
 
@@ -1098,6 +1143,7 @@ def IfEmptyTryNextProcessor(argument_processor, action_processor_chain, post_pro
             topn = []
             for action_processor_class, extra_args_pipe in self.action_processor_chain:
                 action_processor = action_processor_class(not_log_action=True)
+                action_processor.recommender_type = self.recommender_type
                 args = copy.deepcopy(args)
                 for extra_args_filler in extra_args_pipe:
                     if isinstance(extra_args_filler, dict):
@@ -1145,6 +1191,7 @@ recommender_registry.register("UltimatelyBought", GetUltimatelyBoughtProcessor)
 recommender_registry.register("ByPurchasingHistory", GetByPurchasingHistoryProcessor)
 recommender_registry.register("ByShoppingCart", GetByShoppingCartProcessor)
 recommender_registry.register("ByHotIndex", GetByHotIndexProcessor)
+recommender_registry.register("CustomList", GetCustomListsRecommend)
 recommender_registry.register("/unit/home",
                               IfEmptyTryNextProcessor(
                                  ArgumentProcessor(

@@ -632,6 +632,41 @@ class ItemsSearchViewTest(BaseAPITest):
                         ],
                 })
 
+    def _test_item_factory(self):
+        body = {
+            "q": "",
+            "search_config": {"type": "SEARCH_TEXT"},
+            "api_key": self.api_key
+        }
+
+        response = self.api_post(reverse("products-search"), data=body)
+        self.assertEqual(response.data["info"]["total_result_count"], 4)
+        for item in response.data['records']:
+            self.assertNotEqual(item['factory'], '')
+        items = test_data1.getItems()
+        for item in items:
+            del item['factory']
+
+        body = {"type": "multiple_products",
+                "api_key": self.api_key,
+                "items": items}
+        response = self.api_post(reverse("recommender-items"), data=body,
+                                  expected_status_code=200,
+                                  **{"HTTP_AUTHORIZATION": "Token %s" % self.site_token}
+                                  )
+
+        body = {
+            "q": "",
+            "search_config": {"type": "SEARCH_TEXT"},
+            "api_key": self.api_key
+        }
+        self.clearCaches()
+        self.refreshSiteItemIndex(self.TEST_SITE_ID)
+        response = self.api_post(reverse("products-search"), data=body)
+        self.assertEqual(response.data["info"]["total_result_count"], 4)
+        for item in response.data['records']:
+            self.assertEqual(item.has_key('factory'), False)
+
     def test_search(self):
         # TODO: highlight; sort_fields
         self._test_no_such_api_key()
@@ -646,6 +681,7 @@ class ItemsSearchViewTest(BaseAPITest):
         #self._test_result_mode()
         self._test_search_facets_selection()
         #self._test_search_facets_of_whole_sub_tree()
+        self._test_item_factory()
 
     def _assertKWList(self, list_type, expected):
         keywords = set([keyword_record["keyword"] for keyword_record in self.mongo_client.getSuggestKeywordList(self.TEST_SITE_ID, list_type)])

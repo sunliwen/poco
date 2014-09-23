@@ -48,6 +48,7 @@ ITEMS.append({
             "description": "描述A 描述B",
             "sku": "SKU10052",
             "stock": 10,
+            "factory": "雀巢工厂"
             })
 ITEMS += [{
             "type": "product",
@@ -61,6 +62,7 @@ ITEMS += [{
             "categories": ["12", "1201", "120101"],
             "tags": ["小孩", "妇女"],
             "stock": 10,
+            "factory": "能恩工厂"
             },
             {
             "type": "product",
@@ -74,6 +76,7 @@ ITEMS += [{
             "categories":["12", "1201", "120102"],
             "tags": ["老人", "小孩"],
             "stock": 10,
+            "factory": "能恩工厂"
             },
             {
             "type": "product",
@@ -86,7 +89,9 @@ ITEMS += [{
             "origin_place": 0,
             "categories":["15", "1501"],
             "tags": ["小孩"],
-            "stock": 10}
+            "stock": 10,
+            "factory": "智多星工厂"
+            }
             ]
 
 def getItems(item_ids=None):

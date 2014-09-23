@@ -62,6 +62,7 @@ MAPPINGS = {"keyword": {
                         "analyzer": "keyword"
                     },
                     "description": {"type": "string"},
+                    "factory": {"type": "string"},
                     "price": {"type": "float"},
                     "market_price": {"type": "float"},
                     "image_link": {"type": "string"},

@@ -284,3 +284,78 @@ def recommended_item_redirect(request):
                 }
             action_processors.logWriter.writeEntry(site_id, log_content)
         return response
+
+class RecommendStickListsAPIView(BaseAPIView):
+    authentication_classes = (PocoTokenAuthentication, )
+    permission_classes = (TokenMatchAPIKeyPermission,)
+
+    def process_post(self, request, response, site_id, args):
+        recommender_types = action_processors.recommender_registry.getRecommenderTypes()
+
+        rtype = args.get("type", None)
+        if not (rtype in recommender_types):
+            return {"code": 1, "err_msg": "'type' can only be one of '%s'" % '|'.join(recommender_types)}
+
+        item_ids = args.get('item_ids', [])
+        if (not isinstance(item_ids, list)) or isinstance(item_ids, basestring):
+            return {"code": 1, "err_msg": "'item_ids' can only be item_id list"}
+        mongo_client.updateRecommendStickLists(site_id,
+                                               rtype,
+                                               item_ids)
+        return {"code": 0}
+
+class RecommendCustomListsAPIView(BaseAPIView):
+    authentication_classes = (PocoTokenAuthentication, )
+    permission_classes = (TokenMatchAPIKeyPermission,)
+
+    def set_recommender_items(self, site_id, args):
+        item_ids = args.get('item_ids', [])
+        if (not isinstance(item_ids, list)) or isinstance(item_ids, basestring):
+            return {"code": 1, "err_msg": "'item_ids' can only be item_id list"}
+        rtype = args['type']
+        mongo_client.updateRecommendCustomLists(
+            site_id,
+            rtype,
+            {'item_ids': item_ids,
+             'type': rtype,
+             'display_name': args.get('display_name', '')})
+        return {"code": 0}
+
+    def get_recommender_items(self, site_id, args):
+        recommend_data = mongo_client.getRecommendCustomLists(site_id,
+                                                              args['type'])
+        if recommend_data:
+            return {'code': 0,
+                    'err_msg': '',
+                    'data': recommend_data['content']}
+        return {"code": 1, 'err_msg': "'type': %s not exists" % args['type']}
+
+    def list_recommender_types(self, site_id, args):
+        data = []
+        rtypes = mongo_client.getRecommenderCustomTypes(site_id);
+        for rtype in rtypes:
+            data.append({'type': rtype['type'],
+                         'display_name': rtype['content']['display_name']})
+        return {"code": 0, 'err_msg': 0, 'data': data}
+
+    def process_post(self, request, response, site_id, args):
+        rtype = args.get("type", None)
+        if not rtype:
+            return {"code": 1, "err_msg": "'type' missing"}
+
+        action = args.get('action', None)
+        if not (action in ('set_recommender_items',
+                           'get_recommender_items',
+                           'list_recommender_types')):
+            return {"code": 1, "err_msg": "'action' can only be 'set_recommender_items | get_recommender_items | list_recommender_types'"}
+
+        if action == 'set_recommender_items':
+            return self.set_recommender_items(site_id, args)
+        elif action == 'get_recommender_items':
+            return self.get_recommender_items(site_id, args)
+        else:
+            return self.list_recommender_types(site_id, args)
+
+        return {"code": 0}
+
+

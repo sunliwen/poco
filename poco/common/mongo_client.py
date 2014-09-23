@@ -813,6 +813,47 @@ class MongoClient:
                                                           "sticked_keyword_list")
         return c_sticked_keyword_list.find_one({"type": list_type})
 
+    def getRecommendStickLists(self, site_id, list_type):
+        if not list_type:
+            return []
+        c_stick_recommend_list = self.getSiteDBCollection(
+            site_id,
+            "stick_recommend_list")
+        return c_stick_recommend_list.find_one({'type': list_type})
+
+    def updateRecommendStickLists(self, site_id, list_type, content):
+        c_stick_recommend_list = self.getSiteDBCollection(
+            site_id,
+            "stick_recommend_list")
+        c_stick_recommend_list.update({'type': list_type},
+                                       {'content': content,
+                                        'type': list_type},
+                                       upsert=True)
+
+    def getRecommendCustomLists(self, site_id, list_type):
+        if not list_type:
+            return []
+        c_recommend_custom_list = self.getSiteDBCollection(
+            site_id,
+            "recommend_custom_list")
+        return c_recommend_custom_list.find_one({'type': list_type})
+        
+    def updateRecommendCustomLists(self, site_id, list_type, content):
+        c_recommend_custom_list = self.getSiteDBCollection(
+            site_id,
+            "recommend_custom_list")
+        c_recommend_custom_list.update({'type': list_type},
+                                       {'content': content,
+                                        'type': list_type},
+                                       upsert=True)
+        
+    def getRecommenderCustomTypes(self, site_id):
+        c_recommend_custom_list = self.getSiteDBCollection(
+            site_id,
+            "recommend_custom_list")
+        rsts = c_recommend_custom_list.find()
+        return [i for i in rsts]
+            
 
 def getConnection():
     if(settings.REPLICA_SET):

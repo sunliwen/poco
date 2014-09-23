@@ -9,4 +9,6 @@
 
    management_api_items
    management_api_keywords
+   management_api_recommend_stick_lists
+   management_api_recommend_custom_lists
 

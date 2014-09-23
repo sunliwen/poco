@@ -45,6 +45,7 @@ price              否                                            商品价格
 market_price       否                                            商品市场价
 categories         否          []                                商品分类。详细结构见下面注释
 brand              否                                            商品品牌。详细结构见下面注释
+factory            否                                            生产厂家。
 item_level         否                                            商品星级。类型：数字
 item_spec          否                                            商品规格文字
 item_comment_num   否                                            商品评论数。类型：数字
@@ -152,6 +153,7 @@ errors            为一个列表，其内容同单个商品的返回结果，�
                 "id": "22",
                 "name": "雀巢",
             },
+            "factory": "雀巢工厂",
             "item_level": 5,
             "item_comment_num": 15,
             "categories": [
