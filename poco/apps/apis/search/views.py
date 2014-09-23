@@ -517,7 +517,7 @@ class Keywords(BaseAPIView):
         category_id = args.get("category_id", "null")
         amount = args.get("amount", 5)
         site_id = self.getSiteID(args["api_key"])
-        keywords = cached_result.get("KeywordSticked",
+        keywords = cached_result.get("KeywordHotView",
                                      site_id,
                                      (category_id, ))
         if keywords is None:
@@ -538,7 +538,7 @@ class Keywords(BaseAPIView):
                     keywords.append(keyword)
             # update cache
             if keywords:
-                cached_result.set("KeywordSticked",
+                cached_result.set("KeywordHotView",
                                   site_id,
                                   (category_id, ),
                                   keywords)

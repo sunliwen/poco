@@ -155,7 +155,7 @@ class KeywordAPIView(BaseAPIView):
                                               "%s_%s" % (rtype, category_id),
                                               keywords)
         # purge the keywordhotview cache
-        cached_result.delete('KeywordSticked', site_id, (category_id, ))
+        cached_result.delete('KeywordHotView', site_id, (category_id, ))
         return {"code": 0}
 
 
