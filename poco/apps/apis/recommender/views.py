@@ -9,6 +9,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from common.poco_token_auth import PocoTokenAuthentication
 from common.poco_token_auth import TokenMatchAPIKeyPermission
+from common.cached_result import cached_result
 
 from action_processors import mongo_client
 import action_processors
@@ -129,6 +130,34 @@ class ItemsAPIView(BaseAPIView):
                     return {"code": 0}
             else:
                 return {"code": 1, "err_msg": "'items' is expected to be a non empty list."}
+
+class KeywordAPIView(BaseAPIView):
+    authentication_classes = (PocoTokenAuthentication, )
+    permission_classes = (TokenMatchAPIKeyPermission,)
+
+    def process_post(self, request, response, site_id, args):
+        rtype = args.get("type", None)
+        legal_types = ('hot', )
+        if not (rtype in legal_types):
+            return {"code": 1,
+                    "err_msg": "'type' can only be one of '%s'" % '|'.join(legal_types)}
+            
+        action = args.get('action', None)
+        if not (action == 'stick'):
+            return {"code": 1, "err_msg": "'action' can only be 'stick'"}
+
+        category_id = str(args.get("category_id", "null"))
+        keywords = args.get('keywords', [])
+        if (not isinstance(keywords, list)):
+            return {"code": 1,
+                    "err_msg": "'keywords' can only be keyword list"}
+        mongo_client.updateStickedKeywordList(site_id,
+                                              "%s_%s" % (rtype, category_id),
+                                              keywords)
+        # purge the keywordhotview cache
+        cached_result.delete('KeywordHotView', site_id, (category_id, ))
+        return {"code": 0}
+
 
 class RecommenderAPIView(SingleRequestAPIView):
     def getDebugResponse(self, args, result):
