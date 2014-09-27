@@ -263,7 +263,6 @@ class ItemsSearchViewTest(BaseAPITest):
             }
         }
         response = self.api_post(reverse("products-search"), data=body)
-        print response
         self.assertEqual(response.data["info"]["total_result_count"], 2)
 
     def _test_search_other_fields(self):
@@ -295,18 +294,24 @@ class ItemsSearchViewTest(BaseAPITest):
         self.assertEqual(response.data["info"]["total_result_count"], 1)        
 
         # search the sku field
-        body = {"api_key": self.api_key,
-        "q": "SKU10052"
-        }
-        response = self.api_post(reverse("products-search"), data=body)
-        self.assertEqual(response.data["info"]["total_result_count"], 1)
+        for q in ('SKU10052', 'SKU100--52', 'SKU1----0  052', 'SKU10052 其他- 不- 可  取字符'):
+            body = {"api_key": self.api_key,
+                    "q": q}
+            response = self.api_post(reverse("products-search"), data=body)
+            self.assertEqual(response.data["info"]["total_result_count"], 1)
 
-        # search the sku field
-        body = {"api_key": self.api_key,
-        "q": "SKU10052 奶粉"
-        }
-        response = self.api_post(reverse("products-search"), data=body)
-        self.assertEqual(response.data["info"]["total_result_count"], 0)
+        items = test_data1.getItems()
+        for item in items:
+            sku = item.get('sku', '')
+            if sku:
+                item['sku'] = 'new_%s' % '- '.join([sku[idx:idx+2] for idx in range(0, len(sku), 2)])
+                self.postItem(item, self.site_token)
+
+        for q in ('new_SKU10052', 'new_SKU100--52', 'new_SKU1----0  052', 'new_SKU10052 其他- 不- 可  取字符'):
+            body = {"api_key": self.api_key,
+                    "q": q}
+            response = self.api_post(reverse("products-search"), data=body)
+            self.assertEqual(response.data["info"]["total_result_count"], 1)
 
         # search the sku field
         body = {"api_key": self.api_key,

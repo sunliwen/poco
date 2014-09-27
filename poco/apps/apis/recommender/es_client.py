@@ -47,6 +47,9 @@ def es_index_item(site_id, item):
         item["brand"] = brand["id"]
         item["brand_name"] = brand.get("name", "")
 
+    if item.has_key('sku') and item['sku']:
+        item['sku_clean'] = es_search_functions.strip_item_sku(item['sku'])
+
     res = es.index(index=es_search_functions.getESItemIndexName(site_id), doc_type='item', id=item["item_id"], body=item)
 
 

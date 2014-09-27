@@ -45,6 +45,9 @@ def get_item_name(obj):
             return item_names[0]
     return obj.item_name_standard_analyzed
 
+def strip_item_sku(sku_str):
+    return ''.join(re.findall(r'[0-9a-zA-Z]+', sku_str))
+
 
 # FIXME: ItemSerializer does not work correctly currently
 def serialize_items(item_list):
@@ -82,13 +85,10 @@ def construct_or_query(query_str, delimiter=","):
 
 
 def add_sku_query(query, query_str):
-    keywords = [kw.strip() for kw in query_str.strip().split(" ")]
-    if len(keywords) == 1:
-        keyword = keywords[0]
-        query = {"bool": {
-            "should": [query, {"term": {"sku": keyword}}],
-            "minimum_should_match": 1
-        }}
+    stripped_sku = strip_item_sku(query_str)
+    if stripped_sku:
+        query = {"bool": {"should": [query, {"term": {"sku_clean": stripped_sku}}],
+                          "minimum_should_match": 1}}
     return query
 
 # refs:

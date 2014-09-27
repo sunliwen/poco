@@ -79,7 +79,8 @@ MAPPINGS = {"keyword": {
                     "tags": {"type": "string", "analyzer": "keyword"},
                     "tags_standard": {"type": "string", "analyzer": "standard"},
                     "prescription_type": {"type": "string", "analyzer": "keyword"},
-                    "sku": {"type": "string", "analyzer": "keyword"}
+                    "sku_clean": {"type": "string", "analyzer": "keyword"},
+                    "sku": {"type": "string"}
                 }
             }
             }
@@ -140,13 +141,15 @@ def reset_items(site_id):
     mongo_client = getMongoClient()
     if mongo_client.siteExists(site_id, use_cache=False):
         mongo_client.cleanupItems(site_id)
-        es = Elasticsearch()
-        #reset_es_item_index(es, site_id)
-        drop_es_item_index(es, site_id)
-        create_es_item_index(es, site_id)
+        reset_item_index(site_id)
     else:
         raise SiteNotExistsError()
 
+# This function reset item-index in ES.
+def reset_item_index(site_id):
+    es = Elasticsearch()
+    drop_es_item_index(es, site_id)
+    create_es_item_index(es, site_id)
 
 def create_site(mongo_client, site_id, site_name, calc_interval, api_prefix="test-"):
     if mongo_client.siteExists(site_id, use_cache=False):
