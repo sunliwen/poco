@@ -72,6 +72,7 @@ MAPPINGS = {"keyword": {
                     "brand_name": {"type": "string", "analyzer": "standard"},
                     "item_level": {"type": "integer"},
                     "item_spec": {"type": "string"},
+                    "item_spec_clean": {"type": "string",  "analyzer": "keyword"},
                     "origin_place": {"type": "integer"},
                     "item_comment_num": {"type": "integer"},
                     "keywords": {"type": "string",
@@ -79,8 +80,7 @@ MAPPINGS = {"keyword": {
                     "tags": {"type": "string", "analyzer": "keyword"},
                     "tags_standard": {"type": "string", "analyzer": "standard"},
                     "prescription_type": {"type": "string", "analyzer": "keyword"},
-                    "sku_clean": {"type": "string", "analyzer": "keyword"},
-                    "sku": {"type": "string"}
+                    "sku": {"type": "string", "analyzer": "keyword"}
                 }
             }
             }

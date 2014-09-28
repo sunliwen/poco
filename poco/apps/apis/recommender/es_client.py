@@ -37,6 +37,8 @@ def es_index_item(site_id, item):
         del item["created_on"]
     if item.has_key("updated_on"):
         del item["updated_on"]
+    if item.has_key("item_spec") and item['item_spec']:
+        item['item_spec_clean'] = es_search_functions.strip_item_spec(item['item_spec'])
 
     #if item.has_key("origin_place"):
     #    item["origin_place"] = str(item["origin_place"])
@@ -46,9 +48,6 @@ def es_index_item(site_id, item):
     if brand:
         item["brand"] = brand["id"]
         item["brand_name"] = brand.get("name", "")
-
-    if item.has_key('sku') and item['sku']:
-        item['sku_clean'] = es_search_functions.strip_item_sku(item['sku'])
 
     res = es.index(index=es_search_functions.getESItemIndexName(site_id), doc_type='item', id=item["item_id"], body=item)
 
