@@ -43,8 +43,8 @@ class ItemsSearchViewSortByStockTest(BaseAPITest):
                 }
         response = self.api_post(reverse("products-search"), data=body)
         self.assertEqual(response.data["info"]["total_result_count"], 2)
-        self.assertEqual([rec["item_id"] for rec in response.data["records"]], ["I124", "I123"])        
-    
+        self.assertEqual([rec["item_id"] for rec in response.data["records"]], ["I124", "I123"])
+
     def test_search(self):
         items = [{"type": "product",
                   "item_id": "I123",
@@ -208,16 +208,16 @@ class ItemsSearchViewTest(BaseAPITest):
         response = self.api_post(reverse("products-search"), data=body)
         #import pprint; pprint.pprint(response.data)
         self.assertEqual(response.data["info"]["total_result_count"], 4)
-        self.assertEqual(self.sortDictList(response.data["info"]["facets"]["brand"], by_key="id"), 
+        self.assertEqual(self.sortDictList(response.data["info"]["facets"]["brand"], by_key="id"),
                         [{"count": 1, "id": "22", "label": u"雀巢"},
                          {"count": 2, "id": "23", "label": u"能恩"},
                          {"count": 1, "id": "24", "label": u"智多星"}
                         ])
-        self.assertEqual(self.sortDictList(response.data["info"]["facets"]["origin_place"], by_key="id"), 
+        self.assertEqual(self.sortDictList(response.data["info"]["facets"]["origin_place"], by_key="id"),
                         [{"count": 3, "id": 0, "label": ""},
                          {"count": 1, "id": 1, "label": ""}
                         ])
-        self.assertEqual(self.sortDictList(response.data["info"]["facets"]["categories"], by_key="id"), 
+        self.assertEqual(self.sortDictList(response.data["info"]["facets"]["categories"], by_key="id"),
                         [
                         {"count": 3, "id": "12", "label": u"分类12"},
                          {"count": 2, "id": "1201", "label": u"分类12-01"},
@@ -238,15 +238,15 @@ class ItemsSearchViewTest(BaseAPITest):
             }
         response = self.api_post(reverse("products-search"), data=body)
         self.assertEqual(response.data["info"]["total_result_count"], 3)
-        self.assertEqual(self.sortDictList(response.data["info"]["facets"]["brand"], by_key="id"), 
+        self.assertEqual(self.sortDictList(response.data["info"]["facets"]["brand"], by_key="id"),
                         [{"count": 1, "id": "22", "label": u"雀巢"},
                          {"count": 2, "id": "23", "label": u"能恩"}
                         ])
-        self.assertEqual(self.sortDictList(response.data["info"]["facets"]["origin_place"], by_key="id"), 
+        self.assertEqual(self.sortDictList(response.data["info"]["facets"]["origin_place"], by_key="id"),
                         [{"count": 2, "id": 0, "label": ""},
                          {"count": 1, "id": 1, "label": ""}
                         ])
-        self.assertEqual(self.sortDictList(response.data["info"]["facets"]["categories"], by_key="id"), 
+        self.assertEqual(self.sortDictList(response.data["info"]["facets"]["categories"], by_key="id"),
                         [
                         {"count": 3, "id": "12", "label": u"分类12"},
                          {"count": 2, "id": "1201", "label": u"分类12-01"},
@@ -272,7 +272,7 @@ class ItemsSearchViewTest(BaseAPITest):
                 }
         response = self.api_post(reverse("products-search"), data=body)
         self.assertEqual(response.data["info"]["total_result_count"], 1)
-        
+
         # search the tags field
         body = {"api_key": self.api_key,
                 "q": "妇女"
@@ -291,7 +291,7 @@ class ItemsSearchViewTest(BaseAPITest):
                 "q": "智多星"
                 }
         response = self.api_post(reverse("products-search"), data=body)
-        self.assertEqual(response.data["info"]["total_result_count"], 1)        
+        self.assertEqual(response.data["info"]["total_result_count"], 1)
 
         # search the sku field
         body = {"api_key": self.api_key,
@@ -320,7 +320,9 @@ class ItemsSearchViewTest(BaseAPITest):
                 print 'legolaskiss', spec, item['item_spec']
                 print self.postItem(item, self.site_token)
 
-        for q in ('itemspec1', 'item sp-ec1', 'it  e--m-spe   c1', 'itemsp e--c1 其他- 不- 可  取字符'):
+        for q in ('item--sp', 'spec1-', 'emsp--  ec',
+                  'itemspec1', 'item sp-ec1', 'it  e--m-spe   c1',
+                  'itemsp e--c1 其他- 不- 可  取字符'):
             body = {"api_key": self.api_key,
                     "q": q}
             response = self.api_post(reverse("products-search"), data=body)
@@ -419,7 +421,7 @@ class ItemsSearchViewTest(BaseAPITest):
         }
         response = self.api_post(reverse("products-search"), data=body)
         self.assertEqual(len(response.data["errors"]), 1)
-        self.assertSeveralKeys(response.data["errors"][0], 
+        self.assertSeveralKeys(response.data["errors"][0],
                                 {"code": "INVALID_PARAM",
                                  "param_name": "per_page"})
 
@@ -429,7 +431,7 @@ class ItemsSearchViewTest(BaseAPITest):
         }
         response = self.api_post(reverse("products-search"), data=body)
         self.assertEqual(len(response.data["errors"]), 1)
-        self.assertSeveralKeys(response.data["errors"][0], 
+        self.assertSeveralKeys(response.data["errors"][0],
                                 {"code": "INVALID_PARAM",
                                  "param_name": "per_page"})
 
@@ -464,7 +466,7 @@ class ItemsSearchViewTest(BaseAPITest):
         }
         response = self.api_post(reverse("products-search"), data=body)
         self.sortDictList(response.data["info"]["facets"]["brand"], "id")
-        self.assertEqual(response.data["info"]["facets"], 
+        self.assertEqual(response.data["info"]["facets"],
                 {"brand": [{"count": 1, "id": "22", "label": u"雀巢"},
                          {"count": 2, "id": "23", "label": u"能恩"},
                          {"count": 1, "id": "24", "label": u"智多星"}
@@ -495,12 +497,12 @@ class ItemsSearchViewTest(BaseAPITest):
         self.sortDictList(response.data["info"]["facets"]["brand"], "id")
         self.sortDictList(response.data["info"]["facets"]["categories"], "id")
         print response.data["info"]["facets"]
-        self.assertEqual(response.data["info"]["facets"], 
+        self.assertEqual(response.data["info"]["facets"],
                 {"brand": [{"count": 1, "id": "22", "label": u"雀巢"},
                          {"count": 2, "id": "23", "label": u"能恩"},
                          {"count": 1, "id": "24", "label": u"智多星"}
                   ],
-                  "categories": 
+                  "categories":
                         [{"count": 3, "id": "12", "label": u"分类12"},
                          {"count": 1, "id": "15", "label": u"分类15"},
                         ]
@@ -521,12 +523,12 @@ class ItemsSearchViewTest(BaseAPITest):
         self.sortDictList(response.data["info"]["facets"]["brand"], "id")
         self.sortDictList(response.data["info"]["facets"]["categories"], "id")
         self.sortDictList(response.data["info"]["facets"]["origin_place"], "id")
-        self.assertEqual(response.data["info"]["facets"], 
+        self.assertEqual(response.data["info"]["facets"],
                 {"brand": [{"count": 1, "id": "22", "label": u"雀巢"},
                          {"count": 2, "id": "23", "label": u"能恩"},
                          {"count": 1, "id": "24", "label": u"智多星"}
                   ],
-                  "categories": 
+                  "categories":
                         [{"count": 3, "id": "12", "label": u"分类12"},
                          {"count": 2, "id": "1201", "label": u"分类12-01"},
                             {"count": 1, "id": "120101", "label": u"分类12-01-01"},
@@ -553,12 +555,12 @@ class ItemsSearchViewTest(BaseAPITest):
         self.sortDictList(response.data["info"]["facets"]["brand"], "id")
         self.sortDictList(response.data["info"]["facets"]["categories"], "id")
         self.sortDictList(response.data["info"]["facets"]["origin_place"], "id")
-        self.assertEqual(response.data["info"]["facets"], 
+        self.assertEqual(response.data["info"]["facets"],
                 {"brand": [{"count": 1, "id": "22", "label": u"雀巢"},
                          {"count": 2, "id": "23", "label": u"能恩"},
                          {"count": 1, "id": "24", "label": u"智多星"}
                   ],
-                  "categories": 
+                  "categories":
                         [{"count": 3, "id": "12", "label": u"分类12"},
                          {"count": 2, "id": "1201", "label": u"分类12-01"},
                             {"count": 1, "id": "120101", "label": u"分类12-01-01"},
@@ -585,8 +587,8 @@ class ItemsSearchViewTest(BaseAPITest):
         }
         response = self.api_post(reverse("products-search"), data=body)
         self.sortDictList(response.data["info"]["facets"]["categories"], "id")
-        self.assertEqual(response.data["info"]["facets"], 
-                {"categories": 
+        self.assertEqual(response.data["info"]["facets"],
+                {"categories":
                         [{"count": 3, "id": "12", "label": u"分类12"},
                          {"count": 2, "id": "1201", "label": u"分类12-01"},
                             {"count": 1, "id": "120101", "label": u"分类12-01-01"},
@@ -608,8 +610,8 @@ class ItemsSearchViewTest(BaseAPITest):
         }
         response = self.api_post(reverse("products-search"), data=body)
         self.sortDictList(response.data["info"]["facets"]["categories"], "id")
-        self.assertEqual(response.data["info"]["facets"], 
-                {"categories": 
+        self.assertEqual(response.data["info"]["facets"],
+                {"categories":
                         [
                          {"count": 2, "id": "12", "label": u"分类12"},
                          {"count": 2, "id": "1201", "label": u"分类12-01"},
@@ -632,8 +634,8 @@ class ItemsSearchViewTest(BaseAPITest):
         }
         response = self.api_post(reverse("products-search"), data=body)
         self.sortDictList(response.data["info"]["facets"]["categories"], "id")
-        self.assertEqual(response.data["info"]["facets"], 
-                {"categories": 
+        self.assertEqual(response.data["info"]["facets"],
+                {"categories":
                         [
                          {"count": 2, "id": "12", "label": u"分类12"},
                          {"count": 2, "id": "1201", "label": u"分类12-01"},
@@ -715,7 +717,7 @@ class ItemsSearchViewTest(BaseAPITest):
                }
         response = self.api_post(reverse("query-suggest"), data=body)
         self.assertEqual(response.data["errors"], [])
-        self.assertEqual(response.data, 
+        self.assertEqual(response.data,
                          {"errors": [],
                           "suggestions": []
                          })
@@ -731,11 +733,11 @@ class ItemsSearchViewTest(BaseAPITest):
                }
         response = self.api_post(reverse("query-suggest"), data=body)
         self.assertEqual(response.data["errors"], [])
-        self.assertEqual(response.data, 
+        self.assertEqual(response.data,
                          {"errors": [],
                           "suggestions": [{"count": 1, "type": "completion", "value": u"童话"}]
                          })
-        
+
         keyword_list.markKeywordsAsWhiteListed(self.TEST_SITE_ID, all_keywords)
         self.refreshSiteItemIndex(self.TEST_SITE_ID)
         self.rebuildSuggestionCache()
@@ -745,7 +747,7 @@ class ItemsSearchViewTest(BaseAPITest):
                }
         response = self.api_post(reverse("query-suggest"), data=body)
         self.assertEqual(response.data["errors"], [])
-        self.assertEqual(response.data, 
+        self.assertEqual(response.data,
                          {"errors": [],
                           "suggestions": [{'count': 1, 'type': 'more_keyword', 'value': u'能恩 超级'},
                                           {'count': 1, 'type': 'more_keyword', 'value': u'能恩 奶粉'}]
@@ -757,12 +759,12 @@ class ItemsSearchViewTest(BaseAPITest):
         response = self.api_post(reverse("query-suggest"), data=body)
         self.assertEqual(response.data["errors"], [])
         self.maxDiff=None
-        self.assertEqual(response.data, 
-                         {'errors': [], 
-                          'suggestions': [{'count': 1, 'facet_label': u'分类12 > 分类12-02', 'type': 'facet', 
-                                           'value': u'奶粉', 
-                                           'category_id': u'1202', 
-                                           'field_name': 'categories'}, 
+        self.assertEqual(response.data,
+                         {'errors': [],
+                          'suggestions': [{'count': 1, 'facet_label': u'分类12 > 分类12-02', 'type': 'facet',
+                                           'value': u'奶粉',
+                                           'category_id': u'1202',
+                                           'field_name': 'categories'},
                                           {'count': 1, 'type': 'more_keyword', 'value': u'奶粉 雀巢'},
                                           {'count': 1, 'type': 'more_keyword', 'value': u'奶粉 能恩'}
                                           ]}
@@ -788,13 +790,13 @@ class HotKeywordsTest(BaseAPITest):
 
         # Add some search event
         # 2 感冒 in null, 2 感冒 in 123; 3 牛黄 in 123, but 感冒 should be the top.
-        for q, category_id in (("牛黄 奶粉", "123"), 
+        for q, category_id in (("牛黄 奶粉", "123"),
                                ("感冒 冲剂", "null"),
                                ("感冒 牛黄", "123"),
                                ("感冒 牛黄", "123"),
                                ("感冒 冲剂", "null")):
             self.api_get(reverse("recommender-events"),
-                         data={"api_key": self.api_key, 
+                         data={"api_key": self.api_key,
                                "event_type": "Search",
                                "user_id": "U1",
                                "q": q,
@@ -832,5 +834,3 @@ class HotKeywordsTest(BaseAPITest):
         response = self.api_post(reverse("keywords"), data=body)
         self.assertEqual(response.data["errors"], [])
         self.assertEqual(len(response.data["keywords"]), 3)
-
-

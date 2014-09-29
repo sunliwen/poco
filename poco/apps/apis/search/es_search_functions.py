@@ -47,7 +47,8 @@ def get_item_name(obj):
     return obj.item_name_standard_analyzed
 
 def strip_item_spec(spec_str):
-    return ''.join(re.findall(r'[0-9a-zA-Z]+', spec_str))
+    spec_str = ''.join(re.findall(r'[0-9a-zA-Z]+', spec_str))
+    return '*%s*' % spec_str if spec_str else ''
 
 
 # FIXME: ItemSerializer does not work correctly currently
@@ -121,7 +122,7 @@ def construct_query(query_str, for_filter=False):
     should_query = [query, ]
     spec_query = get_spec_query(query_str)
     if spec_query:
-        should_query.append({'term': spec_query})
+        should_query.append({'wildcard': spec_query})
     sku_query = get_sku_query(query_str)
     if sku_query:
         should_query.append({'term': sku_query})

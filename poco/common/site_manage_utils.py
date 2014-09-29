@@ -72,7 +72,7 @@ MAPPINGS = {"keyword": {
                     "brand_name": {"type": "string", "analyzer": "standard"},
                     "item_level": {"type": "integer"},
                     "item_spec": {"type": "string"},
-                    "item_spec_clean": {"type": "string",  "analyzer": "keyword"},
+                    "item_spec_clean": {"type": "string",  "index": "not_analyzed"},
                     "origin_place": {"type": "integer"},
                     "item_comment_num": {"type": "integer"},
                     "keywords": {"type": "string",
@@ -199,4 +199,3 @@ def regenerate_metrics_collections(mongo_client, site_id):
     for raw_log in c_raw_logs.find({}):
         mongo_client.updateTrafficMetricsFromLog(site_id, raw_log)
         mongo_client.updateKeywordMetricsFromLog(site_id, raw_log)
-
