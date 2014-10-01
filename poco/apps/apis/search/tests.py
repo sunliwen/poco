@@ -313,20 +313,17 @@ class ItemsSearchViewTest(BaseAPITest):
         self.assertEqual(response.data["info"]["total_result_count"], 0)
 
         items = test_data1.getItems()
-        for item in items:
-            spec = item.get('item_spec', '')
-            if spec:
-                item['item_spec'] = '- '.join([spec[idx:idx+2] for idx in range(0, len(spec), 2)])
-                print 'legolaskiss', spec, item['item_spec']
-                print self.postItem(item, self.site_token)
-
-        for q in ('item--sp', 'spec1-', 'emsp--  ec',
-                  'itemspec1', 'item sp-ec1', 'it  e--m-spe   c1',
-                  'itemsp e--c1 其他- 不- 可  取字符'):
-            body = {"api_key": self.api_key,
-                    "q": q}
-            response = self.api_post(reverse("products-search"), data=body)
-            self.assertEqual(response.data["info"]["total_result_count"], 1)
+        for item_spec, search_strs in (('RH-LH-BO1', ('RHLH', 'RH-LH-B01', 'HLH', 'LH-B01')),
+                                       ('0.15g*180s', ('0.15g*180s', '0.15g 180s', '0.15g', '180s')),
+                                       ('RH-LH-BO1 5支装', ('RH-LH-BO1 5支', 'BO15支', 'RHLHBO1', '支装'))):
+            item = items[0]
+            item['item_spec'] = item_spec
+            self.postItem(item, self.site_token)
+            for q in search_strs:
+                body = {"api_key": self.api_key,
+                        "q": q}
+                response = self.api_post(reverse("products-search"), data=body)
+                self.assertEqual(response.data["info"]["total_result_count"], 1)
 
     #def _test_search_special_characters(self):
     #    # post another item

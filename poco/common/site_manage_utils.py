@@ -20,13 +20,32 @@ INDEX_SETTINGS = {
                     "type": "custom",
                     "tokenizer": "whitespace",
                     "filter": ["my_pinyin_first_n_full"]
-                }
+                },
+                "trigrams": {
+                    "type":      "custom",
+                    "tokenizer": "my_pinyin",
+                    "filter": ['standard',
+                               'trigrams_filter',]
+                },
             },
             "filter": {
                 "my_pinyin_first_n_full": {
                     "type": "pinyin",
                     "first_letter": "prefix",
                     "padding_char": "||"
+                },
+                "trigrams_filter": {
+                    "type":     "nGram",
+                    "min_gram": 2,
+                    "max_gram": 30,
+                    "token_chars": [ "letter", "digit" ]
+                }
+            },
+            "tokenizer": {
+                "my_pinyin" : {
+                    "type" : "pinyin",
+                    "first_letter" : "prefix",
+                    "padding_char" : ""
                 }
             }
         }
@@ -72,7 +91,7 @@ MAPPINGS = {"keyword": {
                     "brand_name": {"type": "string", "analyzer": "standard"},
                     "item_level": {"type": "integer"},
                     "item_spec": {"type": "string"},
-                    "item_spec_clean": {"type": "string",  "index": "not_analyzed"},
+                    "item_spec_ng": {"type": "string",  "analyzer": "trigrams"},
                     "origin_place": {"type": "integer"},
                     "item_comment_num": {"type": "integer"},
                     "keywords": {"type": "string",

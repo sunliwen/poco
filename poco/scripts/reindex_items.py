@@ -1,3 +1,4 @@
+import sys
 from recommender import es_client
 from common.mongo_client import getMongoClient
 from apps.apis.search.keyword_list import keyword_list
