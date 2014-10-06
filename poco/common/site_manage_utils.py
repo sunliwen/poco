@@ -79,7 +79,8 @@ MAPPINGS = {"keyword": {
                     "tags": {"type": "string", "analyzer": "keyword"},
                     "tags_standard": {"type": "string", "analyzer": "standard"},
                     "prescription_type": {"type": "string", "analyzer": "keyword"},
-                    "sku": {"type": "string", "analyzer": "keyword"}
+                    "sku": {"type": "string", "analyzer": "keyword"},
+                    "sell_num": {"type": "integer"}
                 }
             }
             }
@@ -196,4 +197,3 @@ def regenerate_metrics_collections(mongo_client, site_id):
     for raw_log in c_raw_logs.find({}):
         mongo_client.updateTrafficMetricsFromLog(site_id, raw_log)
         mongo_client.updateKeywordMetricsFromLog(site_id, raw_log)
-
