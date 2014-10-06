@@ -35,12 +35,6 @@ INDEX_SETTINGS = {
                 }
             },
             "tokenizer": {
-                "my_pinyin" : {
-                    "type" : "pinyin",
-                    "first_letter" : "prefix",
-                    "padding_char" : ""
-                },
-
                 "ngram_tokenizer" : {
                     "type" : "nGram",
                     "min_gram" : "2",
