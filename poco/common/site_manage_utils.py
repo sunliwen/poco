@@ -21,11 +21,10 @@ INDEX_SETTINGS = {
                     "tokenizer": "whitespace",
                     "filter": ["my_pinyin_first_n_full"]
                 },
-                "trigrams": {
+                "ngram_analyzer": {
                     "type":      "custom",
-                    "tokenizer": "my_pinyin",
-                    "filter": ['standard',
-                               'trigrams_filter',]
+                    "tokenizer": "ngram_tokenizer",
+                    "filter": ['standard',]
                 },
             },
             "filter": {
@@ -33,12 +32,6 @@ INDEX_SETTINGS = {
                     "type": "pinyin",
                     "first_letter": "prefix",
                     "padding_char": "||"
-                },
-                "trigrams_filter": {
-                    "type":     "nGram",
-                    "min_gram": 2,
-                    "max_gram": 30,
-                    "token_chars": [ "letter", "digit" ]
                 }
             },
             "tokenizer": {
@@ -46,6 +39,13 @@ INDEX_SETTINGS = {
                     "type" : "pinyin",
                     "first_letter" : "prefix",
                     "padding_char" : ""
+                },
+
+                "ngram_tokenizer" : {
+                    "type" : "nGram",
+                    "min_gram" : "2",
+                    "max_gram" : "30",
+                    "token_chars": ["letter", "digit"]
                 }
             }
         }
@@ -91,7 +91,7 @@ MAPPINGS = {"keyword": {
                     "brand_name": {"type": "string", "analyzer": "standard"},
                     "item_level": {"type": "integer"},
                     "item_spec": {"type": "string"},
-                    "item_spec_ng": {"type": "string",  "analyzer": "trigrams"},
+                    "item_spec_ng": {"type": "string",  "analyzer": "ngram_analyzer"},
                     "origin_place": {"type": "integer"},
                     "item_comment_num": {"type": "integer"},
                     "keywords": {"type": "string",
