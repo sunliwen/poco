@@ -82,11 +82,11 @@ class BaseAPIView(APIView):
 class ProductsSearch(BaseAPIView):
     def _search(self, site_id, q, sort_fields, filters, highlight, facets_selector, search_config):
         s = S().indexes(es_search_functions.getESItemIndexName(site_id)).doctypes("item")
-        
+
         if isinstance(q, basestring) and q.strip() != "":
             if search_config["type"] == "SEARCH_TEXT":
                 query = es_search_functions.construct_query(q)
-                
+
             elif search_config["type"] == "SEARCH_TERMS":
                 term_field = search_config["term_field"]
                 terms = q.split(" ")
@@ -103,18 +103,18 @@ class ProductsSearch(BaseAPIView):
                     }
                 }
             s = s.query_raw(query)
-        
+
         order_by_stock = [{"_script": {
-                        	"script": "doc['stock'].value == 0?1:0",
-                        	"type": "number",
-                        	"order": "asc"
-	                       }}]
-        
+                                "script": "doc['stock'].value == 0?1:0",
+                                "type": "number",
+                                "order": "asc"
+                               }}]
+
         if sort_fields == []:
             sort_fields = ["_score"]
 
         sort_fields = order_by_stock + sort_fields
-        
+
         s = s.order_by(*sort_fields)
 
         for filter_field, filter_details in filters.items():
@@ -151,7 +151,7 @@ class ProductsSearch(BaseAPIView):
             facets_dsl["brand"] = es_search_functions.addFilterToFacets(s, {'terms': {'field': 'brand', 'size': 5000}})
         if facets_selector.has_key("origin_place"):
             facets_dsl["origin_place"] = es_search_functions.addFilterToFacets(s,
-                                                    {'terms': {'field': 'origin_place', 
+                                                    {'terms': {'field': 'origin_place',
                                                     'size': 5000}})
         facets_result = {}
         if len(facets_dsl.keys()) > 0:
@@ -169,13 +169,13 @@ class ProductsSearch(BaseAPIView):
                 for facet_sub_cat in facet_categories_list:
                     facet_sub_cat["label"] = property_cache.get_name(site_id, "category", facet_sub_cat["id"])
                 facets_result["categories"] = facet_categories_list
-            
+
             if facets_selector.has_key("brand"):
                 facets_result["brand"] = [{"id": facet["term"],
                                      "label": property_cache.get_name(site_id, "brand", facet["term"]),
                                      "count": facet["count"]}
                                      for facet in s.facet_counts().get("brand", [])]
-            
+
             if facets_selector.has_key("origin_place"):
                 facets_result["origin_place"] = [{"id": facet["term"],
                                      "label": "",
@@ -348,21 +348,21 @@ class ProductsSearch(BaseAPIView):
             if isinstance(search_config, dict):
                 type = search_config.get("type", None)
                 if type not in ("SEARCH_TEXT", "SEARCH_TERMS"):
-                    return False, [{"code": "INVALID_PARAM", "param_name": "search_config", 
+                    return False, [{"code": "INVALID_PARAM", "param_name": "search_config",
                                 "message": "invalid search_config 'type'"}]
                 if type == "SEARCH_TERMS":
                     match_mode = search_config.get("match_mode", None)
                     if match_mode in ("MATCH_ALL", "MATCH_MORE_BETTER"):
                         term_field = search_config.get("term_field", None)
                         if term_field not in (self.SEARCH_TERM_FIELDS):
-                            return False, [{"code": "INVALID_PARAM", "param_name": "search_config", 
+                            return False, [{"code": "INVALID_PARAM", "param_name": "search_config",
                                             "message": "search_config 'term_field' should be one of %s" \
                                                         % ",".join(self.SEARCH_TERM_FIELDS)}]
                     else:
-                        return False, [{"code": "INVALID_PARAM", "param_name": "search_config", 
+                        return False, [{"code": "INVALID_PARAM", "param_name": "search_config",
                                         "message": "invalid search_config 'match_mode'"}]
             else:
-                return False, [{"code": "INVALID_PARAM", "param_name": "search_config", 
+                return False, [{"code": "INVALID_PARAM", "param_name": "search_config",
                                 "message": "invalid 'search_config'"}]
         return True, search_config
 
@@ -373,7 +373,7 @@ class ProductsSearch(BaseAPIView):
     def get(self, request, format=None):
         errors = self._validate(request)
         if errors:
-            logging.debug("Search Params:%s " % request.DATA) 
+            logging.debug("Search Params:%s " % request.DATA)
             return Response({"records": [], "info": {}, "errors": errors})
         # TODO: handle the api_key
         q = request.DATA.get("q", "")
@@ -397,8 +397,8 @@ class ProductsSearch(BaseAPIView):
             facets_selector = copy.deepcopy(self.DEFAULT_FACETS)
 
         #if result_mode not in ("WITHOUT_RECORDS", "WITH_RECORDS"):
-        #    return Response({"records": [], "info": {}, 
-        #                     "errors": [{"code": "INVALID_PARAM", 
+        #    return Response({"records": [], "info": {},
+        #                     "errors": [{"code": "INVALID_PARAM",
         #                                "param_name": "result_mode",
         #                                "message": "invalid result_mode"}]})
 
@@ -411,14 +411,14 @@ class ProductsSearch(BaseAPIView):
         try:
             per_page = int(per_page)
         except ValueError:
-            return Response({"records": [], "info": {}, 
-                             "errors": [{"code": "INVALID_PARAM", 
+            return Response({"records": [], "info": {},
+                             "errors": [{"code": "INVALID_PARAM",
                                         "param_name": "per_page",
                                         "message": "per_page must be a digit value."}]})
 
         if per_page <= 0:
-            return Response({"records": [], "info": {}, 
-                             "errors": [{"code": "INVALID_PARAM", 
+            return Response({"records": [], "info": {},
+                             "errors": [{"code": "INVALID_PARAM",
                                         "param_name": "per_page",
                                         "message": "per_page must be greater than 0."}]})
 
@@ -435,8 +435,8 @@ class ProductsSearch(BaseAPIView):
                 result_set, facets_result = self._search(site_id, q, sort_fields, filters, highlight, facets_selector, search_config)
             except:
                 logging.critical("Unknown exception raised!", exc_info=True)
-                return Response({"records": [], "info": {}, 
-                                 "errors": [{"code": "UNKNOWN_ERROR", 
+                return Response({"records": [], "info": {},
+                                 "errors": [{"code": "UNKNOWN_ERROR",
                                             "message": "Unknown error, please try later."}]})
 
             paginator = Paginator(result_set, per_page)
@@ -508,12 +508,12 @@ class Keywords(BaseAPIView):
             args = request.DATA
         else:
             args = request.GET
-        
+
 
         errors = self._validate(args)
         if errors:
             return Response({"keywords": [], "errors": errors})
-        
+
         category_id = args.get("category_id", "null")
         amount = args.get("amount", 5)
         site_id = self.getSiteID(args["api_key"])
@@ -589,7 +589,7 @@ class QuerySuggest(BaseAPIView):
             suggested_texts = suggester.getQuerySuggestions(q)
         except:
             logging.critical("Unknown exception raised!", exc_info=True)
-            return Response({"records": [], "info": {}, 
-                             "errors": [{"code": "UNKNOWN_ERROR", 
+            return Response({"records": [], "info": {},
+                             "errors": [{"code": "UNKNOWN_ERROR",
                                         "message": "Unknown error, please try later."}]})
         return Response({"suggestions": suggested_texts, "errors": []})

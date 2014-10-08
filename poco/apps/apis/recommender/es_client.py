@@ -18,9 +18,9 @@ def preprocess_categories(categories):
 
 def es_index_item(site_id, item):
     es = Elasticsearch()
-    
+
     fill_keywords(site_id, item)
-    
+
     item["item_name_standard_analyzed"] = item["item_name"]
     item["item_name_no_analysis"] = item["item_name"]
     item["item_name"] = " ".join(es_search_functions.preprocess_query_str(item["item_name"]))
@@ -37,6 +37,8 @@ def es_index_item(site_id, item):
         del item["created_on"]
     if item.has_key("updated_on"):
         del item["updated_on"]
+    if item.has_key("item_spec") and item['item_spec']:
+        item['item_spec_ng'] = es_search_functions.strip_item_spec(item['item_spec'])
 
     #if item.has_key("origin_place"):
     #    item["origin_place"] = str(item["origin_place"])

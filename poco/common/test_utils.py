@@ -42,8 +42,8 @@ class BaseAPITest(TestCase):
     def clearCaches(self):
         # flush everything on redis
         import redis
-        self.redis_client = redis.StrictRedis(host=settings.REDIS_CONFIGURATION["host"], 
-                                              port=settings.REDIS_CONFIGURATION["port"], 
+        self.redis_client = redis.StrictRedis(host=settings.REDIS_CONFIGURATION["host"],
+                                              port=settings.REDIS_CONFIGURATION["port"],
                                               db=settings.REDIS_CONFIGURATION["db"])
         self.redis_client.flushall()
         # To be safe, also clear django cache
@@ -109,4 +109,3 @@ class BaseAPITest(TestCase):
         response = self.client.get(path, content_type=content_type, data=data, **extra)
         self.assertEqual(response.status_code, expected_status_code)
         return response
-

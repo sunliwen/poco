@@ -10,7 +10,8 @@ from apps.apis.recommender.property_cache import PropertyCache
 
 def getESItemIndexName(site_id):
     #return "item-index-v1-%s" % site_id
-    return "item-index-v3-%s" % site_id
+    # change index to v4 for #37 -- add item_spec_clean for search
+    return "item-index-v4-%s" % site_id
 
 
 def getESClient():
@@ -45,6 +46,9 @@ def get_item_name(obj):
             return item_names[0]
     return obj.item_name_standard_analyzed
 
+def strip_item_spec(spec_str):
+    item_white_set = set(' -()[]{}*.')
+    return ''.join([i for i in spec_str if i not in item_white_set])
 
 # FIXME: ItemSerializer does not work correctly currently
 def serialize_items(item_list):
@@ -80,16 +84,18 @@ def construct_or_query(query_str, delimiter=","):
 
     return query
 
+def get_spec_query(query_str):
+    spec = strip_item_spec(query_str)
+    if len(spec) > 1:
+        return {'item_spec_ng': spec}
+    return None
 
-def add_sku_query(query, query_str):
+def get_sku_query(query_str):
     keywords = [kw.strip() for kw in query_str.strip().split(" ")]
     if len(keywords) == 1:
         keyword = keywords[0]
-        query = {"bool": {
-            "should": [query, {"term": {"sku": keyword}}],
-            "minimum_should_match": 1
-        }}
-    return query
+        return {'sku': keyword}
+    return None
 
 # refs:
 # http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-dsl-bool-query.html
@@ -110,7 +116,18 @@ def construct_query(query_str, for_filter=False):
             "must": match_phrases
         }
     }
-    query = add_sku_query(query, query_str)
+
+    # add spec/sku query
+    should_query = [query, ]
+    spec_query = get_spec_query(query_str)
+    if spec_query:
+        should_query.append({'match': spec_query})
+    sku_query = get_sku_query(query_str)
+    if sku_query:
+        should_query.append({'term': sku_query})
+    if spec_query or sku_query:
+        query = {"bool": {"should": should_query,
+                          "minimum_should_match": 1}}
 
     #query = {"custom_score": {
     #    "query": query,

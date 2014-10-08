@@ -20,13 +20,26 @@ INDEX_SETTINGS = {
                     "type": "custom",
                     "tokenizer": "whitespace",
                     "filter": ["my_pinyin_first_n_full"]
-                }
+                },
+                "ngram_analyzer": {
+                    "type":      "custom",
+                    "tokenizer": "ngram_tokenizer",
+                    "filter": ['standard',]
+                },
             },
             "filter": {
                 "my_pinyin_first_n_full": {
                     "type": "pinyin",
                     "first_letter": "prefix",
                     "padding_char": "||"
+                }
+            },
+            "tokenizer": {
+                "ngram_tokenizer" : {
+                    "type" : "nGram",
+                    "min_gram" : "2",
+                    "max_gram" : "30",
+                    "token_chars": ["letter", "digit"]
                 }
             }
         }
@@ -72,6 +85,7 @@ MAPPINGS = {"keyword": {
                     "brand_name": {"type": "string", "analyzer": "standard"},
                     "item_level": {"type": "integer"},
                     "item_spec": {"type": "string"},
+                    "item_spec_ng": {"type": "string",  "analyzer": "ngram_analyzer"},
                     "origin_place": {"type": "integer"},
                     "item_comment_num": {"type": "integer"},
                     "keywords": {"type": "string",
@@ -140,13 +154,15 @@ def reset_items(site_id):
     mongo_client = getMongoClient()
     if mongo_client.siteExists(site_id, use_cache=False):
         mongo_client.cleanupItems(site_id)
-        es = Elasticsearch()
-        #reset_es_item_index(es, site_id)
-        drop_es_item_index(es, site_id)
-        create_es_item_index(es, site_id)
+        reset_item_index(site_id)
     else:
         raise SiteNotExistsError()
 
+# This function reset item-index in ES.
+def reset_item_index(site_id):
+    es = Elasticsearch()
+    drop_es_item_index(es, site_id)
+    create_es_item_index(es, site_id)
 
 def create_site(mongo_client, site_id, site_name, calc_interval, api_prefix="test-"):
     if mongo_client.siteExists(site_id, use_cache=False):
@@ -196,4 +212,3 @@ def regenerate_metrics_collections(mongo_client, site_id):
     for raw_log in c_raw_logs.find({}):
         mongo_client.updateTrafficMetricsFromLog(site_id, raw_log)
         mongo_client.updateKeywordMetricsFromLog(site_id, raw_log)
-

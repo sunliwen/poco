@@ -1,12 +1,14 @@
+import sys
 from recommender import es_client
 from common.mongo_client import getMongoClient
 from apps.apis.search.keyword_list import keyword_list
-
+from common.site_manage_utils import reset_item_index
 
 def run(site_id):
     #print "This script ignore descript field currently!"
     answer = raw_input("Do you really want to reindex items of site: %s (enter 'yes' to continue)" % site_id)
     if answer == "yes":
+        reset_item_index(site_id)
         mongo_client = getMongoClient()
         c_items = mongo_client.getSiteDBCollection(site_id, "items")
         total = c_items.count()
