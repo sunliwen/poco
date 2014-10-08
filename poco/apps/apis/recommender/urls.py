@@ -23,7 +23,7 @@ def recommender_patterns():
                                            url(r'^public/recommender/redirect/?$',
                                                views.recommended_item_redirect,
                                                name="recommender-redirect"),
-                                           url(r'^private/keyword/?$',
+                                           url(r'^private/keywords/?$',
                                                views.KeywordAPIView.as_view(),
                                                name="recommender-keywords"),
                                            url(r'^private/stick_lists/?$',
