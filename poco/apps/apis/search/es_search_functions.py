@@ -71,10 +71,12 @@ def serialize_items(item_list):
 def construct_or_query(query_str, delimiter=","):
     match_phrases = []
     for keyword in query_str.split(delimiter):
-        match_phrases.append(
-                {"match_phrase": {"item_name_standard_analyzed": keyword}
+        splitted_keywords = " ".join(preprocess_query_str(keyword)).split(" ")
+        for skword in splitted_keywords:
+            match_phrases.append(
+                {"match_phrase":
+                 {"item_name_standard_analyzed": {'query': skword, 'type': 'phrase'}}
                 })
-
     query = {
         "bool": {
             "should": match_phrases,
