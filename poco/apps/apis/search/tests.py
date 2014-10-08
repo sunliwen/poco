@@ -831,3 +831,74 @@ class HotKeywordsTest(BaseAPITest):
         response = self.api_post(reverse("keywords"), data=body)
         self.assertEqual(response.data["errors"], [])
         self.assertEqual(len(response.data["keywords"]), 3)
+
+        # test result after preset keywords
+        response = self.api_post(reverse("recommender-keywords"),
+                                 data={"api_key": self.api_key, 
+                                       "type": "hot",
+                                       "action": "stick",
+                                       "keywords": [u'滚滚', u'长江', u'东逝水']},
+                                 **{"HTTP_AUTHORIZATION": "Token %s" % self.site_token})
+        body = {"api_key": self.api_key,
+                "type": "hot",
+                "amount": 3
+               }
+        response = self.api_post(reverse("keywords"), data=body)
+        self.assertEqual(response.data["errors"], [])
+        
+        self.assertEqual(response.data["keywords"],
+                         [u'滚滚', u'长江', u'东逝水'])
+        response = self.api_post(reverse("recommender-keywords"),
+                                 data={"api_key": self.api_key, 
+                                       "type": "hot",
+                                       "action": "stick",
+                                       "keywords": [u'测试', u'中文', u'热词']},
+                                 **{"HTTP_AUTHORIZATION": "Token %s" % self.site_token})
+        body = {"api_key": self.api_key,
+                "type": "hot",
+                "amount": 3
+               }
+        response = self.api_post(reverse("keywords"), data=body)
+        self.assertEqual(response.data["errors"], [])
+        self.assertEqual(response.data["keywords"],
+                         [u"测试", u"中文", u"热词"]
+                         )
+        body = {"api_key": self.api_key,
+                "type": "hot",
+                "amount": 4
+               }
+        response = self.api_post(reverse("keywords"), data=body)
+        self.assertEqual(response.data["errors"], [])
+        self.assertEqual(response.data["keywords"],
+                         [u"测试", u"中文", u"热词", u"感冒"]
+                         )
+        response = self.api_post(reverse("recommender-keywords"),
+                                 data={"api_key": self.api_key, 
+                                       "type": "hot",
+                                       "action": "stick",
+                                       "keywords": [u'测试', u'感冒', u'中文']},
+                                 **{"HTTP_AUTHORIZATION": "Token %s" % self.site_token})
+        response = self.api_post(reverse("keywords"), data=body)
+        self.assertEqual(response.data["errors"], [])
+        self.assertEqual(response.data["keywords"],
+                         [u"测试", u"感冒", u"中文", u"牛黄"]
+                         )
+
+        for q, category_id in (("田七 奶粉", "123"), 
+                               ("感冒 田七", "null"),
+                               ("感冒 田七", "123"),
+                               ("感冒 田七", "123"),
+                               ("感冒 田七", "null")):
+            self.api_get(reverse("recommender-events"),
+                         data={"api_key": self.api_key, 
+                               "event_type": "Search",
+                               "user_id": "U1",
+                               "q": q,
+                               "category_id": category_id})
+        update_keyword_hot_view_list.delay(self.TEST_SITE_ID)
+        response = self.api_post(reverse("keywords"), data=body)
+        self.assertEqual(response.data["errors"], [])
+        self.assertEqual(response.data["keywords"],
+                         [u"测试", u"感冒", u"中文", u"田七"]
+                         )
+
