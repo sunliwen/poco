@@ -687,6 +687,22 @@ class ItemsSearchViewTest(BaseAPITest):
         for item, item_id in zip(response.data['records'], items_sell_num_order):
             self.assertEqual(item['item_id'], item_id)
 
+        body = {
+            "q": "",
+            "search_config": {"type": "SEARCH_TEXT"},
+            "sort_fields": ['_score', 'sell_num'],
+            "api_key": self.api_key
+        }
+        response = self.api_post(reverse("products-search"), data=body)
+        # we didn't set the sell_num for I123, so it will always be the last in search resurt
+        items_sell_num_order = ('I124', 'I126', 'I125', 'I123')
+        for item, item_id in zip(response.data['records'], items_sell_num_order):
+            self.assertEqual(item['item_id'], item_id)
+        items_sell_num_order = ('I125', 'I126', 'I124', 'I123')
+        body['sort_fields'] = ['_score', '-sell_num']
+        response = self.api_post(reverse("products-search"), data=body)
+        for item, item_id in zip(response.data['records'], items_sell_num_order):
+            self.assertEqual(item['item_id'], item_id)
         # test order by sell_num items with same ``_score`` in es response
         # when we query `能` with items in test_data1, we will get two items with same "_score": 0.3942705
         # so we use this query string for cell_num sort test
