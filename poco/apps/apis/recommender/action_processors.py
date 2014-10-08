@@ -737,7 +737,7 @@ class BaseSimpleResultRecommendationProcessor(BaseRecommendationProcessor):
         manual_topn = [[item_id, 0.5] for item_id in manual_list['content']]
         return manual_topn + [item for item in topn if item[0] not in manual_set]
 
-        
+
     def _process(self, site_id, args):
         self.recommended_items = None
         self.recommended_item_names = None
@@ -873,7 +873,7 @@ class GetBoughtTogetherProcessor(BaseSimilarityProcessor):
 class GetUltimatelyBoughtProcessor(BaseSimpleResultRecommendationProcessor):
     '''
         TODO:
-            * support filter by SKUG - sku group 
+            * support filter by SKUG - sku group
     '''
     action_name = "RecVUB"
     ap = ArgumentProcessor(
@@ -936,7 +936,7 @@ class GetByHotIndexProcessor(BaseSimpleResultRecommendationProcessor):
             (
                 ("user_id", True),
                 ("ref", False),
-                ("hot_index_type", True), 
+                ("hot_index_type", True),
                 ("category_id", False),
                 ("brand", False),
                 ("include_item_info", False),  # no, not include; yes, include
@@ -957,9 +957,9 @@ class GetByHotIndexProcessor(BaseSimpleResultRecommendationProcessor):
         hot_index_type = args.get("hot_index_type", None)
         is_valid_hot_index_type = mongo_client.HOT_INDEX_TYPE2INDEX_PREFIX.has_key(hot_index_type)
         if is_valid_hot_index_type:
-            topn = hot_view_list_cache.getHotViewList(site_id, 
+            topn = hot_view_list_cache.getHotViewList(site_id,
                             hot_index_type=hot_index_type,
-                            category_id=args.get("category_id", None), 
+                            category_id=args.get("category_id", None),
                             brand=args.get("brand", None))
             return topn
         else:
@@ -1100,15 +1100,27 @@ class RecommenderRegistry:
 #            topn = action_processor.getTopN(site_id, args)
 
 
-class MatchAnyKeywordProcessor:
-    def __init__(self, not_log_action=True):
-        pass
+class MatchAnyKeywordProcessor(BaseSimpleResultRecommendationProcessor):
+    action_name='RecKW'
+    ap = ArgumentProcessor((("user_id", True),
+                            ("ref", False),
+                            ("include_item_info", False),
+                            ("amount", True),
+                            ("keywords", True),))
+
+    def getRecommendationLog(self, args, req_id, recommended_items):
+        log = BaseSimpleResultRecommendationProcessor.getRecommendationLog(self, args, req_id, recommended_items)
+        log["recommender_type"] = self.recommender_type
+        log['keywords'] = args['keywords']
+        return log
 
     def getRecommendationResultFilter(self, site_id, args):
         return SimpleRecommendationResultFilter()
 
     def getTopN(self, site_id, args):
         keywords = args.get("keywords")
+        if not keywords:
+            return []
         try:
             amount = int(args.get("amount", "5"))
         except ValueError:
@@ -1192,6 +1204,7 @@ recommender_registry.register("ByPurchasingHistory", GetByPurchasingHistoryProce
 recommender_registry.register("ByShoppingCart", GetByShoppingCartProcessor)
 recommender_registry.register("ByHotIndex", GetByHotIndexProcessor)
 recommender_registry.register("CustomList", GetCustomListsRecommend)
+recommender_registry.register("/unit/by_keywords", MatchAnyKeywordProcessor)
 recommender_registry.register("/unit/home",
                               IfEmptyTryNextProcessor(
                                  ArgumentProcessor(
@@ -1207,24 +1220,6 @@ recommender_registry.register("/unit/home",
                                   ]
                               ))
 
-recommender_registry.register("/unit/by_keywords",
-                              IfEmptyTryNextProcessor(
-                                 ArgumentProcessor(
-                                    (("user_id", True),
-                                    ("ref", False),
-                                    ("include_item_info", False),
-                                    ("amount", True),
-                                    ("keywords", True),
-                                    )
-                                  ),
-                                  [
-                                      (MatchAnyKeywordProcessor, {}),
-                                      (GetByBrowsingHistoryProcessor, {}),
-                                      (GetByHotIndexProcessor, [{"hot_index_type": "by_viewed"}])
-                                  ],
-                              extra_args_to_log=["keywords"]
-                              ))
-
 recommender_registry.register("/unit/item",
                               IfEmptyTryNextProcessor(
                                  ArgumentProcessor(
@@ -1237,7 +1232,7 @@ recommender_registry.register("/unit/item",
                                   ),
                                   [
                                       (GetAlsoViewedProcessor, {}),
-                                      (GetByHotIndexProcessor, 
+                                      (GetByHotIndexProcessor,
                                          [{"hot_index_type": "by_viewed"},
                                           fill_category_id_by_item_id]),
                                       (GetByHotIndexProcessor,
@@ -1245,4 +1240,3 @@ recommender_registry.register("/unit/item",
                                   ],
                                   post_process_filters=[exclude_item_id_in_args]
                               ))
-
