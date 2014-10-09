@@ -29,7 +29,7 @@ api_key          是                                                            
         2. 实施过程中，需要确定哪些字段用来过滤。目前，price, market_price, categories，item_id、available、item_level、item_comment_num和origin_place可用来过滤。
         3. available 默认为[true]，即如果不在filter中指定available，则仅仅返回有售的产品。
     2. sort_fields:
-        1. price、market_price、item_level、item_comment_num、origin_place 和 sell_num 可用来排序。
+        1. price、market_price、item_level、item_comment_num、origin_place 和 sell_num 可用来排序。如果要根据相关性排序，可以加上_score。
     3. facets (聚类)
         1. 如果在传参中没有此参数，则为默认状态。默认状态所有支持的facets都选中,categories为"SUB_TREE"模式
         2. 如果在传参中指定"facets"，则仅返回制定的聚类::
