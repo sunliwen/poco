@@ -1048,10 +1048,27 @@ class AdUnitTest(BaseRecommenderTest):
         item["item_name"] = '远红外灸热贴'
         response = self.postItem(item)
 
-        for keyword in ('远红外贴', '远红外灸热贴', '红外热贴', '红外'):
-            response = self._recommender("U1", type="/unit/by_keywords", amount=5, keywords='远红外贴')
+        for keywords in (
+                '远红外贴',
+                '远红外灸热贴',
+                '红外热贴',
+                '红外',
+        ):
+            response = self._recommender("U1", type="/unit/by_keywords", amount=5, keywords=keywords)
             self.assertEqual([item["item_id"] for item in response.data["topn"]],
                              ["I123",])
+        keywords = '远红外灸热贴奶粉',
+        response = self._recommender("U1", type="/unit/by_keywords", amount=5, keywords=keywords)
+        self.assertTrue('I123' not in [item["item_id"] for item in response.data["topn"]])
+        keywords = '远红外灸热贴,能恩粉',
+        response = self._recommender("U1", type="/unit/by_keywords", amount=5, keywords=keywords)
+        self.assertEqual([item["item_id"] for item in response.data["topn"]],
+                         ['I123', 'I125'])
+        keywords = '远红外灸热贴,能恩奶',
+        response = self._recommender("U1", type="/unit/by_keywords", amount=5, keywords=keywords)
+        self.assertEqual([item["item_id"] for item in response.data["topn"]],
+                         ['I123', 'I125'])
+
 
     def testUnitItem(self):
         # And add similarities for ViewItem
