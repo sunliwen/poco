@@ -62,7 +62,8 @@ ITEMS += [{
             "categories": ["12", "1201", "120101"],
             "tags": ["小孩", "妇女"],
             "stock": 10,
-            "factory": "能恩工厂"
+            "factory": "能恩工厂",
+            "sell_num": 3
             },
             {
             "type": "product",
@@ -76,7 +77,8 @@ ITEMS += [{
             "categories":["12", "1201", "120102"],
             "tags": ["老人", "小孩"],
             "stock": 10,
-            "factory": "能恩工厂"
+            "factory": "能恩工厂",
+            "sell_num": 10
             },
             {
             "type": "product",
@@ -90,7 +92,8 @@ ITEMS += [{
             "categories":["15", "1501"],
             "tags": ["小孩"],
             "stock": 10,
-            "factory": "智多星工厂"
+            "factory": "智多星工厂",
+            "sell_num": 4
             }
             ]
 

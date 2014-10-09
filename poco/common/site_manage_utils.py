@@ -93,7 +93,8 @@ MAPPINGS = {"keyword": {
                     "tags": {"type": "string", "analyzer": "keyword"},
                     "tags_standard": {"type": "string", "analyzer": "standard"},
                     "prescription_type": {"type": "string", "analyzer": "keyword"},
-                    "sku": {"type": "string", "analyzer": "keyword"}
+                    "sku": {"type": "string", "analyzer": "keyword"},
+                    "sell_num": {"type": "integer"}
                 }
             }
             }

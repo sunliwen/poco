@@ -678,6 +678,109 @@ class ItemsSearchViewTest(BaseAPITest):
         for item in response.data['records']:
             self.assertEqual(item.has_key('factory'), False)
 
+    def _test_sell_num_sort(self):
+        self.clearCaches()
+        self.refreshSiteItemIndex(self.TEST_SITE_ID)
+        # test blank query string result
+        body = {
+            "q": "",
+            "search_config": {"type": "SEARCH_TEXT"},
+            "sort_fields": ['sell_num', ],
+            "api_key": self.api_key
+        }
+        response = self.api_post(reverse("products-search"), data=body)
+        items_sell_num_order = ('I124', 'I126', 'I125')
+        for item, item_id in zip(response.data['records'], items_sell_num_order):
+            self.assertEqual(item['item_id'], item_id)
+        items_sell_num_order = ('I125', 'I126', 'I124')
+        body['sort_fields'] = ['-sell_num', ]
+        response = self.api_post(reverse("products-search"), data=body)
+        for item, item_id in zip(response.data['records'], items_sell_num_order):
+            self.assertEqual(item['item_id'], item_id)
+
+        body = {
+            "q": "",
+            "search_config": {"type": "SEARCH_TEXT"},
+            "sort_fields": ['_score', 'sell_num'],
+            "api_key": self.api_key
+        }
+        response = self.api_post(reverse("products-search"), data=body)
+        # we didn't set the sell_num for I123, so it will always be the last in search resurt
+        items_sell_num_order = ('I124', 'I126', 'I125', 'I123')
+        for item, item_id in zip(response.data['records'], items_sell_num_order):
+            self.assertEqual(item['item_id'], item_id)
+        items_sell_num_order = ('I125', 'I126', 'I124', 'I123')
+        body['sort_fields'] = ['_score', '-sell_num']
+        response = self.api_post(reverse("products-search"), data=body)
+        for item, item_id in zip(response.data['records'], items_sell_num_order):
+            self.assertEqual(item['item_id'], item_id)
+        # test order by sell_num items with same ``_score`` in es response
+        # when we query `能` with items in test_data1, we will get two items with same "_score": 0.3942705
+        # so we use this query string for cell_num sort test
+        body = {
+            "q": "能",
+            "search_config": {"type": "SEARCH_TEXT"},
+            "sort_fields": ['origin_place', ],
+            "api_key": self.api_key
+        }
+        response = self.api_post(reverse("products-search"), data=body)
+        # test the sort_fields works with `original_place`
+        items_sell_num_order = ('I125', 'I124')
+        for item, item_id in zip(response.data['records'], items_sell_num_order):
+            self.assertEqual(item['item_id'], item_id)
+        items_sell_num_order = ('I124', 'I125')
+        body['sort_fields'] = ['-original_place', ]
+        response = self.api_post(reverse("products-search"), data=body)
+        for item, item_id in zip(response.data['records'], items_sell_num_order):
+            self.assertEqual(item['item_id'], item_id)
+
+        # now we test the order by cell_num
+        items_sell_num_order = ('I125', 'I124')
+        body['sort_fields'] = ['-cell_num', ]
+        response = self.api_post(reverse("products-search"), data=body)
+        for item, item_id in zip(response.data['records'], items_sell_num_order):
+            self.assertEqual(item['item_id'], item_id)
+        items_sell_num_order = ('I124', 'I125')
+        body['sort_fields'] = ['cell_num', ]
+        response = self.api_post(reverse("products-search"), data=body)
+        for item, item_id in zip(response.data['records'], items_sell_num_order):
+            self.assertEqual(item['item_id'], item_id)
+
+        # if we add two sort_fields, the frist one works
+        items_sell_num_order = ('I125', 'I124')
+        body['sort_fields'] = ['-cell_num', '-original_place']
+        response = self.api_post(reverse("products-search"), data=body)
+        for item, item_id in zip(response.data['records'], items_sell_num_order):
+            self.assertEqual(item['item_id'], item_id)
+
+        # the first sort_fields with different result value works
+        # make I124/I125 have the same original_place
+        item = test_data1.getItems(item_ids=["I124"])[0]
+        item["original_place"] = 1
+        response = self.postItem(item)
+        # original_place with same value will not influence the search order
+        items_sell_num_order = ('I125', 'I124')
+        body['sort_fields'] = ['original_place', '-cell_num']
+        response = self.api_post(reverse("products-search"), data=body)
+        for item, item_id in zip(response.data['records'], items_sell_num_order):
+            self.assertEqual(item['item_id'], item_id)
+
+        body['sort_fields'] = ['-original_place', '-cell_num']
+        response = self.api_post(reverse("products-search"), data=body)
+        for item, item_id in zip(response.data['records'], items_sell_num_order):
+            self.assertEqual(item['item_id'], item_id)
+
+        items_sell_num_order = ('I124', 'I125')
+        body['sort_fields'] = ['original_place', 'cell_num']
+        response = self.api_post(reverse("products-search"), data=body)
+        for item, item_id in zip(response.data['records'], items_sell_num_order):
+            self.assertEqual(item['item_id'], item_id)
+
+        body['sort_fields'] = ['-original_place', 'cell_num']
+        response = self.api_post(reverse("products-search"), data=body)
+        for item, item_id in zip(response.data['records'], items_sell_num_order):
+            self.assertEqual(item['item_id'], item_id)
+
     def test_search(self):
         # TODO: highlight; sort_fields
         self._test_no_such_api_key()
@@ -693,6 +796,7 @@ class ItemsSearchViewTest(BaseAPITest):
         self._test_search_facets_selection()
         #self._test_search_facets_of_whole_sub_tree()
         self._test_item_factory()
+        self._test_sell_num_sort()
 
     def _assertKWList(self, list_type, expected):
         keywords = set([keyword_record["keyword"] for keyword_record in self.mongo_client.getSuggestKeywordList(self.TEST_SITE_ID, list_type)])
@@ -834,7 +938,7 @@ class HotKeywordsTest(BaseAPITest):
 
         # test result after preset keywords
         response = self.api_post(reverse("recommender-keywords"),
-                                 data={"api_key": self.api_key, 
+                                 data={"api_key": self.api_key,
                                        "type": "hot",
                                        "action": "stick",
                                        "keywords": [u'滚滚', u'长江', u'东逝水']},
@@ -845,11 +949,11 @@ class HotKeywordsTest(BaseAPITest):
                }
         response = self.api_post(reverse("keywords"), data=body)
         self.assertEqual(response.data["errors"], [])
-        
+
         self.assertEqual(response.data["keywords"],
                          [u'滚滚', u'长江', u'东逝水'])
         response = self.api_post(reverse("recommender-keywords"),
-                                 data={"api_key": self.api_key, 
+                                 data={"api_key": self.api_key,
                                        "type": "hot",
                                        "action": "stick",
                                        "keywords": [u'测试', u'中文', u'热词']},
@@ -873,7 +977,7 @@ class HotKeywordsTest(BaseAPITest):
                          [u"测试", u"中文", u"热词", u"感冒"]
                          )
         response = self.api_post(reverse("recommender-keywords"),
-                                 data={"api_key": self.api_key, 
+                                 data={"api_key": self.api_key,
                                        "type": "hot",
                                        "action": "stick",
                                        "keywords": [u'测试', u'感冒', u'中文']},
@@ -884,13 +988,13 @@ class HotKeywordsTest(BaseAPITest):
                          [u"测试", u"感冒", u"中文", u"牛黄"]
                          )
 
-        for q, category_id in (("田七 奶粉", "123"), 
+        for q, category_id in (("田七 奶粉", "123"),
                                ("感冒 田七", "null"),
                                ("感冒 田七", "123"),
                                ("感冒 田七", "123"),
                                ("感冒 田七", "null")):
             self.api_get(reverse("recommender-events"),
-                         data={"api_key": self.api_key, 
+                         data={"api_key": self.api_key,
                                "event_type": "Search",
                                "user_id": "U1",
                                "q": q,
@@ -901,4 +1005,3 @@ class HotKeywordsTest(BaseAPITest):
         self.assertEqual(response.data["keywords"],
                          [u"测试", u"感冒", u"中文", u"田七"]
                          )
-
