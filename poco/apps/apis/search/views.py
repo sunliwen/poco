@@ -181,7 +181,6 @@ class ProductsSearch(BaseAPIView):
                                      "label": "",
                                      "count": facet["count"]}
                                      for facet in s.facet_counts().get("origin_place", [])]
-
         return s, facets_result
 
     def _validate(self, request):
@@ -309,7 +308,7 @@ class ProductsSearch(BaseAPIView):
         return errors
 
     DEFAULT_FACET_CATEGORY_MODE = "SUB_TREE"
-    VALID_SORT_FIELDS = ("price", "market_price", "item_level", "item_comment_num", "origin_place")
+    VALID_SORT_FIELDS = ("price", "market_price", "item_level", "item_comment_num", "origin_place", 'sell_num', '_score')
     FILTER_FIELD_TYPE_VALIDATORS = {
         "price": is_float,
         "market_price": is_float,
