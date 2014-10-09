@@ -1007,7 +1007,7 @@ class AdUnitTest(BaseRecommenderTest):
         raw_log = self.get_last_n_raw_logs(1)[0]
         self.assertSeveralKeys(raw_log,
                     {"user_id": "U1",
-                     "behavior": "RecKW",
+                     "behavior": "Recommendation",
                      "recommender_type": "/unit/by_keywords",
                      "recommended_items": [],
                      "amount": '5',

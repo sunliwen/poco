@@ -1101,7 +1101,7 @@ class RecommenderRegistry:
 
 
 class MatchAnyKeywordProcessor(BaseSimpleResultRecommendationProcessor):
-    action_name='RecKW'
+    action_name='Recommendation'
     ap = ArgumentProcessor((("user_id", True),
                             ("ref", False),
                             ("include_item_info", False),
