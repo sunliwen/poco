@@ -692,11 +692,13 @@ class ItemsSearchViewTest(BaseAPITest):
         items_sell_num_order = ('I124', 'I126', 'I125')
         for item, item_id in zip(response.data['records'], items_sell_num_order):
             self.assertEqual(item['item_id'], item_id)
+            self.assertTrue('sell_num' in item)
         items_sell_num_order = ('I125', 'I126', 'I124')
         body['sort_fields'] = ['-sell_num', ]
         response = self.api_post(reverse("products-search"), data=body)
         for item, item_id in zip(response.data['records'], items_sell_num_order):
             self.assertEqual(item['item_id'], item_id)
+            self.assertTrue('sell_num' in item)
 
         body = {
             "q": "",
