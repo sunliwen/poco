@@ -313,7 +313,7 @@ class ItemsSearchViewTest(BaseAPITest):
         self.assertEqual(response.data["info"]["total_result_count"], 0)
 
         items = test_data1.getItems()
-        for item_spec, search_strs in (('RH-LH-BO1', ('RHLH', 'RH-LH-B01', 'HLH', 'LH-B01')),
+        for item_spec, search_strs in (('RH-LH-BO1', ('RHLH', 'RH-LH-BO1', 'HLH', 'LH-BO1')),
                                        ('0.15g*180s', ('0.15g*180s', '0.15g 180s', '0.15g', '180s')),
                                        ('RH-LH-BO1 5支装', ('RH-LH-BO1 5支', 'BO15支', 'RHLHBO1', '支装'))):
             item = items[0]
@@ -324,6 +324,17 @@ class ItemsSearchViewTest(BaseAPITest):
                         "q": q}
                 response = self.api_post(reverse("products-search"), data=body)
                 self.assertEqual(response.data["info"]["total_result_count"], 1)
+
+        for item_spec, search_strs in (('88ml', ('288', '882', 'hn88', '88hn',
+                                                 '8hn', 'ml8', 'm8')),):
+            item = items[0]
+            item['item_spec'] = item_spec
+            self.postItem(item, self.site_token)
+            for q in search_strs:
+                body = {"api_key": self.api_key,
+                        "q": q}
+                response = self.api_post(reverse("products-search"), data=body)
+                self.assertEqual(response.data["info"]["total_result_count"], 0)
 
     #def _test_search_special_characters(self):
     #    # post another item

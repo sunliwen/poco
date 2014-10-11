@@ -88,7 +88,9 @@ def construct_or_query(query_str, delimiter=","):
 def get_spec_query(query_str):
     spec = strip_item_spec(query_str)
     if len(spec) > 1:
-        return {'item_spec_ng': spec}
+        return {'item_spec_ng': {'query': spec,
+                                 'operator': 'and'
+                             }}
     return None
 
 def get_sku_query(query_str):
@@ -129,7 +131,6 @@ def construct_query(query_str, for_filter=False):
     if spec_query or sku_query:
         query = {"bool": {"should": should_query,
                           "minimum_should_match": 1}}
-
     #query = {"custom_score": {
     #    "query": query,
     #    "params": {
