@@ -1101,15 +1101,27 @@ class RecommenderRegistry:
 #            topn = action_processor.getTopN(site_id, args)
 
 
-class MatchAnyKeywordProcessor:
-    def __init__(self, not_log_action=True):
-        pass
+class MatchAnyKeywordProcessor(BaseSimpleResultRecommendationProcessor):
+    action_name='Recommendation'
+    ap = ArgumentProcessor((("user_id", True),
+                            ("ref", False),
+                            ("include_item_info", False),
+                            ("amount", True),
+                            ("keywords", True),))
+
+    def getRecommendationLog(self, args, req_id, recommended_items):
+        log = BaseSimpleResultRecommendationProcessor.getRecommendationLog(self, args, req_id, recommended_items)
+        log["recommender_type"] = self.recommender_type
+        log['keywords'] = args['keywords']
+        return log
 
     def getRecommendationResultFilter(self, site_id, args):
         return SimpleRecommendationResultFilter()
 
     def getTopN(self, site_id, args):
         keywords = args.get("keywords")
+        if not keywords:
+            return []
         try:
             amount = int(args.get("amount", "5"))
         except ValueError:
@@ -1193,6 +1205,7 @@ recommender_registry.register("ByPurchasingHistory", GetByPurchasingHistoryProce
 recommender_registry.register("ByShoppingCart", GetByShoppingCartProcessor)
 recommender_registry.register("ByHotIndex", GetByHotIndexProcessor)
 recommender_registry.register("CustomList", GetCustomListsRecommend)
+recommender_registry.register("/unit/by_keywords", MatchAnyKeywordProcessor)
 recommender_registry.register("/unit/home",
                               IfEmptyTryNextProcessor(
                                  ArgumentProcessor(
@@ -1206,24 +1219,6 @@ recommender_registry.register("/unit/home",
                                       (GetByBrowsingHistoryProcessor, {}),
                                       (GetByHotIndexProcessor, [{"hot_index_type": "by_viewed"}])
                                   ]
-                              ))
-
-recommender_registry.register("/unit/by_keywords",
-                              IfEmptyTryNextProcessor(
-                                 ArgumentProcessor(
-                                    (("user_id", True),
-                                    ("ref", False),
-                                    ("include_item_info", False),
-                                    ("amount", True),
-                                    ("keywords", True),
-                                    )
-                                  ),
-                                  [
-                                      (MatchAnyKeywordProcessor, {}),
-                                      (GetByBrowsingHistoryProcessor, {}),
-                                      (GetByHotIndexProcessor, [{"hot_index_type": "by_viewed"}])
-                                  ],
-                              extra_args_to_log=["keywords"]
                               ))
 
 recommender_registry.register("/unit/item",
