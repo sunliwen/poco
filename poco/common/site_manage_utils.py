@@ -20,26 +20,13 @@ INDEX_SETTINGS = {
                     "type": "custom",
                     "tokenizer": "whitespace",
                     "filter": ["my_pinyin_first_n_full"]
-                },
-                "ngram_analyzer": {
-                    "type":      "custom",
-                    "tokenizer": "ngram_tokenizer",
-                    "filter": ['standard',]
-                },
+                }
             },
             "filter": {
                 "my_pinyin_first_n_full": {
                     "type": "pinyin",
                     "first_letter": "prefix",
                     "padding_char": "||"
-                }
-            },
-            "tokenizer": {
-                "ngram_tokenizer" : {
-                    "type" : "nGram",
-                    "min_gram" : "2",
-                    "max_gram" : "30",
-                    "token_chars": ["letter", "digit"]
                 }
             }
         }
@@ -85,7 +72,6 @@ MAPPINGS = {"keyword": {
                     "brand_name": {"type": "string", "analyzer": "standard"},
                     "item_level": {"type": "integer"},
                     "item_spec": {"type": "string"},
-                    "item_spec_ng": {"type": "string",  "analyzer": "ngram_analyzer"},
                     "origin_place": {"type": "integer"},
                     "item_comment_num": {"type": "integer"},
                     "keywords": {"type": "string",
@@ -94,6 +80,7 @@ MAPPINGS = {"keyword": {
                     "tags_standard": {"type": "string", "analyzer": "standard"},
                     "prescription_type": {"type": "string", "analyzer": "keyword"},
                     "sku": {"type": "string", "analyzer": "keyword"},
+                    "sku_for_query": {"type": "string",  "analyzer": "standard"},
                     "sell_num": {"type": "integer"}
                 }
             }

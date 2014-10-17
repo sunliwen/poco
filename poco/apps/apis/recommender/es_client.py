@@ -37,8 +37,8 @@ def es_index_item(site_id, item):
         del item["created_on"]
     if item.has_key("updated_on"):
         del item["updated_on"]
-    if item.has_key("item_spec") and item['item_spec']:
-        item['item_spec_ng'] = es_search_functions.strip_item_spec(item['item_spec'])
+    if item.has_key("sku") and item['sku']:
+        item['sku_for_query'] = es_search_functions.gen_sku_for_query(item['sku'])
 
     #if item.has_key("origin_place"):
     #    item["origin_place"] = str(item["origin_place"])

@@ -1,4 +1,5 @@
 import re
+import string
 import time
 import copy
 import hashlib
@@ -46,9 +47,33 @@ def get_item_name(obj):
             return item_names[0]
     return obj.item_name_standard_analyzed
 
-def strip_item_spec(spec_str):
-    item_white_set = set(' -()[]{}*.')
-    return ''.join([i for i in spec_str if i not in item_white_set])
+def get_item_sku_tables():
+    sp_chars = '_-()[]{}*.,'
+    return string.maketrans(sp_chars, ' ' * len(sp_chars))
+
+def strip_sku_query(sku_str):
+    table = get_item_sku_tables()
+    sku = sku_str.encode('utf8').translate(table).decode('utf8')
+    return sku if (sku.find(' ') + 1) else '%s %s' % (sku, sku.replace(' ', ''))
+
+def gen_sku_for_query(sku_str):
+    # step 1. change all illegal chars to space
+    table = get_item_sku_tables()
+    sku = sku_str.encode('utf8').translate(table).decode('utf8')
+
+    # step 2. trate CJK characters as a word
+    # add a regexp list
+    # words, CJK character, anything else except for spaces
+    regex = [ur'\w+', ur'[\u4e00-\ufaff]', ur'[^\s]']
+    r = re.compile('|'.join(regex))
+    sku_words = r.findall(sku)
+
+    #step 3. join the sub lists togeter for sku query
+    sku_words_count = len(sku_words) + 1
+    return ' '.join([''.join(sku_words[i:j])
+                     for i in range(sku_words_count)
+                     for j in range(sku_words_count)
+                     if j > i])
 
 # FIXME: ItemSerializer does not work correctly currently
 def serialize_items(item_list):
@@ -85,17 +110,13 @@ def construct_or_query(query_str, delimiter=","):
 
     return query
 
-def get_spec_query(query_str):
-    spec = strip_item_spec(query_str)
-    if len(spec) > 1:
-        return {'item_spec_ng': spec}
-    return None
 
 def get_sku_query(query_str):
     keywords = [kw.strip() for kw in query_str.strip().split(" ")]
     if len(keywords) == 1:
-        keyword = keywords[0]
-        return {'sku': keyword}
+        sku = strip_sku_query(keywords[0])
+        return {'sku_for_query': {'query': sku,
+                                  'operator': 'and'}}
     return None
 
 # refs:
@@ -118,16 +139,10 @@ def construct_query(query_str, for_filter=False):
         }
     }
 
-    # add spec/sku query
-    should_query = [query, ]
-    spec_query = get_spec_query(query_str)
-    if spec_query:
-        should_query.append({'match': spec_query})
+    # add sku query
     sku_query = get_sku_query(query_str)
     if sku_query:
-        should_query.append({'term': sku_query})
-    if spec_query or sku_query:
-        query = {"bool": {"should": should_query,
+        query = {"bool": {"should": [query, {'match': sku_query}],
                           "minimum_should_match": 1}}
 
     #query = {"custom_score": {

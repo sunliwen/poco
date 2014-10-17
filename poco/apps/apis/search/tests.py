@@ -313,17 +313,40 @@ class ItemsSearchViewTest(BaseAPITest):
         self.assertEqual(response.data["info"]["total_result_count"], 0)
 
         items = test_data1.getItems()
-        for item_spec, search_strs in (('RH-LH-BO1', ('RHLH', 'RH-LH-B01', 'HLH', 'LH-B01')),
-                                       ('0.15g*180s', ('0.15g*180s', '0.15g 180s', '0.15g', '180s')),
-                                       ('RH-LH-BO1 5支装', ('RH-LH-BO1 5支', 'BO15支', 'RHLHBO1', '支装'))):
+        for sku, search_strs, fail_strs in \
+            (('RH-LH-BO1',
+              ('RHLH', 'RHLHBO1', 'LH', 'LHBO1'),
+              ('LHB', 'RHL', 'LHBO')),
+             ('0.15g*180s',
+              ('0.15g*180s', '15g*180s', '0.15g', '180s', '0.15g-180s'),
+              ('15g18', '0.15g180')),
+             ('RH-LH-BO1 5支装',
+              ('RH-LH-BO1-5支', 'BO15支', 'RHLHBO15', '支装', '5支'),
+              ('O15', 'HLHB'))):
             item = items[0]
-            item['item_spec'] = item_spec
+            item['sku'] = sku
             self.postItem(item, self.site_token)
             for q in search_strs:
                 body = {"api_key": self.api_key,
                         "q": q}
                 response = self.api_post(reverse("products-search"), data=body)
                 self.assertEqual(response.data["info"]["total_result_count"], 1)
+            for q in fail_strs:
+                body = {"api_key": self.api_key,
+                        "q": q}
+                response = self.api_post(reverse("products-search"), data=body)
+                self.assertEqual(response.data["info"]["total_result_count"], 0)
+
+        for sku, search_strs in (('88ml', ('288', '882', 'hn88', '88hn',
+                                                 '8hn', 'ml8', 'm8')),):
+            item = items[0]
+            item['sku'] = sku
+            self.postItem(item, self.site_token)
+            for q in search_strs:
+                body = {"api_key": self.api_key,
+                        "q": q}
+                response = self.api_post(reverse("products-search"), data=body)
+                self.assertEqual(response.data["info"]["total_result_count"], 0)
 
     #def _test_search_special_characters(self):
     #    # post another item
