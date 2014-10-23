@@ -32,6 +32,9 @@ def recommender_patterns():
                                            url(r'^private/recommender/custom_lists/?$',
                                                views.RecommendCustomListsAPIView.as_view(),
                                                name="recommender-custom_lists"),
+                                           url(r'^private/stick_items/?$',
+                                               views.StickSearchItemsAPIView.as_view(),
+                                               name="search-stick_items"),
                                            ))
 
 

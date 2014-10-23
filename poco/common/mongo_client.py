@@ -756,7 +756,7 @@ class MongoClient:
             c_cached_hot_view.update({"hot_index_type": hot_index_type, "category_id": None, "brand": brand},
                                      {"hot_index_type": hot_index_type, "category_id": None, "brand": brand, "result": topn},
                                      upsert=True)
-        
+
     def updateSearchTermsCache(self, site_id, cache_entry):
         c_search_terms_cache = getSiteDBCollection(self.connection, site_id, "search_terms_cache")
         terms_key = "|".join(cache_entry["terms"])
@@ -837,7 +837,7 @@ class MongoClient:
             site_id,
             "recommend_custom_list")
         return c_recommend_custom_list.find_one({'type': list_type})
-        
+
     def updateRecommendCustomLists(self, site_id, list_type, content):
         c_recommend_custom_list = self.getSiteDBCollection(
             site_id,
@@ -846,14 +846,50 @@ class MongoClient:
                                        {'content': content,
                                         'type': list_type},
                                        upsert=True)
-        
+
     def getRecommenderCustomTypes(self, site_id):
         c_recommend_custom_list = self.getSiteDBCollection(
             site_id,
             "recommend_custom_list")
         rsts = c_recommend_custom_list.find()
         return [i for i in rsts]
-            
+
+    def getStickedSearchItems(self, site_id, query_key, category, expire=None):
+        expire = expire if (expire is not None) else int(time.time())
+        c_sticked_serach_items = self.getSiteDBCollection(
+            site_id,
+            "sticked_search_items")
+        restrict = {'query_key': query_key,
+                    'expire': {'$gt': expire}}
+        if category:
+            restrict['category'] = category
+        return c_sticked_serach_items.find_one(restrict)
+
+    def updateStickedSearchItems(self, site_id, query_key, query, category, item_ids, expire):
+        c_sticked_serach_items = self.getSiteDBCollection(
+            site_id,
+            "sticked_search_items")
+        restrict = {'query_key': query_key}
+        if category:
+            restrict['category'] = category
+        c_sticked_serach_items.update(restrict,
+                                      {'content':{
+                                          'item_ids': item_ids,
+                                          'query': query,
+                                          'expire': expire,
+                                          'category': category if category  else ''},
+                                       'expire': expire,
+                                       'category': category if category  else '',
+                                       'query_key': query_key},
+                                      upsert=True)
+
+    def getStickedSearchList(self, site_id):
+        c_sticked_serach_items = self.getSiteDBCollection(
+            site_id,
+            "sticked_search_items")
+        rsts = c_sticked_serach_items.find()
+        return [i for i in rsts]
+
 
 def getConnection():
     if(settings.REPLICA_SET):

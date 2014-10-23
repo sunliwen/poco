@@ -2,17 +2,21 @@
 import sys
 import logging
 import uuid
+import time
 
 from django.shortcuts import render, redirect
+from django.conf import settings
 from django.http import HttpResponse, HttpResponseBadRequest
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from common.poco_token_auth import PocoTokenAuthentication
 from common.poco_token_auth import TokenMatchAPIKeyPermission
 from common.cached_result import cached_result
+from apps.apis.search import es_search_functions
 
 from action_processors import mongo_client
 import action_processors
+from tasks import process_item_update_queue
 
 # TODO: config
 #logging.basicConfig(format="%(asctime)s|%(levelname)s|%(name)s|%(message)s",
@@ -141,7 +145,7 @@ class KeywordAPIView(BaseAPIView):
         if not (rtype in legal_types):
             return {"code": 1,
                     "err_msg": "'type' can only be one of '%s'" % '|'.join(legal_types)}
-            
+
         action = args.get('action', None)
         if not (action == 'stick'):
             return {"code": 1, "err_msg": "'action' can only be 'stick'"}
@@ -247,7 +251,7 @@ class EventsAPIView(BaseAPIView):
         if not_log_action:
             del args["not_log_action"]
         event_type = args.get("event_type", "")
-        
+
         for param in args.keys():
             if param in self.DISALLOWED_PARAMS:
                 return {"code": 1, "err_msg": "param %s is not allowed. " % param}
@@ -358,4 +362,95 @@ class RecommendCustomListsAPIView(BaseAPIView):
 
         return {"code": 0}
 
+class StickSearchItemsAPIView(BaseAPIView):
+    authentication_classes = (PocoTokenAuthentication, )
+    permission_classes = (TokenMatchAPIKeyPermission,)
 
+    def set_stick_search_items(self, site_id, args):
+        item_ids = args.get('item_ids', None)
+        query = args.get('query', '')
+        category = args.get('category', '')
+        expire = args.get('expire', '')
+        if not (query or category):
+            return {"code": 1,
+                    'err_msg': 'query or category required'}
+
+        if (not isinstance(item_ids, list)) or isinstance(item_ids, basestring):
+            return {"code": 1, "err_msg": "'item_ids' can only be item_id list"}
+        query_key = es_search_functions.preprocess_stick_query_str(query, category)
+        # get the original result, and delete the info from old item record
+        ori_ids = []
+        stick_items = mongo_client.getStickedSearchItems(site_id,
+                                                         query_key,
+                                                         category,
+                                                         0)
+        if stick_items:
+            ori_ids = stick_items['content']['item_ids']
+        ids_erased = set(ori_ids) - set(item_ids)
+        ids_added = set(item_ids) - set(ori_ids)
+
+        mongo_client.updateStickedSearchItems(
+            site_id,
+            query_key,
+            query,
+            category,
+            item_ids,
+            int(time.time()) + (int(expire) if expire else settings.STICK_SEARCH_ITEM_EXPIRE))
+        update_items = []
+        # delete the stick key from old item
+        for item_id in ids_erased:
+            item = mongo_client.getItem(site_id, item_id)
+            if item:
+                keys = [key for key in item.get('stick_key', '').split(' ') if (key and (key != query_key))]
+                update_items.append((site_id, {'stick_key': ' '.join(list(set(keys))),
+                                               'item_id': item_id}))
+
+        # add the stick key from new item
+        for item_id in ids_added:
+            item = mongo_client.getItem(site_id, item_id)
+            if item:
+                keys = [key for key in item.get('stick_key', '').split(' ') if key]
+                keys.append(query_key)
+                update_items.append((site_id, {'stick_key': ' '.join(list(set(keys))),
+                                               'item_id': item_id}))
+        process_item_update_queue.delay(update_items)
+        return {"code": 0}
+
+    def get_stick_search_items(self, site_id, args):
+        query = args.get('query', '')
+        category = args.get('category', '')
+        if not (query or category):
+            return {"code": 1,
+                    'err_msg': 'query or category required'}
+        stick_items = mongo_client.getStickedSearchItems(
+            site_id,
+            es_search_functions.preprocess_stick_query_str(query, category),
+            category)
+        if stick_items:
+            return {'code': 0,
+                    'err_msg': '',
+                    'data': stick_items['content']}
+        return {"code": 1,
+                'err_msg': "stick_items under %s:%s not exists" % (category, query)}
+
+    def list_stick_search_items(self, site_id, args):
+        data = []
+        items = mongo_client.getStickedSearchList(site_id);
+        data = [item['content'] for item in items]
+        return {"code": 0, 'err_msg': 0, 'data': data}
+
+    def process_post(self, request, response, site_id, args):
+        action = args.get('action', None)
+        if not (action in ('set_stick_search_items',
+                           'get_stick_search_items',
+                           'list_stick_search_items')):
+            return {"code": 1, "err_msg": "'action' can only be 'set_stick_search_items | get_stick_search_items | list_stick_search_items'"}
+
+        if action == 'set_stick_search_items':
+            return self.set_stick_search_items(site_id, args)
+        elif action == 'get_stick_search_items':
+            return self.get_stick_search_items(site_id, args)
+        else:
+            return self.list_stick_search_items(site_id, args)
+
+        return {"code": 0}
