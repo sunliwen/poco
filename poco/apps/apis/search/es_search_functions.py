@@ -37,6 +37,12 @@ def preprocess_query_str(query_str):
         result.append(cutted_keyword)
     return result
 
+def preprocess_stick_query_str(query_str, category):
+    parts = [w for w in jieba.cut_for_search(query_str) if w != '_']
+    parts.sort()
+    category = ''.join(category.split(' ')) if category else ''
+    return '%s|%s' % (category, '_'.join(parts))
+
 
 def get_item_name(obj):
     _highlight = getattr(obj, "_highlight", None)
@@ -126,10 +132,10 @@ def construct_query(query_str, for_filter=False):
     sku_query = get_sku_query(query_str)
     if sku_query:
         should_query.append({'term': sku_query})
+
     if spec_query or sku_query:
         query = {"bool": {"should": should_query,
                           "minimum_should_match": 1}}
-
     #query = {"custom_score": {
     #    "query": query,
     #    "params": {
@@ -156,7 +162,6 @@ def construct_query(query_str, for_filter=False):
     #            #]
     #        }
     #    }
-
     return query
 
 

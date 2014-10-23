@@ -12,7 +12,7 @@ from browsing_history_cache import BrowsingHistoryCache
 def process_item_update_queue(item_update_queue):
     mongo_client = getMongoClient()
     for site_id, item in item_update_queue:
-        for category in item["categories"]:
+        for category in item.get("categories", []):
             mongo_client.updateProperty(site_id, category)
         if item.get("brand", None):
             mongo_client.updateProperty(site_id, item["brand"])

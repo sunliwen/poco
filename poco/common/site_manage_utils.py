@@ -64,6 +64,11 @@ MAPPINGS = {"keyword": {
                         "store": "yes",
                         "analyzer": "whitespace_lower_analyzer"
                     },
+                    "stick_key": {
+                        "type": "string",
+                        "store": "yes",
+                        "analyzer": "whitespace_lower_analyzer"
+                    },
                     "item_name_standard_analyzed": {
                         "type": "string",
                         "store": "yes",

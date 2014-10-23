@@ -81,12 +81,41 @@ class BaseAPIView(APIView):
 # TODO: http://www.django-rest-framework.org/topics/documenting-your-api
 class ProductsSearch(BaseAPIView):
     def _search(self, site_id, q, sort_fields, filters, highlight, facets_selector, search_config):
+        # TODO: check performance issue
+        categories = filters.get("categories", [])
+        if categories:
+            cat_id = categories[0]
+        else:
+            cat_id = None
+
         s = S().indexes(es_search_functions.getESItemIndexName(site_id)).doctypes("item")
 
         if isinstance(q, basestring) and q.strip() != "":
             if search_config["type"] == "SEARCH_TEXT":
                 query = es_search_functions.construct_query(q)
-
+                stick_key = es_search_functions.preprocess_stick_query_str(q, cat_id)
+                # add the stick items query
+                if mongo_client.getStickedSearchItems(site_id,
+                                                      stick_key,
+                                                      cat_id):
+                    stick_key_query = {'match': {
+                        'stick_key':{
+                            'query': stick_key,
+                            # we want to top some item by this attribute, so we boost its score
+                            # see contruct_qurey in es_search_functions
+                            'boost': "100000"
+                        }}}
+                    query['bool']['should'].append(stick_key_query)
+                # add the stick items by catogory query
+                stick_key = es_search_functions.preprocess_stick_query_str('', cat_id)
+                if cat_id and mongo_client.getStickedSearchItems(site_id,
+                                                                 stick_key,
+                                                                 cat_id):
+                    query['bool']['should'].append({'match': {
+                        'stick_key':{
+                            'query': stick_key,
+                            'boost': "100000"
+                        }}})
             elif search_config["type"] == "SEARCH_TERMS":
                 term_field = search_config["term_field"]
                 terms = q.split(" ")
@@ -109,7 +138,6 @@ class ProductsSearch(BaseAPIView):
                                 "type": "number",
                                 "order": "asc"
                                }}]
-
         if sort_fields == []:
             sort_fields = ["_score"]
 
@@ -128,16 +156,9 @@ class ProductsSearch(BaseAPIView):
                     from_ = filter_details["from"]
                     to_   = filter_details["to"]
                     s = s.filter(**{"%s__range" % filter_field: (from_, to_)})
-
         if highlight:
             s = s.highlight("item_name_standard_analyzed")
 
-        # TODO: check performance issue
-        categories = filters.get("categories", [])
-        if categories:
-            cat_id = categories[0]
-        else:
-            cat_id = None
 
         facets_dsl = {}
         if facets_selector.has_key("categories"):
@@ -437,7 +458,6 @@ class ProductsSearch(BaseAPIView):
                 return Response({"records": [], "info": {},
                                  "errors": [{"code": "UNKNOWN_ERROR",
                                             "message": "Unknown error, please try later."}]})
-
             paginator = Paginator(result_set, per_page)
 
             try:
