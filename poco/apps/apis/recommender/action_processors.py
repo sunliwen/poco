@@ -469,8 +469,6 @@ class UpdateItemProcessor(ActionProcessor):
             ("factory", False),
             ("sell_num", False),
             ("sku_attr", False),
-            ("list_price", False),
-            ("sale_price", False),
             ("discount", False),
             ("promotion_title", False),
         )
