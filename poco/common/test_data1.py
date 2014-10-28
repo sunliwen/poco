@@ -48,7 +48,22 @@ ITEMS.append({
             "description": "描述A 描述B",
             "sku": "SKU10052",
             "stock": 10,
-            "factory": "雀巢工厂"
+            "factory": "雀巢工厂",
+            # leyou test data
+            'sku_attr': {
+                'usingsex': '通用',
+                'startmonth': '3',
+                'endmonth': '16',
+                'buildyear': '2011',
+                'stylecode': '样式1',
+                'season': '四季',
+                'color': '土豪金',
+                'material': '亚麻',
+                'size': 'XXL',
+                'productid': 'PRODI123',
+                },
+            'discount': '0.8',
+            'promotion_title': '这里是介绍',
             })
 ITEMS += [{
             "type": "product",
@@ -63,7 +78,7 @@ ITEMS += [{
             "tags": ["小孩", "妇女"],
             "stock": 10,
             "factory": "能恩工厂",
-            "sell_num": 3
+            "sell_num": 3,
             },
             {
             "type": "product",
@@ -78,7 +93,22 @@ ITEMS += [{
             "tags": ["老人", "小孩"],
             "stock": 10,
             "factory": "能恩工厂",
-            "sell_num": 10
+            "sell_num": 10,
+            'sku_attr': {
+                'usingsex': '男',
+                'startmonth': '3',
+                'endmonth': '16',
+                'buildyera': '2011',
+                'stylecode': '样式1',
+                'seanos': '春',
+                'color': '土豪金',
+                'material': '亚麻',
+                'size': 'XXL',
+                'productid': 'PORDI125',
+                },
+            'discount': '0.8',
+            'promotion_title': '这里是介绍',
+
             },
             {
             "type": "product",
@@ -93,7 +123,22 @@ ITEMS += [{
             "tags": ["小孩"],
             "stock": 10,
             "factory": "智多星工厂",
-            "sell_num": 4
+            "sell_num": 4,
+            'sku_attr': {
+                'usingsex': '男',
+                'startmonth': '3',
+                'endmonth': '16',
+                'buildyera': '2011',
+                'stylecode': '样式1',
+                'seanos': '春',
+                'color': '土豪金',
+                'material': '亚麻',
+                'size': 'XXL',
+                'productid': 'PORDI126',
+                },
+            'discount': '0.8',
+            'promotion_title': '这里是介绍',
+
             }
             ]
 

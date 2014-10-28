@@ -26,8 +26,9 @@ api_key          是                                                            
 
     1. filters:
         1. "categories"字段只接受0或1个值，不接受多个值。
-        2. 实施过程中，需要确定哪些字段用来过滤。目前，price, market_price, categories，item_id、available、item_level、item_comment_num和origin_place可用来过滤。
+        2. 实施过程中，需要确定哪些字段用来过滤。目前，price, market_price, categories，item_id、available、item_level、item_comment_num、discount、sku_attr和origin_place可用来过滤。使用 sku_attr 的属性来过滤时，需要写成 sku_attr.color 这种形式。
         3. available 默认为[true]，即如果不在filter中指定available，则仅仅返回有售的产品。
+        4. 接受两种类型filter: range 和 in； 参见下方请求中的 price 和 categories
     2. sort_fields:
         1. price、market_price、item_level、item_comment_num、origin_place 和 sell_num 可用来排序。如果要根据相关性排序，可以加上_score。
     3. facets (聚类)
@@ -87,7 +88,7 @@ errors             错误信息。正常情况下为[]。
             "page": 1,
             "highlight": true,
             "filters": {
-                "categories": ["17"],
+                "categories": ["17"],    
                 "price": {
                     "type": "range",
                     "from": 15.00,
