@@ -112,9 +112,6 @@ MAPPINGS = {"keyword": {
                             'productid': {'type': 'string', 'analyzer': 'keyword'},
                             }
                     },
-                    # does this duplicated with ``market_price`` and ``price``
-                    "list_price": {"type": "float"},
-                    "sale_price": {"type": "float"},
                     'discount':  {"type": "float"},
                     'promotion_title': {'type': 'string'},
                 }

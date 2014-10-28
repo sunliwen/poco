@@ -340,12 +340,6 @@ class ItemsSearchViewTest(BaseAPITest):
                           {'discount': {'type': 'range',
                                         'from': '1.1',
                                         'to': '2.0'}}),
-                         ({'sale_price': {'type': 'range',
-                                        'from': '50',
-                                        'to': '70'}},
-                          {'sale_price': {'type': 'range',
-                                          'from': '70',
-                                          'to': '80'}}),
                          ({'sku_attr.startmonth': {'type': 'range', 'from': '0', 'to': '4'},
                            'sku_attr.endmonth': {'type': 'range', 'from': '12', 'to': '100'}},
                           {'sku_attr.startmonth': {'type': 'range', 'from': '4', 'to': '6'},
@@ -812,8 +806,6 @@ class ItemsSearchViewTest(BaseAPITest):
             self.assertEqual(item['item_id'], item_id)
 
     def test_search(self):
-        self._test_search1()
-        return
         # TODO: highlight; sort_fields
         self._test_no_such_api_key()
         self._test_by_tags()

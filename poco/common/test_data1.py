@@ -62,8 +62,6 @@ ITEMS.append({
                 'size': 'XXL',
                 'productid': 'PRODI123',
                 },
-            'list_price': '87.53',
-            'sale_price': '57.53',
             'discount': '0.8',
             'promotion_title': '这里是介绍',
             })
@@ -108,8 +106,6 @@ ITEMS += [{
                 'size': 'XXL',
                 'productid': 'PORDI125',
                 },
-            'list_price': '87.53',
-            'sale_price': '57.53',
             'discount': '0.8',
             'promotion_title': '这里是介绍',
 
@@ -140,8 +136,6 @@ ITEMS += [{
                 'size': 'XXL',
                 'productid': 'PORDI126',
                 },
-            'list_price': '87.53',
-            'sale_price': '57.53',
             'discount': '0.8',
             'promotion_title': '这里是介绍',
 
