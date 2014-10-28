@@ -53,6 +53,11 @@ origin_place       否                                            商品产地
 tags               否          []                                商品标签
 sku                否                                            商品SKU编码
 sell_num           否                                            商品销量
+list_price         否                                            商品展示价格
+sale_price         否                                            商品价格
+discount           否                                            商品折扣, float
+promotion_title    否                                            商品促销描述
+sku_attr           否                                            字典，内含 usingsex, startmonth, endmonth, buildyear, stylecode, season, color, material, size, productid
 api_key            是                                            分配给用户站点的api key
 =================  ==========  ===============================   =============================================
 

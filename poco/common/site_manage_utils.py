@@ -94,7 +94,29 @@ MAPPINGS = {"keyword": {
                     "tags_standard": {"type": "string", "analyzer": "standard"},
                     "prescription_type": {"type": "string", "analyzer": "keyword"},
                     "sku": {"type": "string", "analyzer": "keyword"},
-                    "sell_num": {"type": "integer"}
+                    "sell_num": {"type": "integer"},
+                    # the leyou special request
+                    "sku_attr": {
+                        'type': 'nested',
+                        'include_in_parent': True,
+                        'properties': {
+                            'usingsex': {'type': 'string', 'analyzer': 'keyword'},
+                            'startmonth': {'type': 'integer'},
+                            'endmonth': {'type': 'integer'},
+                            'buildyear': {'type': 'integer'},
+                            'stylecode': {'type': 'string', 'analyzer': 'keyword'},
+                            'season': {'type': 'string', 'analyzer': 'keyword'},
+                            'color': {'type': 'string', 'analyzer': 'keyword'},
+                            'material': {'type': 'string', 'analyzer': 'keyword'},
+                            'size':  {'type': 'string', 'analyzer': 'keyword'},
+                            'productid': {'type': 'string', 'analyzer': 'keyword'},
+                            }
+                    },
+                    # does this duplicated with ``market_price`` and ``price``
+                    "list_price": {"type": "float"},
+                    "sale_price": {"type": "float"},
+                    'discount':  {"type": "float"},
+                    'promotion_title': {'type': 'string'},
                 }
             }
             }

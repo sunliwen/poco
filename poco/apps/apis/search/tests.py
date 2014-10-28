@@ -73,7 +73,6 @@ class ItemsSearchViewSortByStockTest(BaseAPITest):
         self.assertEqual(response.data["info"]["total_result_count"], 2)
         self.assertEqual([rec["item_id"] for rec in response.data["records"]], ["I123", "I124"])
 
-
 # refs: http://stackoverflow.com/questions/4055860/unit-testing-with-django-celery
 # refs: http://docs.celeryproject.org/en/2.5/django/unit-testing.html
 @override_settings(CELERY_EAGER_PROPAGATES_EXCEPTIONS=True,
@@ -325,38 +324,6 @@ class ItemsSearchViewTest(BaseAPITest):
                 response = self.api_post(reverse("products-search"), data=body)
                 self.assertEqual(response.data["info"]["total_result_count"], 1)
 
-    #def _test_search_special_characters(self):
-    #    # post another item
-    #    item = {"type": "product",
-    #            "available": True,
-    #            "item_id": "ITEM201",
-    #            "item_name": "橄榄油(精华)（红色）",
-    #            "item_link": "http://example.com/"}
-    #    self.postItem(item)
-    #    body = {"api_key": self.api_key,
-    #            "q": "橄榄油"
-    #            }
-    #    response = self.api_post(reverse("products-search"), data=body)
-    #    self.assertEqual(response.data["info"]["total_result_count"], 1)
-
-    #    body = {"api_key": self.api_key,
-    #            "q": "精华"
-    #            }
-    #    response = self.api_post(reverse("products-search"), data=body)
-    #    self.assertEqual(response.data["info"]["total_result_count"], 1)
-
-    #    body = {"api_key": self.api_key,
-    #            "q": "（红色）"
-    #            }
-    #    response = self.api_post(reverse("products-search"), data=body)
-    #    self.assertEqual(response.data["info"]["total_result_count"], 1)
-
-    #    body = {"api_key": self.api_key,
-    #            "q": "橄榄油(精华)"
-    #            }
-    #    response = self.api_post(reverse("products-search"), data=body)
-    #    self.assertEqual(response.data["info"]["total_result_count"], 1)
-
     def _test_search1(self):
         body = {"api_key": self.api_key,
                 "q": "雀巢"
@@ -365,6 +332,67 @@ class ItemsSearchViewTest(BaseAPITest):
         self.assertEqual(response.data["info"]["total_result_count"], 1)
         # stock field should be included
         self.assertEqual(response.data["records"][0].has_key("stock"), True)
+
+        # the leyou fieleds
+        for v_f, i_f in (({'discount': {'type': 'range',
+                                        'from': '0.1',
+                                        'to': '1.0'}},
+                          {'discount': {'type': 'range',
+                                        'from': '1.1',
+                                        'to': '2.0'}}),
+                         ({'sale_price': {'type': 'range',
+                                        'from': '50',
+                                        'to': '70'}},
+                          {'sale_price': {'type': 'range',
+                                          'from': '70',
+                                          'to': '80'}}),
+                         ({'sku_attr.startmonth': {'type': 'range', 'from': '0', 'to': '4'},
+                           'sku_attr.endmonth': {'type': 'range', 'from': '12', 'to': '100'}},
+                          {'sku_attr.startmonth': {'type': 'range', 'from': '4', 'to': '6'},
+                           'sku_attr.endmonth': {'type': 'range', 'from': '8', 'to': 10}}),
+                         ({'sku_attr.buildyear': [2012, 2013, 2011, '2010']},
+                          {'sku_attr.buildyear': [2012, 2013, 2010, '2015']}),
+                         ({'sku_attr.stylecode': ['样式1',]},
+                          {'sku_attr.stylecode': ['样', '样式2']}),
+                         ({'sku_attr.material': ['亚麻',]},
+                          {'sku_attr.material': ['亚麻料', '亚', '麻']}),
+                         ({'sku_attr.color': ['土豪金',]},
+                          {'sku_attr.color': ['东北银', '土豪', '金']}),
+                         ({'sku_attr.size': ['XXL',]},
+                          {'sku_attr.size': ['XXXL', 'XL', 'L']}),
+                         ({'sku_attr.productid': ['PRODI123',]},
+                          {'sku_attr.productid': ['I123',]}),
+):
+            body['filters'] = v_f
+            response = self.api_post(reverse("products-search"), data=body)
+            self.assertEqual(response.data["info"]["total_result_count"], 1)
+            body['filters'] = i_f
+            response = self.api_post(reverse("products-search"), data=body)
+            self.assertEqual(response.data["info"]["total_result_count"], 0)
+        for gender in ('男', '女', '通用'):
+            body['filters'] = {'sku_attr.usingsex': [gender]}
+            response = self.api_post(reverse("products-search"), data=body)
+            self.assertEqual(response.data["info"]["total_result_count"], 1)
+
+        self.clearCaches()
+        item = test_data1.getItems(item_ids=["I123"])[0]
+        item['sku_attr']['usingsex'] = '男'
+        response = self.postItem(item)
+        self.refreshSiteItemIndex(self.TEST_SITE_ID)
+        body['filters'] = {'sku_attr.usingsex': ['男']}
+        response = self.api_post(reverse("products-search"), data=body)
+        self.assertEqual(response.data["info"]["total_result_count"], 1)
+
+        for gender in ('女', '通用'):
+            body['filters'] = {'sku_attr.usingsex': [gender]}
+            response = self.api_post(reverse("products-search"), data=body)
+            self.assertEqual(response.data["info"]["total_result_count"], 0)
+
+        self.clearCaches()
+        for season in ('春季', '夏季', '秋季', '冬季', '四季'):
+            body['filters'] = {'sku_attr.season': [season]}
+            response = self.api_post(reverse("products-search"), data=body)
+            self.assertEqual(response.data["info"]["total_result_count"], 1)
 
     def _test_search2(self):
         body = {"api_key": self.api_key,
@@ -784,6 +812,8 @@ class ItemsSearchViewTest(BaseAPITest):
             self.assertEqual(item['item_id'], item_id)
 
     def test_search(self):
+        self._test_search1()
+        return
         # TODO: highlight; sort_fields
         self._test_no_such_api_key()
         self._test_by_tags()

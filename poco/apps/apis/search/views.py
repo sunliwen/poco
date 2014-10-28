@@ -262,6 +262,10 @@ class ProductsSearch(BaseAPIView):
                                     errors.append({"code": "INVALID_PARAM",
                                         "param_name": "filters",
                                         "message": u"'categories' can not contain more than 1 value, when facets of categories are in 'DIRECT_CHILDREN' model."})
+                        elif filter_key == 'sku_attr.usingsex':
+                            filter_details.append(u'通用')
+                        elif filter_key == 'sku_attr.season':
+                            filter_details.append(u'四季')
                         for filter_details_item in filter_details:
                             if not filter_validator(filter_details_item):
                                 errors.append({"code": "INVALID_PARAM",
@@ -308,7 +312,7 @@ class ProductsSearch(BaseAPIView):
         return errors
 
     DEFAULT_FACET_CATEGORY_MODE = "SUB_TREE"
-    VALID_SORT_FIELDS = ("price", "market_price", "item_level", "item_comment_num", "origin_place", 'sell_num', '_score')
+    VALID_SORT_FIELDS = ("price", "market_price", "item_level", "item_comment_num", "origin_place", 'sell_num', 'discount', 'sale_price', '_score')
     FILTER_FIELD_TYPE_VALIDATORS = {
         "price": is_float,
         "market_price": is_float,
@@ -319,7 +323,19 @@ class ProductsSearch(BaseAPIView):
         "item_comment_num": is_float,
         "origin_place": is_float,
         "brand": is_string,
-        "prescription_type": is_string
+        "prescription_type": is_string,
+        'discount': is_float,
+        'sale_price': is_float,
+        'sku_attr.usingsex': is_string,
+        'sku_attr.startmonth': is_float,
+        'sku_attr.endmonth': is_float,
+        'sku_attr.buildyear': is_float,
+        'sku_attr.stylecode': is_string,
+        'sku_attr.season': is_string,
+        'sku_attr.color': is_string,
+        'sku_attr.material': is_string,
+        'sku_attr.size': is_string,
+        'sku_attr.productid': is_string,
     }
 
     DEFAULT_FACETS = {
@@ -354,7 +370,7 @@ class ProductsSearch(BaseAPIView):
                     if match_mode in ("MATCH_ALL", "MATCH_MORE_BETTER"):
                         term_field = search_config.get("term_field", None)
                         if term_field not in (self.SEARCH_TERM_FIELDS):
-                            return False, [{"code": "INVALID_PARAM", "param_name": "search_config",
+                            return False, [{"code": "INVALIDPARAM", "param_name": "search_config",
                                             "message": "search_config 'term_field' should be one of %s" \
                                                         % ",".join(self.SEARCH_TERM_FIELDS)}]
                     else:

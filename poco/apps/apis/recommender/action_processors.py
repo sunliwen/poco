@@ -467,7 +467,12 @@ class UpdateItemProcessor(ActionProcessor):
             ("sku", False),
             ("stock", False),
             ("factory", False),
-            ("sell_num", False)
+            ("sell_num", False),
+            ("sku_attr", False),
+            ("list_price", False),
+            ("sale_price", False),
+            ("discount", False),
+            ("promotion_title", False),
         )
     )
 
@@ -481,20 +486,43 @@ class UpdateItemProcessor(ActionProcessor):
         null_parent_id_found = False
         for category in args["categories"]:
             if not isinstance(category, dict):
-                return {"code": 1, "err_msg": "categories content should be dicts. "}
+                return {"code": 1,
+                        "err_msg": "categories content should be dicts. "}
             if category.get("type", None) != "category":
-                return {"code": 1, "err_msg": "categories content should has type 'category'"}
+                return {"code": 1,
+                        "err_msg": "categories content should has type 'category'"}
             for expected_key in ("id", "name", "parent_id"):
                 if not category.has_key(expected_key):
-                    return {"code": 1, "err_msg": "categories content should contains key: '%s'" % expected_key}
-                if (not isinstance(category[expected_key], basestring)) or (len(category[expected_key].strip()) == 0):
-                    return {"code": 1, "err_msg": "'%s' of category should be a non empty string." % expected_key}
+                    return {"code": 1,
+                            "err_msg": "categories content should contains key: '%s'"\
+                                % expected_key}
+                if (not isinstance(category[expected_key], basestring)) or \
+                (len(category[expected_key].strip()) == 0):
+                    return {"code": 1,
+                            "err_msg": "'%s' of category should be a non empty string."\
+                                % expected_key}
             for expected_key in ("id", "parent_id"):
                 if re.match(r"[A-Za-z0-9]+", category[expected_key]) is None:
-                    return {"code": 1, "err_msg": "category ids can only contains digits and letters."}
-            null_parent_id_found = null_parent_id_found or category["parent_id"] == "null"
+                    return {
+                        "code": 1,
+                        "err_msg": "category ids can only contains digits and letters."}
+            null_parent_id_found = null_parent_id_found or \
+                category["parent_id"] == "null"
         if args["categories"] != [] and not null_parent_id_found:
-            return {"code": 1, "err_msg": "At least one category should be at the top level"}
+            return {"code": 1,
+                    "err_msg": "At least one category should be at the top level"}
+        """
+        for expected_key in ('list_price', 'sale_price', 'discount'):
+            value = args.get(expected_key, None)
+            if value is None:
+                return {"code": 1,
+                        "err_msg": "item %s missing" % expected_key}
+            try:
+                args[expected_key] = float(args[expected_key])
+            except ValueError:
+                return {"code": 1,
+                        "err_msg": "item %s not a float" % expected_key}
+                        """
         return None
 
     def _validateBrand(self, args):

@@ -59,7 +59,8 @@ def serialize_items(item_list):
                       "item_link", "available", "item_group",
                       "brand", "item_level", "item_spec", "item_comment_num",
                       "tags", "prescription_type", "sku", "stock", "factory",
-                      "sell_num"):
+                      "sell_num", 'sku_attr', 'list_price', 'sale_price',
+                      'discount', 'promotion_title'):
             val = getattr(item, field, None)
             if val is not None:
                 item_dict[field] = val
