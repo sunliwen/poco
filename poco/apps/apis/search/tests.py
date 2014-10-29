@@ -784,8 +784,6 @@ class ItemsSearchViewTest(BaseAPITest):
             self.assertEqual(item['item_id'], item_id)
 
     def test_search(self):
-        #self._test_search1()
-        #return
         # TODO: highlight; sort_fields
         self._test_no_such_api_key()
         self._test_by_tags()
