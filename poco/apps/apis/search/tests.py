@@ -209,9 +209,9 @@ class ItemsSearchViewTest(BaseAPITest):
         #import pprint; pprint.pprint(response.data)
         self.assertEqual(response.data["info"]["total_result_count"], 4)
         self.assertEqual(self.sortDictList(response.data["info"]["facets"]["brand"], by_key="id"),
-                        [{"count": 1, "id": "22", "label": u"雀巢"},
-                         {"count": 2, "id": "23", "label": u"能恩"},
-                         {"count": 1, "id": "24", "label": u"智多星"}
+                         [{"count": 1, "id": "22", "label": u"雀巢", 'brand_logo': 'http://logo.com/22'},
+                         {"count": 2, "id": "23", "label": u"能恩", 'brand_logo': 'http://logo.com/23'},
+                         {"count": 1, "id": "24", "label": u"智多星", 'brand_logo': 'http://logo.com/24'},
                         ])
         self.assertEqual(self.sortDictList(response.data["info"]["facets"]["origin_place"], by_key="id"),
                         [{"count": 3, "id": 0, "label": ""},
@@ -239,8 +239,8 @@ class ItemsSearchViewTest(BaseAPITest):
         response = self.api_post(reverse("products-search"), data=body)
         self.assertEqual(response.data["info"]["total_result_count"], 3)
         self.assertEqual(self.sortDictList(response.data["info"]["facets"]["brand"], by_key="id"),
-                        [{"count": 1, "id": "22", "label": u"雀巢"},
-                         {"count": 2, "id": "23", "label": u"能恩"}
+                        [{"count": 1, "id": "22", "label": u"雀巢", 'brand_logo': 'http://logo.com/22'},
+                         {"count": 2, "id": "23", "label": u"能恩", 'brand_logo': 'http://logo.com/23'},
                         ])
         self.assertEqual(self.sortDictList(response.data["info"]["facets"]["origin_place"], by_key="id"),
                         [{"count": 2, "id": 0, "label": ""},
@@ -464,9 +464,9 @@ class ItemsSearchViewTest(BaseAPITest):
         response = self.api_post(reverse("products-search"), data=body)
         self.sortDictList(response.data["info"]["facets"]["brand"], "id")
         self.assertEqual(response.data["info"]["facets"],
-                {"brand": [{"count": 1, "id": "22", "label": u"雀巢"},
-                         {"count": 2, "id": "23", "label": u"能恩"},
-                         {"count": 1, "id": "24", "label": u"智多星"}
+                {"brand": [{"count": 1, "id": "22", "label": u"雀巢", 'brand_logo': 'http://logo.com/22'},
+                         {"count": 2, "id": "23", "label": u"能恩", 'brand_logo': 'http://logo.com/23'},
+                         {"count": 1, "id": "24", "label": u"智多星", 'brand_logo': 'http://logo.com/24'},
                   ]})
 
         body = {"api_key": self.api_key,
@@ -495,9 +495,9 @@ class ItemsSearchViewTest(BaseAPITest):
         self.sortDictList(response.data["info"]["facets"]["categories"], "id")
         print response.data["info"]["facets"]
         self.assertEqual(response.data["info"]["facets"],
-                {"brand": [{"count": 1, "id": "22", "label": u"雀巢"},
-                         {"count": 2, "id": "23", "label": u"能恩"},
-                         {"count": 1, "id": "24", "label": u"智多星"}
+                {"brand": [{"count": 1, "id": "22", "label": u"雀巢", 'brand_logo': 'http://logo.com/22'},
+                         {"count": 2, "id": "23", "label": u"能恩", 'brand_logo': 'http://logo.com/23'},
+                         {"count": 1, "id": "24", "label": u"智多星", 'brand_logo': 'http://logo.com/24'},
                   ],
                   "categories":
                         [{"count": 3, "id": "12", "label": u"分类12"},
@@ -521,9 +521,9 @@ class ItemsSearchViewTest(BaseAPITest):
         self.sortDictList(response.data["info"]["facets"]["categories"], "id")
         self.sortDictList(response.data["info"]["facets"]["origin_place"], "id")
         self.assertEqual(response.data["info"]["facets"],
-                {"brand": [{"count": 1, "id": "22", "label": u"雀巢"},
-                         {"count": 2, "id": "23", "label": u"能恩"},
-                         {"count": 1, "id": "24", "label": u"智多星"}
+                {"brand": [{"count": 1, "id": "22", "label": u"雀巢", 'brand_logo': 'http://logo.com/22'},
+                         {"count": 2, "id": "23", "label": u"能恩", 'brand_logo': 'http://logo.com/23'},
+                         {"count": 1, "id": "24", "label": u"智多星", 'brand_logo': 'http://logo.com/24'},
                   ],
                   "categories":
                         [{"count": 3, "id": "12", "label": u"分类12"},
@@ -553,9 +553,9 @@ class ItemsSearchViewTest(BaseAPITest):
         self.sortDictList(response.data["info"]["facets"]["categories"], "id")
         self.sortDictList(response.data["info"]["facets"]["origin_place"], "id")
         self.assertEqual(response.data["info"]["facets"],
-                {"brand": [{"count": 1, "id": "22", "label": u"雀巢"},
-                         {"count": 2, "id": "23", "label": u"能恩"},
-                         {"count": 1, "id": "24", "label": u"智多星"}
+                {"brand": [{"count": 1, "id": "22", "label": u"雀巢", 'brand_logo': 'http://logo.com/22'},
+                         {"count": 2, "id": "23", "label": u"能恩", 'brand_logo': 'http://logo.com/23'},
+                         {"count": 1, "id": "24", "label": u"智多星", 'brand_logo': 'http://logo.com/24'},
                   ],
                   "categories":
                         [{"count": 3, "id": "12", "label": u"分类12"},
@@ -784,6 +784,8 @@ class ItemsSearchViewTest(BaseAPITest):
             self.assertEqual(item['item_id'], item_id)
 
     def test_search(self):
+        #self._test_search1()
+        #return
         # TODO: highlight; sort_fields
         self._test_no_such_api_key()
         self._test_by_tags()

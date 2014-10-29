@@ -504,7 +504,7 @@ class UpdateItemProcessor(ActionProcessor):
                 return {"code": 1, "err_msg": "brand should be of type 'dict'"}
             if args_brand.get("type", None) != "brand":
                 return {"code": 1, "err_msg": "brand should has type 'brand'"}
-            for expected_key in ("id", "name"):
+            for expected_key in ("id", "name", 'brand_logo'):
                 if not args_brand.has_key(expected_key):
                     return {"code": 1, "err_msg": "brand content should contains key: '%s'" % expected_key}
         return None
@@ -564,7 +564,6 @@ class UpdateItemProcessor(ActionProcessor):
                     except (ValueError, TypeError):
                         return {"code": 1, "err_msg": "%s should be an integer." % key}
 
-            #self._updateItem(site_id, args)
             self._queueItem(site_id, args)
 
             return {"code": 0}
