@@ -999,10 +999,9 @@ class AdUnitTest(BaseRecommenderTest):
         self.assertEqual([item["item_id"] for item in response.data["topn"]],
                          ["I123", "I124", "I125", "I126"])
 
-        # And the /unit/by_keywords with invalid keywords should return same result, because the user has no browsing history
+        # And the /unit/by_keywords with invalid keywords should return blank result on customer request
         response = self._recommender("U1", type="/unit/by_keywords", amount=5, keywords="不存在1,不存在2")
-        self.assertEqual([item["item_id"] for item in response.data["topn"]],
-                        ["I123", "I124", "I125", "I126"])
+        self.assertEqual([item["item_id"] for item in response.data["topn"]], [])
 
         # And let's let the user U1 browse some items
         self._viewItem("U1", "I123", 10)
@@ -1028,11 +1027,9 @@ class AdUnitTest(BaseRecommenderTest):
 
         raw_log_count = len(self.get_last_n_raw_logs(None))
 
-        # And now the /unit/home should return the same result as ByBrowsingHistory
-        # because ByBrowsingHistory takes priority in the logic of /unit/home
+        # And now the /unit/by_keywords should return blank result
         response = self._recommender("U1", type="/unit/by_keywords", amount=5, keywords="不存在1,不存在2")
-        self.assertEqual([item["item_id"] for item in response.data["topn"]],
-                        ["I125", "I126"])
+        self.assertEqual([item["item_id"] for item in response.data["topn"]], [])
         self.assertEqual(len(self.get_last_n_raw_logs(None)) - raw_log_count, 1)
 
         # also check the raw log
@@ -1041,10 +1038,12 @@ class AdUnitTest(BaseRecommenderTest):
                     {"user_id": "U1",
                      "behavior": "Recommendation",
                      "recommender_type": "/unit/by_keywords",
-                     "recommended_items": [u"I125", u"I126"],
+                     "recommended_items": [],
                      "amount": '5',
                      "keywords": u"不存在1,不存在2"
                      })
+        response = self._recommender("U1", type="/unit/by_keywords", amount=5, keywords="")
+        self.assertEqual([item["item_id"] for item in response.data["topn"]], [])
 
 
     def testUnitItem(self):

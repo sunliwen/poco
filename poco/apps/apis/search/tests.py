@@ -803,9 +803,9 @@ class ItemsSearchViewTest(BaseAPITest):
                 }
         response = self.api_post(reverse("products-search"), data=body)
         self.assertEqual(self.sortDictList(response.data["info"]["facets"]["brand"], by_key="id"),
-                        [{"count": 1, "id": "22", "label": u"雀巢"},
-                         {"count": 2, "id": "23", "label": u"能恩"},
-                         {"count": 1, "id": "24", "label": u"智多星"}
+                         [{"count": 1, "id": "22", "label": u"雀巢", 'brand_logo': 'http://logo.com/22'},
+                         {"count": 2, "id": "23", "label": u"能恩", 'brand_logo': 'http://logo.com/23'},
+                         {"count": 1, "id": "24", "label": u"智多星", 'brand_logo': 'http://logo.com/24'},
                         ])
         self.assertEqual(self.sortDictList(response.data["info"]["facets"]['prescription_type'], by_key="id"),
                         [{"count": 2, "id": 3, "label": ""},
