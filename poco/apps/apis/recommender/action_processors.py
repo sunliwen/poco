@@ -467,7 +467,8 @@ class UpdateItemProcessor(ActionProcessor):
             ("sku", False),
             ("stock", False),
             ("factory", False),
-            ("sell_num", False)
+            ("sell_num", False),
+            ("dosage", False),
         )
     )
 

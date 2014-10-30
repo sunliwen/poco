@@ -147,12 +147,12 @@ class ProductsSearch(BaseAPIView):
             elif categories_facet_mode == "SUB_TREE":
                 facets_dsl["categories"] = es_search_functions.addFilterToFacets(s,
                                             {'terms': {'regex': r'[^_]+', 'field': 'categories', 'size': 5000}})
-        if facets_selector.has_key("brand"):
-            facets_dsl["brand"] = es_search_functions.addFilterToFacets(s, {'terms': {'field': 'brand', 'size': 5000}})
-        if facets_selector.has_key("origin_place"):
-            facets_dsl["origin_place"] = es_search_functions.addFilterToFacets(s,
-                                                    {'terms': {'field': 'origin_place',
-                                                    'size': 5000}})
+        for facet_key in ('brand', 'origin_place', 'dosage', 'prescription_type'):
+            if facets_selector.has_key(facet_key):
+                facets_dsl[facet_key] = es_search_functions.addFilterToFacets(
+                    s,
+                    {'terms': {'field': facet_key, 'size': 5000}})
+
         facets_result = {}
         if len(facets_dsl.keys()) > 0:
             s = s.facet_raw(**facets_dsl)
@@ -180,11 +180,13 @@ class ProductsSearch(BaseAPIView):
                              "count": facet["count"]}
                     facets_result["brand"].append(brand)
 
-            if facets_selector.has_key("origin_place"):
-                facets_result["origin_place"] = [{"id": facet["term"],
-                                     "label": "",
-                                     "count": facet["count"]}
-                                     for facet in s.facet_counts().get("origin_place", [])]
+            for facet_key in ('origin_place', 'dosage', 'prescription_type'):
+                if facets_selector.has_key(facet_key):
+                    facets_result[facet_key] = [{"id": facet["term"],
+                                                 "label": "",
+                                                 "count": facet["count"]}
+                                                for facet in s.facet_counts().get(facet_key, [])]
+
         return s, facets_result
 
     def _validate(self, request):
@@ -323,13 +325,17 @@ class ProductsSearch(BaseAPIView):
         "item_comment_num": is_float,
         "origin_place": is_float,
         "brand": is_string,
-        "prescription_type": is_string
+        "prescription_type": is_string,
+        'dosage': is_string,
+        'prescription_type': is_float,
     }
 
     DEFAULT_FACETS = {
         "brand": {},
         "origin_place": {},
-        "categories": {"mode": DEFAULT_FACET_CATEGORY_MODE}
+        "categories": {"mode": DEFAULT_FACET_CATEGORY_MODE},
+        'dosage': {},
+        'prescription_type': {}
     }
 
     SUPPORTED_FACETS = ["brand", "categories", "origin_place"]
