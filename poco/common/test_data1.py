@@ -51,7 +51,8 @@ ITEMS.append({
             "stock": 10,
             "factory": "雀巢工厂",
             "dosage": "针剂",
-            "prescription_type": 3
+            "prescription_type": 3,
+            'item_sub_title': '奶粉副标题',
             })
 ITEMS += [{
             "type": "product",
@@ -68,6 +69,7 @@ ITEMS += [{
             "factory": "能恩工厂",
             "sell_num": 3,
             "dosage": "粉剂",
+            'item_sub_title': '能恩副标题',
             "prescription_type": 3
             },
             {
@@ -85,6 +87,7 @@ ITEMS += [{
             "factory": "能恩工厂",
             "sell_num": 10,
             "dosage": "片剂",
+            'item_sub_title': '能恩副标题',
             "prescription_type": 5
             },
             {
@@ -102,6 +105,7 @@ ITEMS += [{
             "factory": "智多星工厂",
             "sell_num": 4,
             "dosage": "针剂",
+            'item_sub_title': '智多星标题',
             "prescription_type": 6
             }
             ]
