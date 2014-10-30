@@ -171,10 +171,14 @@ class ProductsSearch(BaseAPIView):
                 facets_result["categories"] = facet_categories_list
 
             if facets_selector.has_key("brand"):
-                facets_result["brand"] = [{"id": facet["term"],
-                                     "label": property_cache.get_name(site_id, "brand", facet["term"]),
-                                     "count": facet["count"]}
-                                     for facet in s.facet_counts().get("brand", [])]
+                facets_result["brand"] = []
+                for facet in s.facet_counts().get("brand", []):
+                    binfo = property_cache.get(site_id, "brand", facet["term"])
+                    brand = {"id": facet["term"],
+                             "label": binfo.get('name', '') if binfo else '',
+                             "brand_logo": binfo.get('brand_logo', '') if binfo else '',
+                             "count": facet["count"]}
+                    facets_result["brand"].append(brand)
 
             if facets_selector.has_key("origin_place"):
                 facets_result["origin_place"] = [{"id": facet["term"],
@@ -463,7 +467,6 @@ class ProductsSearch(BaseAPIView):
                       "errors": []
                     }
             django_cache.set(search_cache_key, json.dumps(result), settings.CACHE_EXPIRY_SEARCH_RESULTS)
-
 
         return Response(result)
 

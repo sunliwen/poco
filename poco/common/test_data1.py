@@ -29,6 +29,7 @@ BRANDS = {
 for id, brand in BRANDS.items():
     brand["type"] = "brand"
     brand["id"] = id
+    brand['brand_logo'] = 'http://logo.com/%s' % id
 
 
 ITEMS = []
