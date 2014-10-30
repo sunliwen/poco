@@ -32,7 +32,8 @@ api_key          是                                                            
         1. price、market_price、item_level、item_comment_num、origin_place 和 sell_num 可用来排序。如果要根据相关性排序，可以加上_score。
     3. facets (聚类)
         1. 如果在传参中没有此参数，则为默认状态。默认状态所有支持的facets都选中,categories为"SUB_TREE"模式
-        2. 如果在传参中指定"facets"，则仅返回制定的聚类::
+        2. 支持 categories, brand, origin_place, dosage, prescription_type
+        3. 如果在传参中指定"facets"，则仅返回制定的聚类::
            {"brand": {}}  # 这样仅返回brand的聚类
            {"brand": {}, "origin_place": {}} # 这样仅聚合brand和origin_place
            {"categories": {"mode": "DIRECT_CHILDREN"}} # 如果在filters中指定分类，则聚合这些分类的直接子分类；如果在filters中未指定分类，则聚合所有顶层分类

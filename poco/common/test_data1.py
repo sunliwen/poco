@@ -48,7 +48,9 @@ ITEMS.append({
             "description": "描述A 描述B",
             "sku": "SKU10052",
             "stock": 10,
-            "factory": "雀巢工厂"
+            "factory": "雀巢工厂",
+            "dosage": "针剂",
+            "prescription_type": 3
             })
 ITEMS += [{
             "type": "product",
@@ -63,7 +65,9 @@ ITEMS += [{
             "tags": ["小孩", "妇女"],
             "stock": 10,
             "factory": "能恩工厂",
-            "sell_num": 3
+            "sell_num": 3,
+            "dosage": "粉剂",
+            "prescription_type": 3
             },
             {
             "type": "product",
@@ -78,7 +82,9 @@ ITEMS += [{
             "tags": ["老人", "小孩"],
             "stock": 10,
             "factory": "能恩工厂",
-            "sell_num": 10
+            "sell_num": 10,
+            "dosage": "片剂",
+            "prescription_type": 5
             },
             {
             "type": "product",
@@ -93,7 +99,9 @@ ITEMS += [{
             "tags": ["小孩"],
             "stock": 10,
             "factory": "智多星工厂",
-            "sell_num": 4
+            "sell_num": 4,
+            "dosage": "针剂",
+            "prescription_type": 6
             }
             ]
 
