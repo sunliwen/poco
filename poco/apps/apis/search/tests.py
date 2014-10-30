@@ -365,6 +365,24 @@ class ItemsSearchViewTest(BaseAPITest):
         self.assertEqual(response.data["info"]["total_result_count"], 1)
         # stock field should be included
         self.assertEqual(response.data["records"][0].has_key("stock"), True)
+        self.assertEqual(response.data["records"][0]['brand']['id'], '22')
+        self.assertEqual(response.data["records"][0]['brand']['name'], u'雀巢')
+        self.assertEqual(response.data["records"][0]['brand']['brand_logo'],
+                         'http://logo.com/22')
+
+        item_id = response.data['records'][0]['item_id']
+        # delete the brand, got nothing
+        item = test_data1.getItems(item_ids=[item_id])[0]
+        del item['brand']
+        response = self.postItem(item)
+        self.clearCaches()
+        self.refreshSiteItemIndex(self.TEST_SITE_ID)
+        response = self.api_post(reverse("products-search"), data=body)
+        self.assertEqual(response.data["info"]["total_result_count"], 1)
+        # stock field should be included
+        self.assertEqual(response.data["records"][0].has_key("stock"), True)
+        self.assertEqual(response.data["records"][0].has_key('brand'), False)
+
 
     def _test_search2(self):
         body = {"api_key": self.api_key,
