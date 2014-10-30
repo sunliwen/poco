@@ -53,6 +53,8 @@ origin_place       否                                            商品产地
 tags               否          []                                商品标签
 sku                否                                            商品SKU编码
 sell_num           否                                            商品销量
+dosage             否                                            剂型
+prescription_type  否                                            integer
 api_key            是                                            分配给用户站点的api key
 =================  ==========  ===============================   =============================================
 

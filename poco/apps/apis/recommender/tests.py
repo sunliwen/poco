@@ -664,7 +664,7 @@ class ItemsAPITest(BaseRecommenderTest):
         item_to_post = test_data1.getItems(["I123"])[0]
         item_to_post["api_key"] = self.api_key
 
-        prescription_type = "Blah blah"
+        prescription_type = 8627
         item_to_post["prescription_type"] = prescription_type
         response = self.api_post(reverse("recommender-items"), data=item_to_post,
                                   expected_status_code=200,

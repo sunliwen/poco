@@ -209,9 +209,9 @@ class ItemsSearchViewTest(BaseAPITest):
         #import pprint; pprint.pprint(response.data)
         self.assertEqual(response.data["info"]["total_result_count"], 4)
         self.assertEqual(self.sortDictList(response.data["info"]["facets"]["brand"], by_key="id"),
-                        [{"count": 1, "id": "22", "label": u"雀巢"},
-                         {"count": 2, "id": "23", "label": u"能恩"},
-                         {"count": 1, "id": "24", "label": u"智多星"}
+                         [{"count": 1, "id": "22", "label": u"雀巢", 'brand_logo': 'http://logo.com/22'},
+                         {"count": 2, "id": "23", "label": u"能恩", 'brand_logo': 'http://logo.com/23'},
+                         {"count": 1, "id": "24", "label": u"智多星", 'brand_logo': 'http://logo.com/24'},
                         ])
         self.assertEqual(self.sortDictList(response.data["info"]["facets"]["origin_place"], by_key="id"),
                         [{"count": 3, "id": 0, "label": ""},
@@ -239,8 +239,8 @@ class ItemsSearchViewTest(BaseAPITest):
         response = self.api_post(reverse("products-search"), data=body)
         self.assertEqual(response.data["info"]["total_result_count"], 3)
         self.assertEqual(self.sortDictList(response.data["info"]["facets"]["brand"], by_key="id"),
-                        [{"count": 1, "id": "22", "label": u"雀巢"},
-                         {"count": 2, "id": "23", "label": u"能恩"}
+                        [{"count": 1, "id": "22", "label": u"雀巢", 'brand_logo': 'http://logo.com/22'},
+                         {"count": 2, "id": "23", "label": u"能恩", 'brand_logo': 'http://logo.com/23'},
                         ])
         self.assertEqual(self.sortDictList(response.data["info"]["facets"]["origin_place"], by_key="id"),
                         [{"count": 2, "id": 0, "label": ""},
@@ -464,9 +464,9 @@ class ItemsSearchViewTest(BaseAPITest):
         response = self.api_post(reverse("products-search"), data=body)
         self.sortDictList(response.data["info"]["facets"]["brand"], "id")
         self.assertEqual(response.data["info"]["facets"],
-                {"brand": [{"count": 1, "id": "22", "label": u"雀巢"},
-                         {"count": 2, "id": "23", "label": u"能恩"},
-                         {"count": 1, "id": "24", "label": u"智多星"}
+                {"brand": [{"count": 1, "id": "22", "label": u"雀巢", 'brand_logo': 'http://logo.com/22'},
+                         {"count": 2, "id": "23", "label": u"能恩", 'brand_logo': 'http://logo.com/23'},
+                         {"count": 1, "id": "24", "label": u"智多星", 'brand_logo': 'http://logo.com/24'},
                   ]})
 
         body = {"api_key": self.api_key,
@@ -495,9 +495,9 @@ class ItemsSearchViewTest(BaseAPITest):
         self.sortDictList(response.data["info"]["facets"]["categories"], "id")
         print response.data["info"]["facets"]
         self.assertEqual(response.data["info"]["facets"],
-                {"brand": [{"count": 1, "id": "22", "label": u"雀巢"},
-                         {"count": 2, "id": "23", "label": u"能恩"},
-                         {"count": 1, "id": "24", "label": u"智多星"}
+                {"brand": [{"count": 1, "id": "22", "label": u"雀巢", 'brand_logo': 'http://logo.com/22'},
+                         {"count": 2, "id": "23", "label": u"能恩", 'brand_logo': 'http://logo.com/23'},
+                         {"count": 1, "id": "24", "label": u"智多星", 'brand_logo': 'http://logo.com/24'},
                   ],
                   "categories":
                         [{"count": 3, "id": "12", "label": u"分类12"},
@@ -521,9 +521,9 @@ class ItemsSearchViewTest(BaseAPITest):
         self.sortDictList(response.data["info"]["facets"]["categories"], "id")
         self.sortDictList(response.data["info"]["facets"]["origin_place"], "id")
         self.assertEqual(response.data["info"]["facets"],
-                {"brand": [{"count": 1, "id": "22", "label": u"雀巢"},
-                         {"count": 2, "id": "23", "label": u"能恩"},
-                         {"count": 1, "id": "24", "label": u"智多星"}
+                {"brand": [{"count": 1, "id": "22", "label": u"雀巢", 'brand_logo': 'http://logo.com/22'},
+                         {"count": 2, "id": "23", "label": u"能恩", 'brand_logo': 'http://logo.com/23'},
+                         {"count": 1, "id": "24", "label": u"智多星", 'brand_logo': 'http://logo.com/24'},
                   ],
                   "categories":
                         [{"count": 3, "id": "12", "label": u"分类12"},
@@ -553,9 +553,9 @@ class ItemsSearchViewTest(BaseAPITest):
         self.sortDictList(response.data["info"]["facets"]["categories"], "id")
         self.sortDictList(response.data["info"]["facets"]["origin_place"], "id")
         self.assertEqual(response.data["info"]["facets"],
-                {"brand": [{"count": 1, "id": "22", "label": u"雀巢"},
-                         {"count": 2, "id": "23", "label": u"能恩"},
-                         {"count": 1, "id": "24", "label": u"智多星"}
+                {"brand": [{"count": 1, "id": "22", "label": u"雀巢", 'brand_logo': 'http://logo.com/22'},
+                         {"count": 2, "id": "23", "label": u"能恩", 'brand_logo': 'http://logo.com/23'},
+                         {"count": 1, "id": "24", "label": u"智多星", 'brand_logo': 'http://logo.com/24'},
                   ],
                   "categories":
                         [{"count": 3, "id": "12", "label": u"分类12"},
@@ -783,6 +783,41 @@ class ItemsSearchViewTest(BaseAPITest):
         for item, item_id in zip(response.data['records'], items_sell_num_order):
             self.assertEqual(item['item_id'], item_id)
 
+    def _test_search_dosage_prescription_type(self):
+        body = {"api_key": self.api_key,
+                "q": "雀巢",
+                }
+        for ft, fv_miss, fv_hit in (('dosage', 'test-dosage', '针剂'),
+                                    ('prescription_type', 4, 3)):
+            body['filters'] = {ft: [fv_miss,]}
+            response = self.api_post(reverse("products-search"), data=body)
+            self.assertEqual(response.data["info"]["total_result_count"], 0)
+            body['filters'] = {ft: [fv_hit,]}
+            response = self.api_post(reverse("products-search"), data=body)
+            self.assertEqual(response.data["info"]["total_result_count"], 1)
+            # stock field should be included
+            self.assertEqual(response.data["records"][0].has_key("dosage"), True)
+            self.assertEqual(response.data["records"][0].has_key("prescription_type"), True)
+        body = {"api_key": self.api_key,
+                "q": "",
+                }
+        response = self.api_post(reverse("products-search"), data=body)
+        self.assertEqual(self.sortDictList(response.data["info"]["facets"]["brand"], by_key="id"),
+                         [{"count": 1, "id": "22", "label": u"雀巢", 'brand_logo': 'http://logo.com/22'},
+                         {"count": 2, "id": "23", "label": u"能恩", 'brand_logo': 'http://logo.com/23'},
+                         {"count": 1, "id": "24", "label": u"智多星", 'brand_logo': 'http://logo.com/24'},
+                        ])
+        self.assertEqual(self.sortDictList(response.data["info"]["facets"]['prescription_type'], by_key="id"),
+                        [{"count": 2, "id": 3, "label": ""},
+                         {"count": 1, "id": 5, "label": ""},
+                         {"count": 1, "id": 6, "label": ""}
+                        ])
+        self.assertEqual(self.sortDictList(response.data["info"]["facets"]['dosage'], by_key="id"),
+                         self.sortDictList([{"count": 2, "id": u'针剂', "label": ""},
+                                            {"count": 1, "id": u'粉剂', "label": ""},
+                                            {"count": 1, "id": u'片剂', "label": ""}
+                                        ], by_key="id"),)
+
     def test_search(self):
         # TODO: highlight; sort_fields
         self._test_no_such_api_key()
@@ -799,6 +834,7 @@ class ItemsSearchViewTest(BaseAPITest):
         #self._test_search_facets_of_whole_sub_tree()
         self._test_item_factory()
         self._test_sell_num_sort()
+        self._test_search_dosage_prescription_type()
 
     def _assertKWList(self, list_type, expected):
         keywords = set([keyword_record["keyword"] for keyword_record in self.mongo_client.getSuggestKeywordList(self.TEST_SITE_ID, list_type)])
