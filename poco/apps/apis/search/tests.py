@@ -511,7 +511,6 @@ class ItemsSearchViewTest(BaseAPITest):
         response = self.api_post(reverse("products-search"), data=body)
         self.sortDictList(response.data["info"]["facets"]["brand"], "id")
         self.sortDictList(response.data["info"]["facets"]["categories"], "id")
-        print response.data["info"]["facets"]
         self.assertEqual(response.data["info"]["facets"],
                 {"brand": [{"count": 1, "id": "22", "label": u"雀巢", 'brand_logo': 'http://logo.com/22'},
                          {"count": 2, "id": "23", "label": u"能恩", 'brand_logo': 'http://logo.com/23'},
@@ -828,6 +827,23 @@ class ItemsSearchViewTest(BaseAPITest):
                          {"count": 2, "id": "23", "label": u"能恩", 'brand_logo': 'http://logo.com/23'},
                          {"count": 1, "id": "24", "label": u"智多星", 'brand_logo': 'http://logo.com/24'},
                         ])
+        self.assertEqual(self.sortDictList(response.data["info"]["facets"]['prescription_type'], by_key="id"),
+                        [{"count": 2, "id": 3, "label": ""},
+                         {"count": 1, "id": 5, "label": ""},
+                         {"count": 1, "id": 6, "label": ""}
+                        ])
+        self.assertEqual(self.sortDictList(response.data["info"]["facets"]['dosage'], by_key="id"),
+                         self.sortDictList([{"count": 2, "id": u'针剂', "label": ""},
+                                            {"count": 1, "id": u'粉剂', "label": ""},
+                                            {"count": 1, "id": u'片剂', "label": ""}
+                                        ], by_key="id"),)
+        body = {"api_key": self.api_key,
+                "q": "",
+                'facets': {
+                    'dosage': {},
+                    'prescription_type': {}
+                }}
+        response = self.api_post(reverse("products-search"), data=body)
         self.assertEqual(self.sortDictList(response.data["info"]["facets"]['prescription_type'], by_key="id"),
                         [{"count": 2, "id": 3, "label": ""},
                          {"count": 1, "id": 5, "label": ""},
