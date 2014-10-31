@@ -96,6 +96,7 @@ MAPPINGS = {"keyword": {
                     "sell_num": {"type": "integer"},
                     "dosage": {"type": "string", "analyzer": "keyword"},
                     "prescription_type": {"type": "integer"},
+                    "item_sub_title": {"type": "string"},
                 }
             }
             }

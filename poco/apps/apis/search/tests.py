@@ -643,7 +643,7 @@ class ItemsSearchViewTest(BaseAPITest):
                         ],
                 })
 
-    def _test_item_factory(self):
+    def _test_item_factory_subtitle(self):
         body = {
             "q": "",
             "search_config": {"type": "SEARCH_TEXT"},
@@ -654,9 +654,11 @@ class ItemsSearchViewTest(BaseAPITest):
         self.assertEqual(response.data["info"]["total_result_count"], 4)
         for item in response.data['records']:
             self.assertNotEqual(item['factory'], '')
+            self.assertNotEqual(item['item_sub_title'], '')
         items = test_data1.getItems()
         for item in items:
             del item['factory']
+            del item['item_sub_title']
 
         body = {"type": "multiple_products",
                 "api_key": self.api_key,
@@ -677,6 +679,7 @@ class ItemsSearchViewTest(BaseAPITest):
         self.assertEqual(response.data["info"]["total_result_count"], 4)
         for item in response.data['records']:
             self.assertEqual(item.has_key('factory'), False)
+            self.assertEqual(item.has_key('item_sub_title'), False)
 
     def _test_sell_num_sort(self):
         self.clearCaches()
@@ -832,7 +835,7 @@ class ItemsSearchViewTest(BaseAPITest):
         #self._test_result_mode()
         self._test_search_facets_selection()
         #self._test_search_facets_of_whole_sub_tree()
-        self._test_item_factory()
+        self._test_item_factory_subtitle()
         self._test_sell_num_sort()
         self._test_search_dosage_prescription_type()
 
