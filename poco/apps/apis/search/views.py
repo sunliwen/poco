@@ -338,7 +338,8 @@ class ProductsSearch(BaseAPIView):
         'prescription_type': {}
     }
 
-    SUPPORTED_FACETS = ["brand", "categories", "origin_place"]
+    SUPPORTED_FACETS = ["brand", "categories", "origin_place",
+                        "dosage", "prescription_type"]
 
     DEFAULT_FILTERS = {
         "available": [True]
