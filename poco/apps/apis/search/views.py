@@ -14,7 +14,7 @@ from django.conf import settings
 from rest_framework.views import APIView
 from rest_framework import status
 import es_search_functions
-from es_search_functions import serialize_items
+from es_search_functions import serialize_items, update_item_brands
 from common.mongo_client import getMongoClient
 from common.cached_result import cached_result
 from apps.apis.recommender.property_cache import PropertyCache
@@ -472,6 +472,7 @@ class ProductsSearch(BaseAPIView):
                       },
                       "errors": []
                     }
+            update_item_brands(site_id, result['records'], property_cache)
             django_cache.set(search_cache_key, json.dumps(result), settings.CACHE_EXPIRY_SEARCH_RESULTS)
 
         return Response(result)

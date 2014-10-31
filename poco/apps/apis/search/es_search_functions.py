@@ -69,6 +69,23 @@ def serialize_items(item_list):
     return result
 
 
+def update_item_brands(site_id, items, property_cache):
+    """append brand info to items and the brand info stored in property_cache
+    """
+    brands = {}
+    for item in items:
+        bid = item.get('brand', '')
+        if not bid:
+            continue
+        if brands.has_key(bid):
+            binfo = brands[bid]
+            item['brand'] = binfo if binfo else {'id': bid}
+            continue
+        binfo = property_cache.get(site_id, "brand", bid)
+        # add it to dict no matter we get a None
+        brands[bid] = binfo
+        item['brand'] = binfo if binfo else {'id': bid}
+
 def construct_or_query(query_str, delimiter=","):
     match_phrases = []
     for keyword in query_str.split(delimiter):
