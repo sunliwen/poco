@@ -525,6 +525,35 @@ class ItemsAPITest(BaseRecommenderTest):
         self.assertEqual(es_search_functions.getItemById(self.TEST_SITE_ID, "I888")["_source"]["keywords"], [u"能恩", u"奶粉"])
         self.assertEqual(es_search_functions.getItemById(self.TEST_SITE_ID, "I889")["_source"]["keywords"], [u"能恩", u"超级"])
 
+    def test_category_brand_share_name_id(self):
+        item = {
+            "api_key": self.api_key,
+            "type": "product",
+            "available": True,
+            "item_id": "I890",
+            "item_name": u"测试商品",
+            "item_link": "http://example.com/",
+            'brand': {'id': "8627",
+                      'type': 'brand',
+                      'name': 'brand-label',
+                      'brand_logo': 'http://logo.com/8627'},
+            'categories': [{'type': 'category',
+                            'id': "8627",
+                            'name': 'cate1',
+                            'parent_id': 'null'}]
+        }
+        response = self.postItem(item)
+        self.assertEqual(response.data["code"], 0, "Unexpected response: %s" % response.data)
+        self.refreshSiteItemIndex(self.TEST_SITE_ID)
+        self.clearCaches()
+        body = {"api_key": self.api_key,
+                "q": "测试商品"
+                }
+        response = self.api_post(reverse("products-search"), data=body)
+        self.assertEqual(response.data['records'][0]['brand']['name'], 'brand-label')
+        self.assertEqual(response.data['info']['facets']['categories'][0]['label'], 'cate1')
+
+
     def test_invalid_properties_format_in_posted_items(self):
         # TODO full test of properties type
         c_items = self.mongo_client.getSiteDBCollection(self.TEST_SITE_ID, "items")
