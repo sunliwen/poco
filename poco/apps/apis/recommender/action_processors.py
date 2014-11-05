@@ -1045,8 +1045,6 @@ class GetCustomListsRecommend(BaseSimpleResultRecommendationProcessor):
         topn = []
         if recommend_data:
             topn = [[item, 0.5] for item in recommend_data['content']['item_ids']]
-        if len(topn) < amount:
-            pass
         # since filter will work, so we have to append hotviewlist no matter how many items in custom list
         default_topn = mongo_client.getHotViewList(site_id,
                                                    'by_viewed')
