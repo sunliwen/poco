@@ -1686,3 +1686,19 @@ class RecommendCustomListsAPITest(BaseRecommenderTest):
         self.assertEqual(response.data["code"], 0)
         self.assertEqual([item["item_id"] for item in response.data["topn"]],
                          ['I123', 'I124', 'I126', 'I125'])
+
+        # if we set I123 to unavailable, the hot view list will work
+        item = test_data1.getItems(item_ids=["I123"])[0]
+        item["stock"] = 0
+        response = self.postItem(item)
+        response = self.api_get(reverse("recommender-recommender"),
+                    data={"api_key": self.api_key,
+                          "type": "CustomList",
+                          "custom_type": "com-type",
+                          "user_id": "U1",
+                          "brand": "23",
+                          "amount": 3
+                          })
+        self.assertEqual(response.data["code"], 0)
+        self.assertEqual([item["item_id"] for item in response.data["topn"]],
+                         ['I124', 'I126', 'I125'])
