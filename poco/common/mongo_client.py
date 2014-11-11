@@ -302,7 +302,8 @@ class MongoClient:
 
     def updateProperty(self, site_id, property):
         c_properties = getSiteDBCollection(self.connection, site_id, "properties")
-        prop_in_db = c_properties.find_one({"id": property["id"]})
+        prop_in_db = c_properties.find_one({"id": property["id"],
+                                            'type': property['type']})
         if prop_in_db is None:
             prop_in_db = {}
         else:
@@ -756,7 +757,7 @@ class MongoClient:
             c_cached_hot_view.update({"hot_index_type": hot_index_type, "category_id": None, "brand": brand},
                                      {"hot_index_type": hot_index_type, "category_id": None, "brand": brand, "result": topn},
                                      upsert=True)
-        
+
     def updateSearchTermsCache(self, site_id, cache_entry):
         c_search_terms_cache = getSiteDBCollection(self.connection, site_id, "search_terms_cache")
         terms_key = "|".join(cache_entry["terms"])
@@ -837,7 +838,7 @@ class MongoClient:
             site_id,
             "recommend_custom_list")
         return c_recommend_custom_list.find_one({'type': list_type})
-        
+
     def updateRecommendCustomLists(self, site_id, list_type, content):
         c_recommend_custom_list = self.getSiteDBCollection(
             site_id,
@@ -846,14 +847,14 @@ class MongoClient:
                                        {'content': content,
                                         'type': list_type},
                                        upsert=True)
-        
+
     def getRecommenderCustomTypes(self, site_id):
         c_recommend_custom_list = self.getSiteDBCollection(
             site_id,
             "recommend_custom_list")
         rsts = c_recommend_custom_list.find()
         return [i for i in rsts]
-            
+
 
 def getConnection():
     if(settings.REPLICA_SET):
