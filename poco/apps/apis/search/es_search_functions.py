@@ -7,6 +7,7 @@ from django.conf import settings
 from django.core.cache import get_cache
 from apps.apis.recommender.property_cache import PropertyCache
 
+import es_item_attrs
 
 def getESItemIndexName(site_id):
     #return "item-index-v1-%s" % site_id
@@ -26,18 +27,9 @@ import jieba
 
 
 def preprocess_query_str(query_str):
-    # ignore "(", ")"
-    query_str = query_str.replace("(", "").replace(")", "")
-    result = []
-    keywords = [keyword for keyword in query_str.split(
-        " ") if keyword.strip() != ""]
-    for keyword in keywords:
-        cutted_keyword = " ".join(
-            ["%s" % term for term in jieba.cut_for_search(keyword)])
-        result.append(cutted_keyword)
-    return result
+    return es_item_attrs.preprocess_query_str(query_str)
 
-
+"""
 def get_item_name(obj):
     _highlight = getattr(obj, "_highlight", None)
     if _highlight:
@@ -45,27 +37,16 @@ def get_item_name(obj):
         if item_names:
             return item_names[0]
     return obj.item_name_standard_analyzed
+"""
 
 def strip_item_spec(spec_str):
-    item_white_set = set(' -()[]{}*.')
-    return ''.join([i for i in spec_str if i not in item_white_set])
+    return es_item_attrs.strip_item_spec(spec_str)
 
 # FIXME: ItemSerializer does not work correctly currently
 def serialize_items(item_list):
     result = []
     for item in item_list:
-        item_dict = {}
-        for field in ("item_id", "price", "market_price", "image_link",
-                      "item_link", "available", "item_group",
-                      "brand", "item_level", "item_spec", "item_comment_num",
-                      "tags", "prescription_type", "sku", "stock", "factory",
-                      "sell_num", 'dosage', 'item_sub_title'):
-            val = getattr(item, field, None)
-            if val is not None:
-                item_dict[field] = val
-        item_dict["categories"] = [cat for cat in getattr(item, "categories", []) if "__" not in cat]
-        item_dict["item_name"] = get_item_name(item)
-        result.append(item_dict)
+        result.append(es_item_util.serialize_item(None, item))
     return result
 
 
@@ -90,7 +71,7 @@ def construct_or_query(query_str, delimiter=","):
     match_phrases = []
     for keyword in query_str.split(delimiter):
         match_phrases.append(
-                {"match_phrase": {"item_name_standard_analyzed": keyword}
+                {"match_phrase": {es_item_util.get_keyword_query_key(): keyword}
                 })
 
     query = {
@@ -123,7 +104,7 @@ def construct_query(query_str, for_filter=False):
     for keyword in splitted_keywords:
         match_phrases.append(
             {"multi_match": {
-                "fields": ["item_name_standard_analyzed^1000", "brand_name^100", "tags_standard^10", "description"],
+                "fields": es_item_util.get_search_fields(),
                 "query": keyword,
                 "type": "phrase"
             }}
@@ -353,3 +334,56 @@ class Suggester:
             return completed_forms
         else:
             return []
+
+class es_item_util:
+    @staticmethod
+    def get_item_mapping():
+        return {'properties': dict([(key, cfg['index'])
+                                    for key, cfg in es_item_attrs.item_attrs.iteritems()
+                                    if cfg.get('index', {})])}
+
+    @staticmethod
+    def get_index_item(site_id, item):
+        rst = item.copy()
+        for key, cfg in es_item_attrs.item_attrs.iteritems():
+            massage = cfg.get('massage', {})
+            if massage.has_key('by'):
+                operator = massage['by']
+                rst[key] = operator(site_id, item)
+            elif massage.get('erase', False):
+                if rst.has_key(key):
+                    del rst[key]
+        return rst
+
+    @staticmethod
+    def serialize_item(site_id, item):
+        keys = [k for k, cfg in es_item_attrs.item_attrs.iteritems()
+                if cfg.get('serialize', {}).get('include', False)]
+
+        item_dict = {}
+        for k in keys:
+            handler = es_item_attrs.item_attrs[k]['serialize'].get('by', None)
+            if handler:
+                val = handler(site_id, item)
+            else:
+                val = getattr(item, k, None)
+
+            if val:
+                item_dict[k] = val
+        return item_dict
+
+    @staticmethod
+    def get_keyword_query_key():
+        for k, cfg in es_item_attrs.item_attrs.iteritems():
+            if not(cfg.get('query', {}).get('keyword', None) is None):
+                return k
+        assert 'keyword query item should exist' is None
+
+    @staticmethod
+    def get_search_fields():
+        rst = []
+        for k, cfg in es_item_attrs.item_attrs.iteritems():
+            if not(cfg.get('query', {}).get('search', None) is None):
+                rst.append('%s^%d' % (k, cfg['query']['search']['weight'])\
+                                      if cfg['query']['search'].get('weight', 0) else k)
+        return rst

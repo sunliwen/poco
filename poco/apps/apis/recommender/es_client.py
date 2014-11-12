@@ -1,5 +1,6 @@
 from elasticsearch import Elasticsearch
 from apps.apis.search import es_search_functions
+
 from apps.apis.search.keyword_list import keyword_list
 
 #from misc.keyword_whitelist import KEYWORD_WHITELIST
@@ -10,7 +11,6 @@ def fill_keywords(site_id, item):
     #item["keywords"] = whitelisted_keywords
     item["keywords"] = keywords
 
-
 def preprocess_categories(categories):
     for_facets = ["%s__%s" % (category["parent_id"], category["id"]) for category in categories]
     return [category["id"] for category in categories] + for_facets
@@ -20,6 +20,7 @@ def es_index_item(site_id, item):
     es = Elasticsearch()
 
     fill_keywords(site_id, item)
+    """
 
     item["item_name_standard_analyzed"] = item["item_name"]
     item["item_name_no_analysis"] = item["item_name"]
@@ -48,7 +49,8 @@ def es_index_item(site_id, item):
     if brand:
         item["brand"] = brand["id"]
         item["brand_name"] = brand.get("name", "")
-
+    """
+    item = es_search_functions.es_item_util.get_index_item(site_id, item)
     res = es.index(index=es_search_functions.getESItemIndexName(site_id), doc_type='item', id=item["item_id"], body=item)
 
 

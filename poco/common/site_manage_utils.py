@@ -57,7 +57,7 @@ MAPPINGS = {"keyword": {
             }
             },
             "item": {
-                "properties": {
+                "properties": """{
                     "available": {"type": "boolean"},
                     "item_name": {
                         "type": "string",
@@ -97,7 +97,7 @@ MAPPINGS = {"keyword": {
                     "dosage": {"type": "string", "analyzer": "keyword"},
                     "prescription_type": {"type": "integer"},
                     "item_sub_title": {"type": "string"},
-                }
+                }"""
             }
             }
 
@@ -112,8 +112,10 @@ def drop_es_item_index(es, site_id):
 
 def create_es_item_index(es, site_id):
     item_index = es_search_functions.getESItemIndexName(site_id)
+    mappings = MAPPINGS
+    mappings['item'] = es_search_functions.es_item_util.get_item_mapping()
     res = es.indices.create(
-        index=item_index, body={"mappings": MAPPINGS, "settings": INDEX_SETTINGS})
+        index=item_index, body={"mappings": mappings, "settings": INDEX_SETTINGS})
 
 
 # TODO: move all scripts.fix_db_indexes here.
