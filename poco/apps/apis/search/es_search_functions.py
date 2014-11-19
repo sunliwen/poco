@@ -7,8 +7,6 @@ from django.conf import settings
 from django.core.cache import get_cache
 from apps.apis.recommender.property_cache import PropertyCache
 
-import es_item_attrs
-
 def getESItemIndexName(site_id):
     #return "item-index-v1-%s" % site_id
     # change index to v4 for #37 -- add item_spec_clean for search
@@ -27,21 +25,21 @@ import jieba
 
 
 def preprocess_query_str(query_str):
-    return es_item_attrs.preprocess_query_str(query_str)
-
-"""
-def get_item_name(obj):
-    _highlight = getattr(obj, "_highlight", None)
-    if _highlight:
-        item_names = _highlight.get("item_name_standard_analyzed", None)
-        if item_names:
-            return item_names[0]
-    return obj.item_name_standard_analyzed
-"""
+    query_str = query_str.replace("(", "").replace(")", "")
+    result = []
+    keywords = [keyword for keyword in query_str.split(
+        " ") if keyword.strip() != ""]
+    for keyword in keywords:
+        cutted_keyword = " ".join(
+            ["%s" % term for term in jieba.cut_for_search(keyword)])
+        result.append(cutted_keyword)
+    return result
 
 def strip_item_spec(spec_str):
-    return es_item_attrs.strip_item_spec(spec_str)
-
+    if not spec_str:
+        return ''
+    item_white_set = set(' -()[]{}*.')
+    return ''.join([i for i in spec_str if i not in item_white_set])
 
 def update_item_brands(site_id, items, property_cache):
     """append brand info to items and the brand info stored in property_cache
