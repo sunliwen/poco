@@ -42,13 +42,6 @@ def get_item_name(obj):
 def strip_item_spec(spec_str):
     return es_item_attrs.strip_item_spec(spec_str)
 
-# FIXME: ItemSerializer does not work correctly currently
-def serialize_items(item_list):
-    result = []
-    for item in item_list:
-        result.append(es_item_util.serialize_item(None, item))
-    return result
-
 
 def update_item_brands(site_id, items, property_cache):
     """append brand info to items and the brand info stored in property_cache
@@ -71,7 +64,7 @@ def construct_or_query(query_str, delimiter=","):
     match_phrases = []
     for keyword in query_str.split(delimiter):
         match_phrases.append(
-                {"match_phrase": {es_item_util.get_keyword_query_key(): keyword}
+                {"match_phrase": {"item_name_standard_analyzed": keyword}
                 })
 
     query = {
@@ -104,7 +97,7 @@ def construct_query(query_str, for_filter=False):
     for keyword in splitted_keywords:
         match_phrases.append(
             {"multi_match": {
-                "fields": es_item_util.get_search_fields(),
+                "fields": ["item_name_standard_analyzed^1000", "brand_name^100", "tags_standard^10", "description"],
                 "query": keyword,
                 "type": "phrase"
             }}
@@ -128,42 +121,13 @@ def construct_query(query_str, for_filter=False):
         query = {"bool": {"should": should_query,
                           "minimum_should_match": 1}}
 
-    #query = {"custom_score": {
-    #    "query": query,
-    #    "params": {
-    #        "empty_stock_penalty": 0.5
-    #    },
-    #    "script": "_score * (doc['stock']==0?empty_stock_penalty:1)"
-    #}}
-
-
-    #if for_filter:
-    #    query = {
-    #        "bool": {
-    #            "must": match_phrases
-    #        }
-    #    }
-    #else:
-    #    query = {
-    #        "bool": {
-    #            "must": match_phrases,
-    #            #"should": [
-    #            #    {'match': {'item_name': {"boost": 2.0,
-    #            #                             'query': splitted_keywords,
-    #            #                             'operator': "and"}}}
-    #            #]
-    #        }
-    #    }
-
     return query
-
 
 def addFilterToFacets(s, facets):
     filter = s.build_search().get("filter", None)
     if filter:
         facets["facet_filter"] = filter
     return facets
-
 
 def _getSubCategoriesFacets(cat_id, s):
     if cat_id is None:
@@ -174,7 +138,6 @@ def _getSubCategoriesFacets(cat_id, s):
     #result = {'terms': {'field': 'categories', 'size': 20}}
     addFilterToFacets(s, result)
     return result
-
 
 def _extractSuggestedTerms(res, name):
     suggested_keywords = res["facets"][name]
@@ -334,56 +297,3 @@ class Suggester:
             return completed_forms
         else:
             return []
-
-class es_item_util:
-    @staticmethod
-    def get_item_mapping():
-        return {'properties': dict([(key, cfg['index'])
-                                    for key, cfg in es_item_attrs.item_attrs.iteritems()
-                                    if cfg.get('index', {})])}
-
-    @staticmethod
-    def get_index_item(site_id, item):
-        rst = item.copy()
-        for key, cfg in es_item_attrs.item_attrs.iteritems():
-            massage = cfg.get('massage', {})
-            if massage.has_key('by'):
-                operator = massage['by']
-                rst[key] = operator(site_id, item)
-            elif massage.get('erase', False):
-                if rst.has_key(key):
-                    del rst[key]
-        return rst
-
-    @staticmethod
-    def serialize_item(site_id, item):
-        keys = [k for k, cfg in es_item_attrs.item_attrs.iteritems()
-                if cfg.get('serialize', {}).get('include', False)]
-
-        item_dict = {}
-        for k in keys:
-            handler = es_item_attrs.item_attrs[k]['serialize'].get('by', None)
-            if handler:
-                val = handler(site_id, item)
-            else:
-                val = getattr(item, k, None)
-
-            if val:
-                item_dict[k] = val
-        return item_dict
-
-    @staticmethod
-    def get_keyword_query_key():
-        for k, cfg in es_item_attrs.item_attrs.iteritems():
-            if not(cfg.get('query', {}).get('keyword', None) is None):
-                return k
-        assert 'keyword query item should exist' is None
-
-    @staticmethod
-    def get_search_fields():
-        rst = []
-        for k, cfg in es_item_attrs.item_attrs.iteritems():
-            if not(cfg.get('query', {}).get('search', None) is None):
-                rst.append('%s^%d' % (k, cfg['query']['search']['weight'])\
-                                      if cfg['query']['search'].get('weight', 0) else k)
-        return rst

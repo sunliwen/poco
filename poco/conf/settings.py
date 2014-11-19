@@ -229,6 +229,9 @@ TEMPLATE_DIRS = (
 
 DASHBOARD_AUTH = 'apps.web.dashboard.views.default_login_required'
 
+
+SITE_PLUGIN_PATH = 'apps.apis.search.site_plugins.haoyaoshi'
+
 # in the end
 
 from local_settings import *

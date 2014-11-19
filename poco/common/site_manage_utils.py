@@ -1,107 +1,12 @@
 import uuid
 from elasticsearch import Elasticsearch
 from elasticsearch.exceptions import NotFoundError
-from apps.apis.search import es_search_functions
+from apps.apis.search import es_search_functions, plugins
 from common import mongodb_ensure_site_indexes
 from common.mongo_client import getMongoClient
 
 
 # TODO: move these into per site configurations
-INDEX_SETTINGS = {
-    "number_of_shards": 1,
-    "index": {
-        "analysis": {
-            "analyzer": {
-                "whitespace_lower_analyzer": {
-                    "tokenizer": "whitespace",
-                    "filter": ["lowercase"]
-                },
-                "mycn_analyzer_whitespace_pinyin_first_n_full": {
-                    "type": "custom",
-                    "tokenizer": "whitespace",
-                    "filter": ["my_pinyin_first_n_full"]
-                },
-                "ngram_analyzer": {
-                    "type":      "custom",
-                    "tokenizer": "ngram_tokenizer",
-                    "filter": ['standard',]
-                },
-            },
-            "filter": {
-                "my_pinyin_first_n_full": {
-                    "type": "pinyin",
-                    "first_letter": "prefix",
-                    "padding_char": "||"
-                }
-            },
-            "tokenizer": {
-                "ngram_tokenizer" : {
-                    "type" : "nGram",
-                    "min_gram" : "2",
-                    "max_gram" : "30",
-                    "token_chars": ["letter", "digit"]
-                }
-            }
-        }
-    }
-}
-
-
-MAPPINGS = {"keyword": {
-            "properties": {
-                "keyword_completion": {
-                    "type": "completion",
-                    "index_analyzer": "simple",
-                    "search_analyzer": "simple"
-                }
-            }
-            },
-            "item": {
-                "properties": """{
-                    "available": {"type": "boolean"},
-                    "item_name": {
-                        "type": "string",
-                        "store": "yes",
-                        "analyzer": "whitespace_lower_analyzer"
-                    },
-                    "item_name_standard_analyzed": {
-                        "type": "string",
-                        "store": "yes",
-                        "analyzer": "standard"
-                    },
-                    "item_name_no_analysis": {
-                        "type": "string",
-                        "store": "yes",
-                        "analyzer": "keyword"
-                    },
-                    "description": {"type": "string"},
-                    "factory": {"type": "string"},
-                    "price": {"type": "float"},
-                    "market_price": {"type": "float"},
-                    "image_link": {"type": "string"},
-                    "item_link": {"type": "string"},
-                    "categories": {"type": "string", "index_name": "category"},
-                    "brand": {"type": "string"},
-                    "brand_name": {"type": "string", "analyzer": "standard"},
-                    "item_level": {"type": "integer"},
-                    "item_spec": {"type": "string"},
-                    "item_spec_ng": {"type": "string",  "analyzer": "ngram_analyzer"},
-                    "origin_place": {"type": "integer"},
-                    "item_comment_num": {"type": "integer"},
-                    "keywords": {"type": "string",
-                                 "analyzer": "keyword"},
-                    "tags": {"type": "string", "analyzer": "keyword"},
-                    "tags_standard": {"type": "string", "analyzer": "standard"},
-                    "sku": {"type": "string", "analyzer": "keyword"},
-                    "sell_num": {"type": "integer"},
-                    "dosage": {"type": "string", "analyzer": "keyword"},
-                    "prescription_type": {"type": "integer"},
-                    "item_sub_title": {"type": "string"},
-                }"""
-            }
-            }
-
-
 def drop_es_item_index(es, site_id):
     item_index = es_search_functions.getESItemIndexName(site_id)
     try:
@@ -112,10 +17,11 @@ def drop_es_item_index(es, site_id):
 
 def create_es_item_index(es, site_id):
     item_index = es_search_functions.getESItemIndexName(site_id)
-    mappings = MAPPINGS
-    mappings['item'] = es_search_functions.es_item_util.get_item_mapping()
+    map_op = plugins.get_op_from_plugin('index.get_site_mapping')
+    setting_op = plugins.get_op_from_plugin('index.get_index_setting')
     res = es.indices.create(
-        index=item_index, body={"mappings": mappings, "settings": INDEX_SETTINGS})
+        index=item_index, body={"mappings": map_op(),
+                                "settings": setting_op()})
 
 
 # TODO: move all scripts.fix_db_indexes here.

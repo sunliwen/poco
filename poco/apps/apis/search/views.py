@@ -14,11 +14,12 @@ from django.conf import settings
 from rest_framework.views import APIView
 from rest_framework import status
 import es_search_functions
-from es_search_functions import serialize_items, update_item_brands
+import plugins
 from common.mongo_client import getMongoClient
 from common.cached_result import cached_result
 from apps.apis.recommender.property_cache import PropertyCache
 
+import deepdiff
 
 mongo_client = getMongoClient()
 property_cache = PropertyCache(mongo_client)
@@ -85,7 +86,9 @@ class ProductsSearch(BaseAPIView):
 
         if isinstance(q, basestring) and q.strip() != "":
             if search_config["type"] == "SEARCH_TEXT":
-                query = es_search_functions.construct_query(q)
+                op = plugins.get_op_from_plugin('search.construct_query')
+                query = op(q)
+                #query = plugins.es_item_util.construct_query(q)
 
             elif search_config["type"] == "SEARCH_TERMS":
                 term_field = search_config["term_field"]
@@ -104,89 +107,39 @@ class ProductsSearch(BaseAPIView):
                 }
             s = s.query_raw(query)
 
-        order_by_stock = [{"_script": {
-                                "script": "doc['stock'].value == 0?1:0",
-                                "type": "number",
-                                "order": "asc"
-                               }}]
-
-        if sort_fields == []:
-            sort_fields = ["_score"]
-
-        sort_fields = order_by_stock + sort_fields
-
+        op = plugins.get_op_from_plugin('search.construct_sortby')
+        sort_fields = op(sort_fields)
+        #sort_fields = plugins.es_item_util.construct_sortby(sort_fields)
         s = s.order_by(*sort_fields)
 
-        for filter_field, filter_details in filters.items():
-            if isinstance(filter_details, list):
-                if len(filter_details) == 1:
-                    s = s.filter(**{filter_field: filter_details[0]})
-                else:
-                    s = s.filter(**{"%s__in" % filter_field: filter_details})
-            elif isinstance(filter_details, dict):
-                if filter_details.get("type") == "range":
-                    from_ = filter_details["from"]
-                    to_   = filter_details["to"]
-                    s = s.filter(**{"%s__range" % filter_field: (from_, to_)})
+        # filters part
+        op = plugins.get_op_from_plugin('search.construct_filters')
+        es_filters = op(filters)
+        #es_filters = plugins.es_item_util.construct_filters(filters)
+        if es_filters:
+            s = s.filter(**es_filters)
 
         if highlight:
-            s = s.highlight("item_name_standard_analyzed")
+            op = plugins.get_op_from_plugin('search.construct_highlight')
+            s = s.highlight(op())
+            #s = s.highlight(plugins.es_item_util.construct_highlight())
 
         # TODO: check performance issue
-        categories = filters.get("categories", [])
-        if categories:
-            cat_id = categories[0]
-        else:
-            cat_id = None
+        op = plugins.get_op_from_plugin('search.construct_facets')
+        facets_dsl, facets_selector = op(s, facets_selector, filters)
+        #facets_dsl, facets_selector = plugins.es_item_util.construct_facets(s, facets_selector, filters)
 
-        facets_dsl = {}
-        if facets_selector.has_key("categories"):
-            categories_facet_mode = facets_selector["categories"]["mode"]
-            if categories_facet_mode == "DIRECT_CHILDREN":
-                facets_dsl["categories"] = es_search_functions._getSubCategoriesFacets(cat_id, s)
-            elif categories_facet_mode == "SUB_TREE":
-                facets_dsl["categories"] = es_search_functions.addFilterToFacets(s,
-                                            {'terms': {'regex': r'[^_]+', 'field': 'categories', 'size': 5000}})
-        for facet_key in ('brand', 'origin_place', 'dosage', 'prescription_type'):
-            if facets_selector.has_key(facet_key):
-                facets_dsl[facet_key] = es_search_functions.addFilterToFacets(
-                    s,
-                    {'terms': {'field': facet_key, 'size': 5000}})
-
+        # massage the facets result
         facets_result = {}
         if len(facets_dsl.keys()) > 0:
             s = s.facet_raw(**facets_dsl)
 
-            if facets_selector.has_key("categories"):
-                categories_facet_mode = facets_selector["categories"]["mode"]
-                facets_list = s.facet_counts().get("categories", [])
-                if categories_facet_mode == "DIRECT_CHILDREN":
-                    for facets in facets_list:
-                        facets["term"] == facets["term"]
-                facet_categories_list = [{"id": get_last_cat_id(facet["term"]),
-                                          "count": facet["count"]}
-                                          for facet in facets_list]
-                for facet_sub_cat in facet_categories_list:
-                    facet_sub_cat["label"] = property_cache.get_name(site_id, "category", facet_sub_cat["id"])
-                facets_result["categories"] = facet_categories_list
-
-            if facets_selector.has_key("brand"):
-                facets_result["brand"] = []
-                for facet in s.facet_counts().get("brand", []):
-                    binfo = property_cache.get(site_id, "brand", facet["term"])
-                    brand = {"id": facet["term"],
-                             "label": binfo.get('name', '') if binfo else '',
-                             "brand_logo": binfo.get('brand_logo', '') if binfo else '',
-                             "count": facet["count"]}
-                    facets_result["brand"].append(brand)
-
-            for facet_key in ('origin_place', 'dosage', 'prescription_type'):
-                if facets_selector.has_key(facet_key):
-                    facets_result[facet_key] = [{"id": facet["term"],
-                                                 "label": "",
-                                                 "count": facet["count"]}
-                                                for facet in s.facet_counts().get(facet_key, [])]
-
+            op = plugins.get_op_from_plugin('serialize.serialize_facets')
+            #facets_result = plugins.es_item_util.serialize_facets(site_id,
+            facets_result = op(site_id,
+                               s.facet_counts(),
+                               facets_selector,
+                               property_cache)
         return s, facets_result
 
     def _validate(self, request):
@@ -397,21 +350,6 @@ class ProductsSearch(BaseAPIView):
         #result_mode = request.DATA.get("result_mode", "WITH_RECORDS")
         api_key = request.DATA["api_key"]
 
-        # Apply default filters
-        for filter_key , filter_content in self.DEFAULT_FILTERS.items():
-            if not filters.has_key(filter_key):
-                filters[filter_key] = filter_content
-
-        # Apply default facets
-        if facets_selector is None:
-            facets_selector = copy.deepcopy(self.DEFAULT_FACETS)
-
-        #if result_mode not in ("WITHOUT_RECORDS", "WITH_RECORDS"):
-        #    return Response({"records": [], "info": {},
-        #                     "errors": [{"code": "INVALID_PARAM",
-        #                                "param_name": "result_mode",
-        #                                "message": "invalid result_mode"}]})
-
         is_valid, result = self._cleanupSearchConfig(search_config)
         if not is_valid:
             return Response({"records": [], "info": {}, "errors": result})
@@ -438,7 +376,6 @@ class ProductsSearch(BaseAPIView):
         django_cache = get_cache("default")
         result_in_cache = django_cache.get(search_cache_key)
         if (result_in_cache is not None):
-            #result = json.loads(result_in_cache)
             return HttpResponse(result_in_cache)
         else:
             try:
@@ -462,8 +399,8 @@ class ProductsSearch(BaseAPIView):
 
             items_list = [item for item in items_page]
 
-            #serializer = ItemSerializer(items_list, many=True)
-            result = {"records": serialize_items(items_list),
+            op = plugins.get_op_from_plugin('serialize.serialize_items')
+            result = {"records": op(site_id, items_list, property_cache),
                       "info": {
                          "current_page": page,
                          "num_pages": paginator.num_pages,
@@ -473,7 +410,6 @@ class ProductsSearch(BaseAPIView):
                       },
                       "errors": []
                     }
-            update_item_brands(site_id, result['records'], property_cache)
             django_cache.set(search_cache_key, json.dumps(result), settings.CACHE_EXPIRY_SEARCH_RESULTS)
 
         return Response(result)
