@@ -328,6 +328,7 @@ class ProductsSearch(BaseAPIView):
         "prescription_type": is_string,
         'dosage': is_string,
         'prescription_type': is_float,
+        'channel': is_string
     }
 
     DEFAULT_FACETS = {

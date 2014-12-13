@@ -53,6 +53,7 @@ ITEMS.append({
             "dosage": "针剂",
             "prescription_type": 3,
             'item_sub_title': '奶粉副标题',
+            'channel': '1269e'
             })
 ITEMS += [{
             "type": "product",
@@ -70,7 +71,8 @@ ITEMS += [{
             "sell_num": 3,
             "dosage": "粉剂",
             'item_sub_title': '能恩副标题',
-            "prescription_type": 3
+            "prescription_type": 3,
+            "channel": '1269a'
             },
             {
             "type": "product",
@@ -88,7 +90,8 @@ ITEMS += [{
             "sell_num": 10,
             "dosage": "片剂",
             'item_sub_title': '能恩副标题',
-            "prescription_type": 5
+            "prescription_type": 5,
+            "channel": '1269e'
             },
             {
             "type": "product",
@@ -106,7 +109,8 @@ ITEMS += [{
             "sell_num": 4,
             "dosage": "针剂",
             'item_sub_title': '智多星标题',
-            "prescription_type": 6
+            "prescription_type": 6,
+            "channel": '1269e'
             }
             ]
 

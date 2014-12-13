@@ -97,6 +97,7 @@ MAPPINGS = {"keyword": {
                     "dosage": {"type": "string", "analyzer": "keyword"},
                     "prescription_type": {"type": "integer"},
                     "item_sub_title": {"type": "string"},
+                    "channel": {"type": "string", "analyzer": "keyword"}
                 }
             }
             }
