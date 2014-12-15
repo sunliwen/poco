@@ -26,7 +26,7 @@ api_key          是                                                            
 
     1. filters:
         1. "categories"字段只接受0或1个值，不接受多个值。
-        2. 实施过程中，需要确定哪些字段用来过滤。目前，price, market_price, categories，item_id、available、item_level、item_comment_num和origin_place可用来过滤。
+        2. 实施过程中，需要确定哪些字段用来过滤。目前，price, market_price, categories，item_id、available、item_level、item_comment_num、channel和origin_place可用来过滤。
         3. available 默认为[true]，即如果不在filter中指定available，则仅仅返回有售的产品。
     2. sort_fields:
         1. price、market_price、item_level、item_comment_num、origin_place 和 sell_num 可用来排序。如果要根据相关性排序，可以加上_score。

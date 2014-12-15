@@ -255,7 +255,7 @@ class ItemsSearchViewTest(BaseAPITest):
                          {"count": 1, "id": "1202", "label": u"分类12-02"},
                         ])
 
-    def _test_search_filt_by_brand(self):
+    def _test_search_filters(self):
         body = {"api_key": self.api_key,
             "q": "",
             "filters": {
@@ -264,6 +264,33 @@ class ItemsSearchViewTest(BaseAPITest):
         }
         response = self.api_post(reverse("products-search"), data=body)
         self.assertEqual(response.data["info"]["total_result_count"], 2)
+
+        filters = {}
+        body['filters'] = filters
+        response = self.api_post(reverse("products-search"), data=body)
+        self.assertEqual(response.data["info"]["total_result_count"], 4)
+
+
+        filters = {'channel': ['1269e', '1269a']}
+        body['filters'] = filters
+        response = self.api_post(reverse("products-search"), data=body)
+        self.assertEqual(response.data["info"]["total_result_count"], 4)
+
+
+        filters = {'channel': ['1269e']}
+        body['filters'] = filters
+        response = self.api_post(reverse("products-search"), data=body)
+        self.assertEqual(response.data["info"]["total_result_count"], 3)
+
+        filters = {'channel': ['1269a']}
+        body['filters'] = filters
+        response = self.api_post(reverse("products-search"), data=body)
+        self.assertEqual(response.data["info"]["total_result_count"], 1)
+
+        filters = {'channel': ['1269']}
+        body['filters'] = filters
+        response = self.api_post(reverse("products-search"), data=body)
+        self.assertEqual(response.data["info"]["total_result_count"], 0)
 
     def _test_search_other_fields(self):
         # search the description field
@@ -861,7 +888,7 @@ class ItemsSearchViewTest(BaseAPITest):
         self._test_by_tags()
         self._test_search_empty_string()
         self._test_search_facets_under_a_category()
-        self._test_search_filt_by_brand()
+        self._test_search_filters()
         self._test_search1()
         self._test_search2()
         self._test_search_pagination()
