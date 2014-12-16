@@ -41,14 +41,15 @@ api_key          是                                                            
     4. search_config
         1. 全文搜索：type=SEARCH_TEXT，示例
             {"type": "SEARCH_TEXT"}
-        2. 标签匹配：type=SEARCH_TERMS
-            选择这种搜索时，要匹配的标签放到q之中，标签间以空格分隔。
-            所有标签必须匹配
+        2. TERMS 匹配：type=SEARCH_TERMS
+            选择这种搜索时，要匹配的项放到q之中，多个项以空格分隔。
+            可选的项有：'tags', 'item_name_no_analysis', 'keywords', 'sku', 'dosage', 'channel'
+            所有项必须匹配
             {"type": "SEARCH_TERMS",
              "match_mode": "MATCH_ALL",
              "term_field": "tags"}
 
-            可部分匹配标签，匹配越多的排序靠前
+            可部分匹配，匹配越多的排序靠前
             {"type": "SEARCH_TERMS",
              "match_mode": "MATCH_MORE_BETTER",
              "term_field": "tags"}
