@@ -11,7 +11,7 @@ from apps.apis.recommender.property_cache import PropertyCache
 def getESItemIndexName(site_id):
     #return "item-index-v1-%s" % site_id
     # change index to v4 for #37 -- add item_spec_clean for search
-    return "item-index-v5-%s" % site_id
+    return "item-index-v6-%s" % site_id
 
 
 def getESClient():
