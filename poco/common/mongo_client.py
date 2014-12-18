@@ -53,7 +53,8 @@ class SameGroupRecommendationResultFilter(BaseRecommendationResultFilter):
         if item is not None:
             for category in item["categories"]:
                 category_group = category_groups.get(self.getCatId(category), None)
-                allowed_category_groups.append(category_group)
+                if not (category_group is None):
+                    allowed_category_groups.append(category_group)
             self.allowed_categories = set([self.getCatId(category) for category in item["categories"]])
             self.allowed_category_groups = set(allowed_category_groups)
         else:
@@ -64,15 +65,18 @@ class SameGroupRecommendationResultFilter(BaseRecommendationResultFilter):
         if not super(SameGroupRecommendationResultFilter, self).is_allowed(item_dict):
             return False
         category_groups = self.mongo_client.getCategoryGroups(self.site_id)
-        if len(item_dict["categories"]) == 0:
+        # if we don't set any allowed_category_groups, will return all value
+        if ((len(item_dict["categories"]) == 0) or
+            (not self.allowed_category_groups)):
             return True
         else:
             for category in item_dict["categories"]:
+                cid = self.getCatId(category)
                 if category_groups is not None:
-                    item_category_group = category_groups.get(self.getCatId(category), None)
+                    item_category_group = category_groups.get(cid, None)
                     if item_category_group in self.allowed_category_groups:
                         return True
-                elif self.getCatId(category) in self.allowed_categories:
+                elif cid in self.allowed_categories:
                     return True
             return False
 
