@@ -66,13 +66,12 @@ class SameGroupRecommendationResultFilter(BaseRecommendationResultFilter):
             return False
         category_groups = self.mongo_client.getCategoryGroups(self.site_id)
         # if we don't set any allowed_category_groups, will return all value
-        if ((len(item_dict["categories"]) == 0) or
-            (not self.allowed_category_groups)):
+        if len(item_dict["categories"]) == 0:
             return True
         else:
             for category in item_dict["categories"]:
                 cid = self.getCatId(category)
-                if category_groups is not None:
+                if category_groups:
                     item_category_group = category_groups.get(cid, None)
                     if item_category_group in self.allowed_category_groups:
                         return True

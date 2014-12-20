@@ -735,6 +735,13 @@ class RecommenderTest(BaseRecommenderTest):
                     [["I125", 0.9725],
                      ["I126", 0.7050]])
 
+        item_123 = test_data1.getItems(item_ids=["I123"])[0]
+        item = test_data1.getItems(item_ids=["I126"])[0]
+        old_cates = item['categories']
+        item['categories'] = item_123['categories']
+        response = self.postItem(item)
+
+
         # Missing item_id
         response = self._recommender("U1", type=recommend_type, amount=5)
         self.assertEqual(response.data["code"], 1)
@@ -841,9 +848,9 @@ class RecommenderTest(BaseRecommenderTest):
         # items without similarities
         response = self._recommender("U1", type="UltimatelyBought", item_id="I5000", amount=5)
         self.assertEqual([item["item_id"] for item in response.data["topn"]], [])
-        # item I123
+        # item I123, 125 and 123 has same category, so return it
         response = self._recommender("U1", type="UltimatelyBought", item_id="I123", amount=5)
-        self.assertEqual([item["item_id"] for item in response.data["topn"]], ["I126", "I125"])
+        self.assertEqual([item["item_id"] for item in response.data["topn"]], ["I125"])
 
     def test_by_purchasing_history(self):
         self.insert_item_similarities("PLO", "I123",
