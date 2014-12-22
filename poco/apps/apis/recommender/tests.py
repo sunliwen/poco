@@ -3,6 +3,7 @@ import cgi
 import urlparse
 import copy
 import json
+import time
 from django.test import TestCase
 from django.test.utils import override_settings
 from django.core.urlresolvers import reverse
@@ -82,6 +83,7 @@ class BaseRecommenderTest(BaseAPITest):
                     self.TEST_SITE_ID, "item_similarities_%s" % similarity_type)
         record = {"item_id": item_id,
                   "mostSimilarItems": mostSimilarItems}
+        c_item_similarities.remove({'item_id': item_id})
         c_item_similarities.insert(record)
 
 
@@ -733,6 +735,13 @@ class RecommenderTest(BaseRecommenderTest):
                     [["I125", 0.9725],
                      ["I126", 0.7050]])
 
+        item_123 = test_data1.getItems(item_ids=["I123"])[0]
+        item = test_data1.getItems(item_ids=["I126"])[0]
+        old_cates = item['categories']
+        item['categories'] = item_123['categories']
+        response = self.postItem(item)
+
+
         # Missing item_id
         response = self._recommender("U1", type=recommend_type, amount=5)
         self.assertEqual(response.data["code"], 1)
@@ -786,6 +795,37 @@ class RecommenderTest(BaseRecommenderTest):
         self.assertEqual(self.get_item("I124")["available"], True)
 
     def test_also_viewed(self):
+        # the category groups test
+        action_name = 'V'
+        recommend_type = 'AlsoViewed'
+        self.insert_item_similarities(action_name, "I123",
+                    [["I124", 0.9725],
+                     ["I125", 0.8023]])
+        self.insert_item_similarities(action_name, "I124",
+                    [["I125", 0.9725],
+                     ["I126", 0.7050]])
+
+        # Missing item_id
+        response = self._recommender("U1", type=recommend_type, amount=5)
+        self.assertEqual(response.data["code"], 1)
+        # items without similarities
+        response = self._recommender("U1", type=recommend_type, item_id="I123", amount=5)
+        self.assertEqual([item["item_id"] for item in response.data["topn"]], ["I124", "I125"])
+        for item in response.data["topn"]:
+            self.assertEqual(item.has_key("stock"), True)
+        # if we set invalid allowed category-groups, no one will return
+        self.mongo_client.SITE_ID2CATEGORY_GROUPS[self.TEST_SITE_ID] = ({"1202": "18"}, time.time())
+        response = self._recommender("U1", type=recommend_type, item_id="I123", amount=5)
+        self.assertEqual([item["item_id"] for item in response.data["topn"]], [])
+
+        # if we set valid allowed-category-groups, the result come back
+        self.mongo_client.SITE_ID2CATEGORY_GROUPS[self.TEST_SITE_ID] = ({"12": "18"}, time.time())
+        response = self._recommender("U1", type=recommend_type, item_id="I123", amount=5)
+        self.assertEqual([item["item_id"] for item in response.data["topn"]], ['I124', 'I125'])
+
+        # restore the category-groups
+        self.mongo_client.SITE_ID2CATEGORY_GROUPS[self.TEST_SITE_ID] = ({}, time.time())
+
         self._test_recommenders_with_one_item_id_as_input("V", "AlsoViewed")
 
     def test_also_bought(self):
@@ -808,9 +848,9 @@ class RecommenderTest(BaseRecommenderTest):
         # items without similarities
         response = self._recommender("U1", type="UltimatelyBought", item_id="I5000", amount=5)
         self.assertEqual([item["item_id"] for item in response.data["topn"]], [])
-        # item I123
+        # item I123, 125 and 123 has same category, so return it
         response = self._recommender("U1", type="UltimatelyBought", item_id="I123", amount=5)
-        self.assertEqual([item["item_id"] for item in response.data["topn"]], ["I126", "I125"])
+        self.assertEqual([item["item_id"] for item in response.data["topn"]], ["I125"])
 
     def test_by_purchasing_history(self):
         self.insert_item_similarities("PLO", "I123",
@@ -997,7 +1037,6 @@ class AdUnitTest(BaseRecommenderTest):
                         [])
         # But we can match items /unit/by_keywords
         response = self._recommender("U1", type="/unit/by_keywords", amount=5, keywords="雀巢,能恩")
-        print response.data
         self.assertEqual(set([item["item_id"] for item in response.data["topn"]]),
                         set(["I123", "I124", "I125"]))
         # by if valid keywords, no result
