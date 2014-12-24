@@ -11,7 +11,7 @@ from apps.apis.recommender.property_cache import PropertyCache
 def getESItemIndexName(site_id):
     #return "item-index-v1-%s" % site_id
     # change index to v4 for #37 -- add item_spec_clean for search
-    return "item-index-v4-%s" % site_id
+    return "item-index-v6-%s" % site_id
 
 
 def getESClient():
@@ -59,8 +59,7 @@ def serialize_items(item_list):
                       "item_link", "available", "item_group",
                       "brand", "item_level", "item_spec", "item_comment_num",
                       "tags", "prescription_type", "sku", "stock", "factory",
-                      "sell_num", 'sku_attr', 'list_price', 'sale_price',
-                      'discount', 'promotion_title'):
+                      "sell_num", 'dosage', 'item_sub_title', 'channel'):
             val = getattr(item, field, None)
             if val is not None:
                 item_dict[field] = val
@@ -69,6 +68,23 @@ def serialize_items(item_list):
         result.append(item_dict)
     return result
 
+
+def update_item_brands(site_id, items, property_cache):
+    """append brand info to items and the brand info stored in property_cache
+    """
+    brands = {}
+    for item in items:
+        bid = item.get('brand', '')
+        if not bid:
+            continue
+        if brands.has_key(bid):
+            binfo = brands[bid]
+            item['brand'] = binfo if binfo else {'id': bid}
+            continue
+        binfo = property_cache.get(site_id, "brand", bid)
+        # add it to dict no matter we get a None
+        brands[bid] = binfo
+        item['brand'] = binfo if binfo else {'id': bid}
 
 def construct_or_query(query_str, delimiter=","):
     match_phrases = []

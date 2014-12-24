@@ -26,14 +26,14 @@ api_key          是                                                            
 
     1. filters:
         1. "categories"字段只接受0或1个值，不接受多个值。
-        2. 实施过程中，需要确定哪些字段用来过滤。目前，price, market_price, categories，item_id、available、item_level、item_comment_num、discount、sku_attr和origin_place可用来过滤。使用 sku_attr 的属性来过滤时，需要写成 sku_attr.color 这种形式。
+        2. 实施过程中，需要确定哪些字段用来过滤。目前，price, market_price, categories，item_id、available、item_level、item_comment_num、channel和origin_place可用来过滤。
         3. available 默认为[true]，即如果不在filter中指定available，则仅仅返回有售的产品。
-        4. 接受两种类型filter: range 和 in； 参见下方请求中的 price 和 categories
     2. sort_fields:
         1. price、market_price、item_level、item_comment_num、origin_place 和 sell_num 可用来排序。如果要根据相关性排序，可以加上_score。
     3. facets (聚类)
         1. 如果在传参中没有此参数，则为默认状态。默认状态所有支持的facets都选中,categories为"SUB_TREE"模式
-        2. 如果在传参中指定"facets"，则仅返回制定的聚类::
+        2. 支持 categories, brand, origin_place, dosage, prescription_type
+        3. 如果在传参中指定"facets"，则仅返回制定的聚类::
            {"brand": {}}  # 这样仅返回brand的聚类
            {"brand": {}, "origin_place": {}} # 这样仅聚合brand和origin_place
            {"categories": {"mode": "DIRECT_CHILDREN"}} # 如果在filters中指定分类，则聚合这些分类的直接子分类；如果在filters中未指定分类，则聚合所有顶层分类
@@ -41,15 +41,14 @@ api_key          是                                                            
     4. search_config
         1. 全文搜索：type=SEARCH_TEXT，示例
             {"type": "SEARCH_TEXT"}
-        2. TERMS 匹配：type=SEARCH_TERMS
-            选择这种搜索时，要匹配的项放到q之中，多个项以空格分隔。
-            可选的项有：'tags', 'item_name_no_analysis', 'keywords', 'sku', 'dosage', 'channel'
-            所有项必须匹配
+        2. 标签匹配：type=SEARCH_TERMS
+            选择这种搜索时，要匹配的标签放到q之中，标签间以空格分隔。
+            所有标签必须匹配
             {"type": "SEARCH_TERMS",
              "match_mode": "MATCH_ALL",
              "term_field": "tags"}
 
-            可部分匹配，匹配越多的排序靠前
+            可部分匹配标签，匹配越多的排序靠前
             {"type": "SEARCH_TERMS",
              "match_mode": "MATCH_MORE_BETTER",
              "term_field": "tags"}
@@ -89,7 +88,7 @@ errors             错误信息。正常情况下为[]。
             "page": 1,
             "highlight": true,
             "filters": {
-                "categories": ["17"],    
+                "categories": ["17"],
                 "price": {
                     "type": "range",
                     "from": 15.00,

@@ -29,6 +29,7 @@ BRANDS = {
 for id, brand in BRANDS.items():
     brand["type"] = "brand"
     brand["id"] = id
+    brand['brand_logo'] = 'http://logo.com/%s' % id
 
 
 ITEMS = []
@@ -49,21 +50,10 @@ ITEMS.append({
             "sku": "SKU10052",
             "stock": 10,
             "factory": "雀巢工厂",
-            # leyou test data
-            'sku_attr': {
-                'usingsex': '通用',
-                'startmonth': '3',
-                'endmonth': '16',
-                'buildyear': '2011',
-                'stylecode': '样式1',
-                'season': '四季',
-                'color': '土豪金',
-                'material': '亚麻',
-                'size': 'XXL',
-                'productid': 'PRODI123',
-                },
-            'discount': '0.8',
-            'promotion_title': '这里是介绍',
+            "dosage": "针剂",
+            "prescription_type": 3,
+            'item_sub_title': '奶粉副标题',
+            'channel': '1269e'
             })
 ITEMS += [{
             "type": "product",
@@ -79,6 +69,10 @@ ITEMS += [{
             "stock": 10,
             "factory": "能恩工厂",
             "sell_num": 3,
+            "dosage": "粉剂",
+            'item_sub_title': '能恩副标题',
+            "prescription_type": 3,
+            "channel": '1269a'
             },
             {
             "type": "product",
@@ -94,21 +88,10 @@ ITEMS += [{
             "stock": 10,
             "factory": "能恩工厂",
             "sell_num": 10,
-            'sku_attr': {
-                'usingsex': '男',
-                'startmonth': '3',
-                'endmonth': '16',
-                'buildyera': '2011',
-                'stylecode': '样式1',
-                'seanos': '春',
-                'color': '土豪金',
-                'material': '亚麻',
-                'size': 'XXL',
-                'productid': 'PORDI125',
-                },
-            'discount': '0.8',
-            'promotion_title': '这里是介绍',
-
+            "dosage": "片剂",
+            'item_sub_title': '能恩副标题',
+            "prescription_type": 5,
+            "channel": '1269e'
             },
             {
             "type": "product",
@@ -124,21 +107,10 @@ ITEMS += [{
             "stock": 10,
             "factory": "智多星工厂",
             "sell_num": 4,
-            'sku_attr': {
-                'usingsex': '男',
-                'startmonth': '3',
-                'endmonth': '16',
-                'buildyera': '2011',
-                'stylecode': '样式1',
-                'seanos': '春',
-                'color': '土豪金',
-                'material': '亚麻',
-                'size': 'XXL',
-                'productid': 'PORDI126',
-                },
-            'discount': '0.8',
-            'promotion_title': '这里是介绍',
-
+            "dosage": "针剂",
+            'item_sub_title': '智多星标题',
+            "prescription_type": 6,
+            "channel": '1269e'
             }
             ]
 

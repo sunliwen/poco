@@ -468,9 +468,9 @@ class UpdateItemProcessor(ActionProcessor):
             ("stock", False),
             ("factory", False),
             ("sell_num", False),
-            ("sku_attr", False),
-            ("discount", False),
-            ("promotion_title", False),
+            ("dosage", False),
+            ("item_sub_title", False),
+            ("channel", False)
         )
     )
 
@@ -484,43 +484,20 @@ class UpdateItemProcessor(ActionProcessor):
         null_parent_id_found = False
         for category in args["categories"]:
             if not isinstance(category, dict):
-                return {"code": 1,
-                        "err_msg": "categories content should be dicts. "}
+                return {"code": 1, "err_msg": "categories content should be dicts. "}
             if category.get("type", None) != "category":
-                return {"code": 1,
-                        "err_msg": "categories content should has type 'category'"}
+                return {"code": 1, "err_msg": "categories content should has type 'category'"}
             for expected_key in ("id", "name", "parent_id"):
                 if not category.has_key(expected_key):
-                    return {"code": 1,
-                            "err_msg": "categories content should contains key: '%s'"\
-                                % expected_key}
-                if (not isinstance(category[expected_key], basestring)) or \
-                (len(category[expected_key].strip()) == 0):
-                    return {"code": 1,
-                            "err_msg": "'%s' of category should be a non empty string."\
-                                % expected_key}
+                    return {"code": 1, "err_msg": "categories content should contains key: '%s'" % expected_key}
+                if (not isinstance(category[expected_key], basestring)) or (len(category[expected_key].strip()) == 0):
+                    return {"code": 1, "err_msg": "'%s' of category should be a non empty string." % expected_key}
             for expected_key in ("id", "parent_id"):
                 if re.match(r"[A-Za-z0-9]+", category[expected_key]) is None:
-                    return {
-                        "code": 1,
-                        "err_msg": "category ids can only contains digits and letters."}
-            null_parent_id_found = null_parent_id_found or \
-                category["parent_id"] == "null"
+                    return {"code": 1, "err_msg": "category ids can only contains digits and letters."}
+            null_parent_id_found = null_parent_id_found or category["parent_id"] == "null"
         if args["categories"] != [] and not null_parent_id_found:
-            return {"code": 1,
-                    "err_msg": "At least one category should be at the top level"}
-        """
-        for expected_key in ('list_price', 'sale_price', 'discount'):
-            value = args.get(expected_key, None)
-            if value is None:
-                return {"code": 1,
-                        "err_msg": "item %s missing" % expected_key}
-            try:
-                args[expected_key] = float(args[expected_key])
-            except ValueError:
-                return {"code": 1,
-                        "err_msg": "item %s not a float" % expected_key}
-                        """
+            return {"code": 1, "err_msg": "At least one category should be at the top level"}
         return None
 
     def _validateBrand(self, args):
@@ -530,7 +507,7 @@ class UpdateItemProcessor(ActionProcessor):
                 return {"code": 1, "err_msg": "brand should be of type 'dict'"}
             if args_brand.get("type", None) != "brand":
                 return {"code": 1, "err_msg": "brand should has type 'brand'"}
-            for expected_key in ("id", "name"):
+            for expected_key in ("id", "name", 'brand_logo'):
                 if not args_brand.has_key(expected_key):
                     return {"code": 1, "err_msg": "brand content should contains key: '%s'" % expected_key}
         return None
@@ -590,7 +567,6 @@ class UpdateItemProcessor(ActionProcessor):
                     except (ValueError, TypeError):
                         return {"code": 1, "err_msg": "%s should be an integer." % key}
 
-            #self._updateItem(site_id, args)
             self._queueItem(site_id, args)
 
             return {"code": 0}
@@ -1070,15 +1046,12 @@ class GetCustomListsRecommend(BaseSimpleResultRecommendationProcessor):
         topn = []
         if recommend_data:
             topn = [[item, 0.5] for item in recommend_data['content']['item_ids']]
-        if len(topn) < amount:
-            default_topn = mongo_client.getHotViewList(site_id,
-                                                       'by_viewed')
-            topn_set = set([item[0] for item in topn])
-            miss_amount = amount-len(topn)
-            default_topn = [item for item in default_topn if item[0] not in topn_set][:miss_amount]
-            topn = topn + default_topn
-        return topn
-
+        # since filter will work, so we have to append hotviewlist no matter how many items in custom list
+        default_topn = mongo_client.getHotViewList(site_id,
+                                                   'by_viewed')
+        topn_set = set([item[0] for item in topn])
+        default_topn = [item for item in default_topn if item[0] not in topn_set]
+        return topn + default_topn if topn else default_topn
 
 logWriter = LogWriter()
 
@@ -1125,17 +1098,31 @@ class RecommenderRegistry:
 #        def getTopN(self, site_id, args):
 #            action_processor = self.action_processor_class(self.not_log_action_for_child)
 #            topn = action_processor.getTopN(site_id, args)
-
-
-class MatchAnyKeywordProcessor:
-    def __init__(self, not_log_action=True):
-        pass
+class MatchAnyKeywordProcessor(BaseSimpleResultRecommendationProcessor):
+    action_name = 'Recommendation'
+    similarity_type = '/unit/by_keywords'
+    ap = ArgumentProcessor(
+        (("user_id", True),
+         ("ref", False),
+         ("include_item_info", False),
+         ("amount", True),
+         ("keywords", True),
+        ))
 
     def getRecommendationResultFilter(self, site_id, args):
         return SimpleRecommendationResultFilter()
 
+    def getRecommendationLog(self, args, req_id, recommended_items):
+        log = BaseSimpleResultRecommendationProcessor.getRecommendationLog(self, args, req_id, recommended_items)
+        # FIXME fix the setting of recommender_type
+        log["recommender_type"] = self.recommender_type
+        log['keywords'] = args['keywords']
+        return log
+
     def getTopN(self, site_id, args):
         keywords = args.get("keywords")
+        if not keywords:
+            return []
         try:
             amount = int(args.get("amount", "5"))
         except ValueError:
@@ -1234,24 +1221,7 @@ recommender_registry.register("/unit/home",
                                   ]
                               ))
 
-recommender_registry.register("/unit/by_keywords",
-                              IfEmptyTryNextProcessor(
-                                 ArgumentProcessor(
-                                    (("user_id", True),
-                                    ("ref", False),
-                                    ("include_item_info", False),
-                                    ("amount", True),
-                                    ("keywords", True),
-                                    )
-                                  ),
-                                  [
-                                      (MatchAnyKeywordProcessor, {}),
-                                      (GetByBrowsingHistoryProcessor, {}),
-                                      (GetByHotIndexProcessor, [{"hot_index_type": "by_viewed"}])
-                                  ],
-                              extra_args_to_log=["keywords"]
-                              ))
-
+recommender_registry.register("/unit/by_keywords", MatchAnyKeywordProcessor)
 recommender_registry.register("/unit/item",
                               IfEmptyTryNextProcessor(
                                  ArgumentProcessor(

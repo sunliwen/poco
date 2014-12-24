@@ -53,7 +53,8 @@ class SameGroupRecommendationResultFilter(BaseRecommendationResultFilter):
         if item is not None:
             for category in item["categories"]:
                 category_group = category_groups.get(self.getCatId(category), None)
-                allowed_category_groups.append(category_group)
+                if not (category_group is None):
+                    allowed_category_groups.append(category_group)
             self.allowed_categories = set([self.getCatId(category) for category in item["categories"]])
             self.allowed_category_groups = set(allowed_category_groups)
         else:
@@ -64,15 +65,17 @@ class SameGroupRecommendationResultFilter(BaseRecommendationResultFilter):
         if not super(SameGroupRecommendationResultFilter, self).is_allowed(item_dict):
             return False
         category_groups = self.mongo_client.getCategoryGroups(self.site_id)
+        # if we don't set any allowed_category_groups, will return all value
         if len(item_dict["categories"]) == 0:
             return True
         else:
             for category in item_dict["categories"]:
-                if category_groups is not None:
-                    item_category_group = category_groups.get(self.getCatId(category), None)
+                cid = self.getCatId(category)
+                if category_groups:
+                    item_category_group = category_groups.get(cid, None)
                     if item_category_group in self.allowed_category_groups:
                         return True
-                elif self.getCatId(category) in self.allowed_categories:
+                elif cid in self.allowed_categories:
                     return True
             return False
 
@@ -302,7 +305,8 @@ class MongoClient:
 
     def updateProperty(self, site_id, property):
         c_properties = getSiteDBCollection(self.connection, site_id, "properties")
-        prop_in_db = c_properties.find_one({"id": property["id"]})
+        prop_in_db = c_properties.find_one({"id": property["id"],
+                                            'type': property['type']})
         if prop_in_db is None:
             prop_in_db = {}
         else:
@@ -756,7 +760,7 @@ class MongoClient:
             c_cached_hot_view.update({"hot_index_type": hot_index_type, "category_id": None, "brand": brand},
                                      {"hot_index_type": hot_index_type, "category_id": None, "brand": brand, "result": topn},
                                      upsert=True)
-        
+
     def updateSearchTermsCache(self, site_id, cache_entry):
         c_search_terms_cache = getSiteDBCollection(self.connection, site_id, "search_terms_cache")
         terms_key = "|".join(cache_entry["terms"])
@@ -837,7 +841,7 @@ class MongoClient:
             site_id,
             "recommend_custom_list")
         return c_recommend_custom_list.find_one({'type': list_type})
-        
+
     def updateRecommendCustomLists(self, site_id, list_type, content):
         c_recommend_custom_list = self.getSiteDBCollection(
             site_id,
@@ -846,14 +850,14 @@ class MongoClient:
                                        {'content': content,
                                         'type': list_type},
                                        upsert=True)
-        
+
     def getRecommenderCustomTypes(self, site_id):
         c_recommend_custom_list = self.getSiteDBCollection(
             site_id,
             "recommend_custom_list")
         rsts = c_recommend_custom_list.find()
         return [i for i in rsts]
-            
+
 
 def getConnection():
     if(settings.REPLICA_SET):

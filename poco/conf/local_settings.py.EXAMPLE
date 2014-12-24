@@ -49,8 +49,7 @@ SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 
 DASHBOARD_AUTH = 'apps.web.dashboard.views.haoyaoshi_login_required'
 
-TIME_ZONE = 'Asia/Shanghai' # django
-CELERY_TIMEZONE = TIME_ZONE
+CELERY_TIMEZONE = 'Asia/Shanghai'
 
 
 # currently, these tasks only support one site

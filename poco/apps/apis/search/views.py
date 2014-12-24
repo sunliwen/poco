@@ -14,7 +14,7 @@ from django.conf import settings
 from rest_framework.views import APIView
 from rest_framework import status
 import es_search_functions
-from es_search_functions import serialize_items
+from es_search_functions import serialize_items, update_item_brands
 from common.mongo_client import getMongoClient
 from common.cached_result import cached_result
 from apps.apis.recommender.property_cache import PropertyCache
@@ -147,12 +147,12 @@ class ProductsSearch(BaseAPIView):
             elif categories_facet_mode == "SUB_TREE":
                 facets_dsl["categories"] = es_search_functions.addFilterToFacets(s,
                                             {'terms': {'regex': r'[^_]+', 'field': 'categories', 'size': 5000}})
-        if facets_selector.has_key("brand"):
-            facets_dsl["brand"] = es_search_functions.addFilterToFacets(s, {'terms': {'field': 'brand', 'size': 5000}})
-        if facets_selector.has_key("origin_place"):
-            facets_dsl["origin_place"] = es_search_functions.addFilterToFacets(s,
-                                                    {'terms': {'field': 'origin_place',
-                                                    'size': 5000}})
+        for facet_key in ('brand', 'origin_place', 'dosage', 'prescription_type'):
+            if facets_selector.has_key(facet_key):
+                facets_dsl[facet_key] = es_search_functions.addFilterToFacets(
+                    s,
+                    {'terms': {'field': facet_key, 'size': 5000}})
+
         facets_result = {}
         if len(facets_dsl.keys()) > 0:
             s = s.facet_raw(**facets_dsl)
@@ -171,16 +171,22 @@ class ProductsSearch(BaseAPIView):
                 facets_result["categories"] = facet_categories_list
 
             if facets_selector.has_key("brand"):
-                facets_result["brand"] = [{"id": facet["term"],
-                                     "label": property_cache.get_name(site_id, "brand", facet["term"]),
-                                     "count": facet["count"]}
-                                     for facet in s.facet_counts().get("brand", [])]
+                facets_result["brand"] = []
+                for facet in s.facet_counts().get("brand", []):
+                    binfo = property_cache.get(site_id, "brand", facet["term"])
+                    brand = {"id": facet["term"],
+                             "label": binfo.get('name', '') if binfo else '',
+                             "brand_logo": binfo.get('brand_logo', '') if binfo else '',
+                             "count": facet["count"]}
+                    facets_result["brand"].append(brand)
 
-            if facets_selector.has_key("origin_place"):
-                facets_result["origin_place"] = [{"id": facet["term"],
-                                     "label": "",
-                                     "count": facet["count"]}
-                                     for facet in s.facet_counts().get("origin_place", [])]
+            for facet_key in ('origin_place', 'dosage', 'prescription_type'):
+                if facets_selector.has_key(facet_key):
+                    facets_result[facet_key] = [{"id": facet["term"],
+                                                 "label": "",
+                                                 "count": facet["count"]}
+                                                for facet in s.facet_counts().get(facet_key, [])]
+
         return s, facets_result
 
     def _validate(self, request):
@@ -262,10 +268,6 @@ class ProductsSearch(BaseAPIView):
                                     errors.append({"code": "INVALID_PARAM",
                                         "param_name": "filters",
                                         "message": u"'categories' can not contain more than 1 value, when facets of categories are in 'DIRECT_CHILDREN' model."})
-                        elif filter_key == 'sku_attr.usingsex':
-                            filter_details.append(u'通用')
-                        elif filter_key == 'sku_attr.season':
-                            filter_details.append(u'四季')
                         for filter_details_item in filter_details:
                             if not filter_validator(filter_details_item):
                                 errors.append({"code": "INVALID_PARAM",
@@ -312,7 +314,7 @@ class ProductsSearch(BaseAPIView):
         return errors
 
     DEFAULT_FACET_CATEGORY_MODE = "SUB_TREE"
-    VALID_SORT_FIELDS = ("price", "market_price", "item_level", "item_comment_num", "origin_place", 'sell_num', 'discount', 'sale_price', '_score')
+    VALID_SORT_FIELDS = ("price", "market_price", "item_level", "item_comment_num", "origin_place", 'sell_num', '_score')
     FILTER_FIELD_TYPE_VALIDATORS = {
         "price": is_float,
         "market_price": is_float,
@@ -324,34 +326,28 @@ class ProductsSearch(BaseAPIView):
         "origin_place": is_float,
         "brand": is_string,
         "prescription_type": is_string,
-        'discount': is_float,
-        'sale_price': is_float,
-        'sku_attr.usingsex': is_string,
-        'sku_attr.startmonth': is_float,
-        'sku_attr.endmonth': is_float,
-        'sku_attr.buildyear': is_float,
-        'sku_attr.stylecode': is_string,
-        'sku_attr.season': is_string,
-        'sku_attr.color': is_string,
-        'sku_attr.material': is_string,
-        'sku_attr.size': is_string,
-        'sku_attr.productid': is_string,
+        'dosage': is_string,
+        'prescription_type': is_float,
+        'channel': is_string
     }
 
     DEFAULT_FACETS = {
         "brand": {},
         "origin_place": {},
-        "categories": {"mode": DEFAULT_FACET_CATEGORY_MODE}
+        "categories": {"mode": DEFAULT_FACET_CATEGORY_MODE},
+        'dosage': {},
+        'prescription_type': {}
     }
 
-    SUPPORTED_FACETS = ["brand", "categories", "origin_place"]
+    SUPPORTED_FACETS = ["brand", "categories", "origin_place",
+                        "dosage", "prescription_type"]
 
     DEFAULT_FILTERS = {
         "available": [True]
     }
     PER_PAGE = 20
 
-    SEARCH_TERM_FIELDS = ["tags", 'item_name_no_analysis', 'keywords', 'sku', 'dosage', 'channel']
+    SEARCH_TERM_FIELDS = ["tags"]
 
     def post(self, request, format=None):
         return self.get(request, format)
@@ -370,7 +366,7 @@ class ProductsSearch(BaseAPIView):
                     if match_mode in ("MATCH_ALL", "MATCH_MORE_BETTER"):
                         term_field = search_config.get("term_field", None)
                         if term_field not in (self.SEARCH_TERM_FIELDS):
-                            return False, [{"code": "INVALIDPARAM", "param_name": "search_config",
+                            return False, [{"code": "INVALID_PARAM", "param_name": "search_config",
                                             "message": "search_config 'term_field' should be one of %s" \
                                                         % ",".join(self.SEARCH_TERM_FIELDS)}]
                     else:
@@ -478,8 +474,8 @@ class ProductsSearch(BaseAPIView):
                       },
                       "errors": []
                     }
+            update_item_brands(site_id, result['records'], property_cache)
             django_cache.set(search_cache_key, json.dumps(result), settings.CACHE_EXPIRY_SEARCH_RESULTS)
-
 
         return Response(result)
 
