@@ -351,7 +351,7 @@ class ProductsSearch(BaseAPIView):
     }
     PER_PAGE = 20
 
-    SEARCH_TERM_FIELDS = ["tags"]
+    SEARCH_TERM_FIELDS = ["tags", 'item_name_no_analysis', 'keywords', 'sku', 'dosage', 'channel']
 
     def post(self, request, format=None):
         return self.get(request, format)
