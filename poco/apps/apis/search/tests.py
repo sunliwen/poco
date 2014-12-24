@@ -298,23 +298,6 @@ class ItemsSearchViewTest(BaseAPITest):
         response = self.api_post(reverse("products-search"), data=body)
         self.assertEqual(response.data["info"]["total_result_count"], 1)
 
-        # test the sku field by term search
-        body = {
-            "q": "SKU10052",
-            "search_config": {"type": "SEARCH_TERMS",
-                            "match_mode": "MATCH_ALL",
-                            "term_field": "sku"
-                            },
-            "api_key": self.api_key
-        }
-        response = self.api_post(reverse("products-search"), data=body)
-        self.assertEqual(response.data["info"]["total_result_count"], 1)
-
-        body['q'] = 'SKU100'
-        response = self.api_post(reverse("products-search"), data=body)
-        self.assertEqual(response.data["info"]["total_result_count"], 0)
-
-
         # search the sku field
         body = {"api_key": self.api_key,
         "q": "SKU10052 奶粉"
