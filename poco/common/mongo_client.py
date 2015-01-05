@@ -440,6 +440,14 @@ class MongoClient:
         else:
             recent_history = items_list
 
+        weights = settings.SIMILARITY_WEIGHT.get(similarity_type, [])
+        wei_cnt = len(weights)
+        his_cnt = len(recent_history)
+        if his_cnt <= wei_cnt:
+            weight_dict = dict(zip(recent_history, weights[0:his_cnt]))
+        else:
+            weight_dict = dict(zip(recent_history[0:wei_cnt], weights))
+
         excludes_set = set(items_list + extra_excludes_list)
 
         # calculate weighted top list from recent browsing history
@@ -449,7 +457,7 @@ class MongoClient:
             for rec_item, score in recommended_items:
                 if rec_item not in excludes_set:
                     rec_map.setdefault(rec_item, [0, 0])
-                    rec_map[rec_item][0] += float(score)
+                    rec_map[rec_item][0] += (float(score) * weight_dict.get(row['item_id'], 1))
                     rec_map[rec_item][1] += 1
         rec_tuples = []
         for key in rec_map.keys():

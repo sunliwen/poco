@@ -229,6 +229,13 @@ TEMPLATE_DIRS = (
 
 DASHBOARD_AUTH = 'apps.web.dashboard.views.default_login_required'
 
+
+SIMILARITY_WEIGHT = {
+    # set the weight for recommender, just set the leading ones,
+    # system will add 1 for default
+    'V': []
+    }
+
 # in the end
 
 from local_settings import *
