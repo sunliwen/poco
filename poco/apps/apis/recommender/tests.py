@@ -1168,6 +1168,7 @@ class AdUnitTest(BaseRecommenderTest):
 
         # For /unit/item, if item_id=INULL, the ByHotIndex of full site should be used.
         response = self._recommender("U1", type="/unit/item", item_id="INULL", amount=5)
+        print response
         self.assertEqual([item["item_id"] for item in response.data["topn"]],
                         ["I123", "I124", "I125", "I126"])
 
