@@ -1135,7 +1135,7 @@ class MatchAnyKeywordProcessor(BaseSimpleResultRecommendationProcessor):
         return topn
 
 
-def IfEmptyTryNextProcessor(argument_processor, action_processor_chain, post_process_filters=[], extra_args_to_log=[], use_sub_process=False):
+def IfEmptyTryNextProcessor(argument_processor, action_processor_chain, post_process_filters=[], extra_args_to_log=[], use_sub_process_filter=False):
     # TODO: action_processors should be of BaseSimpleResultRecommendationProcessor
     # TODO: should check the argument list against those action processors
     class IfEmptyTryNextProcessor(BaseSimpleResultRecommendationProcessor):
@@ -1150,7 +1150,7 @@ def IfEmptyTryNextProcessor(argument_processor, action_processor_chain, post_pro
             return log
 
         def _process(self, site_id, args):
-            if not use_sub_process:
+            if not use_sub_process_filter:
                 return super(IfEmptyTryNextProcessor, self)._process(site_id, args)
             result = {'code': 0}
             for action_processor_class, extra_args_pipe in self.action_processor_chain:
@@ -1265,5 +1265,5 @@ recommender_registry.register("/unit/item",
                                       (GetByHotIndexProcessor,
                                        {"hot_index_type": "by_viewed"}) # This is the backup plan in case the hot index of specific categories is also empty
                                   ],
-                                  use_sub_process=True
+                                  use_sub_process_filter=True
                               ))
