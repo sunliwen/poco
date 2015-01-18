@@ -753,7 +753,7 @@ class BaseSimpleResultRecommendationProcessor(BaseRecommendationProcessor):
         req_id = self.generateReqId()
         # append ref parameters
         ref = self._getRef(args)
-        topn = self.getTopN(site_id, args)  # return TopN list
+        topn = exclude_item_id_in_args(site_id, args, self.getTopN(site_id, args))
         topn = self.reOrderTopN(site_id, topn)
 
         # apply filter
@@ -953,7 +953,7 @@ class GetByHotIndexProcessor(BaseSimpleResultRecommendationProcessor):
     def getRecommendationLog(self, args, req_id, recommended_items):
         log = BaseSimpleResultRecommendationProcessor.getRecommendationLog(self, args, req_id, recommended_items)
         log["category_id"] = args["category_id"]
-        log["brand"] = args["brand"]
+        log["brand"] = args.get("brand", None)
         return log
 
     def getTopN(self, site_id, args):
@@ -1135,7 +1135,7 @@ class MatchAnyKeywordProcessor(BaseSimpleResultRecommendationProcessor):
         return topn
 
 
-def IfEmptyTryNextProcessor(argument_processor, action_processor_chain, post_process_filters=[], extra_args_to_log=[]):
+def IfEmptyTryNextProcessor(argument_processor, action_processor_chain, post_process_filters=[], extra_args_to_log=[], use_sub_process_filter=False):
     # TODO: action_processors should be of BaseSimpleResultRecommendationProcessor
     # TODO: should check the argument list against those action processors
     class IfEmptyTryNextProcessor(BaseSimpleResultRecommendationProcessor):
@@ -1149,9 +1149,31 @@ def IfEmptyTryNextProcessor(argument_processor, action_processor_chain, post_pro
                 log[extra_arg] = args[extra_arg]
             return log
 
+        def _process(self, site_id, args):
+            if not use_sub_process_filter:
+                return super(IfEmptyTryNextProcessor, self)._process(site_id, args)
+            result = {'code': 0}
+            for action_processor_class, extra_args_pipe in self.action_processor_chain:
+                action_processor = action_processor_class(not_log_action=True)
+                action_processor.recommender_type = self.recommender_type
+                args = copy.deepcopy(args)
+                for extra_args_filler in extra_args_pipe:
+                    if isinstance(extra_args_filler, dict):
+                        args.update(extra_args_filler)
+                    else:
+                        extra_args_filler(site_id, args)
+                result = action_processor._process(site_id, args)
+                if result.get('topn'):
+                    break
+            return result
+
+
         # TODO
         def getRecommendationResultFilter(self, site_id, args):
-            return SimpleRecommendationResultFilter()
+            if args.get('item_id', ''):
+                return SameGroupRecommendationResultFilter(mongo_client, site_id, args["item_id"])
+            else:
+                return SimpleRecommendationResultFilter()
 
         def getTopN(self, site_id, args):
             topn = []
@@ -1191,8 +1213,11 @@ def fill_category_id_by_item_id(site_id, args):
 
 
 def exclude_item_id_in_args(site_id, args, topn):
-    item_id = args["item_id"]
-    return [item for item in topn if item_id != item[0]]
+    item_id = args.get("item_id", '')
+    if item_id:
+        return [item for item in topn if item_id != item[0]]
+    else:
+        return topn
 
 
 recommender_registry = RecommenderRegistry()
@@ -1240,5 +1265,5 @@ recommender_registry.register("/unit/item",
                                       (GetByHotIndexProcessor,
                                        {"hot_index_type": "by_viewed"}) # This is the backup plan in case the hot index of specific categories is also empty
                                   ],
-                                  post_process_filters=[exclude_item_id_in_args]
+                                  use_sub_process_filter=True
                               ))

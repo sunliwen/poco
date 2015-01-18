@@ -972,6 +972,22 @@ class GetByBrowsingHistoryTest(BaseRecommenderTest):
         self.assertEqual(last_raw_log["behavior"], "RecBOBH")
         self.assertEqual(last_raw_log["browsing_history"], ["K300", "K301", "I123", "I124"])
 
+        get_cache("default").clear()
+        self.insert_item_similarities("V", "I123",
+                    [["I124", 0.9725],
+                     ["I125", 0.3023]])
+        self.insert_item_similarities("V", "I124",
+                    [["I125", 0.9725],
+                     ["I126", 0.7050]])
+        response = self._recommender("U1", type="ByBrowsingHistory", amount=5)
+        self.assertEqual([item["item_id"] for item in response.data["topn"]],
+                        ["I126", "I125"])
+        # now we set the similary weight
+        settings.SIMILARITY_WEIGHT['V'] = [2, 2, 2]
+        response = self._recommender("U1", type="ByBrowsingHistory", amount=5)
+        self.assertEqual([item["item_id"] for item in response.data["topn"]],
+                        ["I125", "I126"])
+        settings.SIMILARITY_WEIGHT['V'] = []
 
     def test_view_item_affects_browsing_history(self):
         browsing_history_cache = self.get_browsing_history_cache()
@@ -1152,6 +1168,7 @@ class AdUnitTest(BaseRecommenderTest):
 
         # For /unit/item, if item_id=INULL, the ByHotIndex of full site should be used.
         response = self._recommender("U1", type="/unit/item", item_id="INULL", amount=5)
+        print response
         self.assertEqual([item["item_id"] for item in response.data["topn"]],
                         ["I123", "I124", "I125", "I126"])
 
