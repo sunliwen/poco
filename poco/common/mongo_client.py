@@ -435,12 +435,14 @@ class MongoClient:
 
     def calc_weighted_top_list_method1(self, site_id, similarity_type,
             items_list, extra_excludes_list=[]):
-        # here we got the latest items
+        # the new items added to the items_list, are appended to the end of the list
+        # here we have to get the latest 15 items, so we get the last 15 items
+        # from the items_list
         if len(items_list) > 15:
             recent_history = items_list[-15:]
         else:
             recent_history = items_list
-        # get the items in the time desc order
+        # some calc are item-order releated, so we have to get the items reversed
         recent_history = recent_history[::-1]
 
         weights = settings.SIMILARITY_WEIGHT.get(similarity_type, [])
