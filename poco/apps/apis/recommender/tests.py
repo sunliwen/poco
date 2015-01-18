@@ -892,6 +892,36 @@ class RecommenderTest(BaseRecommenderTest):
         response = self._recommender("U1", type="ByShoppingCart", shopping_cart="I123,I124", amount=5)
         self.assertEqual([item["item_id"] for item in response.data["topn"]], ["I125", "I126"])
 
+@override_settings(CELERY_EAGER_PROPAGATES_EXCEPTIONS=True,
+                   CELERY_ALWAYS_EAGER=True,
+                   BROKER_BACKEND='memory',
+                   SIMILARITY_WEIGHT = {'V': [2, 1, 1]})
+class SimilarityWeightTest(BaseRecommenderTest):
+    def setUp(self):
+        super(SimilarityWeightTest, self).setUp()
+        self.postItems(test_data1, None)
+
+    def test_SimilarityWeightInByBrowsingHistory(self):
+        self.insert_item_similarities("V", "I123",
+                    [["I126", 0.7050],
+                     ["I125", 0.3023]])
+        self.insert_item_similarities("V", "I124",
+                    [["I125", 0.9725],
+                     ["I124", 0.9725]])
+        self._viewItem("U1", "I123")
+        self._viewItem("U1", "I124")
+        get_cache("default").clear()
+        response = self._recommender("U1", type="ByBrowsingHistory", amount=5)
+        # the original resurt before we set similirity weight should be ['I126', 'I125']
+        self.assertEqual([item["item_id"] for item in response.data["topn"]],
+                        ["I125", "I126"])
+
+        self._viewItem("U1", "K300")
+        get_cache("default").clear()
+        response = self._recommender("U1", type="ByBrowsingHistory", amount=5)
+        # after we review another item, the 2 items has same weight, so we got the same result as default
+        self.assertEqual([item["item_id"] for item in response.data["topn"]],
+                        ["I126", "I125"])
 
 @override_settings(CELERY_EAGER_PROPAGATES_EXCEPTIONS=True,
                    CELERY_ALWAYS_EAGER=True,
@@ -982,12 +1012,6 @@ class GetByBrowsingHistoryTest(BaseRecommenderTest):
         response = self._recommender("U1", type="ByBrowsingHistory", amount=5)
         self.assertEqual([item["item_id"] for item in response.data["topn"]],
                         ["I126", "I125"])
-        # now we set the similary weight
-        settings.SIMILARITY_WEIGHT['V'] = [2, 2, 2]
-        response = self._recommender("U1", type="ByBrowsingHistory", amount=5)
-        self.assertEqual([item["item_id"] for item in response.data["topn"]],
-                        ["I125", "I126"])
-        settings.SIMILARITY_WEIGHT['V'] = []
 
     def test_view_item_affects_browsing_history(self):
         browsing_history_cache = self.get_browsing_history_cache()
