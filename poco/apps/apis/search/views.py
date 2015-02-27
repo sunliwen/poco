@@ -104,16 +104,16 @@ class ProductsSearch(BaseAPIView):
                 }
             s = s.query_raw(query)
 
-        #order_by_stock = [{"_script": {
-        #                        "script": "doc['stock'].value == 0?1:0",
-        #                        "type": "number",
-        #                        "order": "asc"
-        #                       }}]
+        order_by_stock = [] if settings.FILTER_EMPTY_STOCK else [{"_script": {
+                                "script": "doc['stock'].value == 0?1:0",
+                                "type": "number",
+                                "order": "asc"
+                               }}]
 
         if sort_fields == []:
             sort_fields = ["_score"]
 
-        #sort_fields = order_by_stock + sort_fields
+        sort_fields = order_by_stock + sort_fields
 
         s = s.order_by(*sort_fields)
 

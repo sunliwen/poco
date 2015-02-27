@@ -236,6 +236,8 @@ SIMILARITY_WEIGHT = {
     'V': []
     }
 
+FILTER_EMPTY_STOCK = True
+
 # in the end
 
 from local_settings import *

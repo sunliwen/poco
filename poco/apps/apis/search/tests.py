@@ -10,6 +10,7 @@ from apps.apis.search import es_search_functions
 from common.test_utils import BaseAPITest
 from common import test_data1
 from apps.apis.recommender.tasks import update_keyword_hot_view_list
+from django.conf import settings
 
 
 @override_settings(CELERY_EAGER_PROPAGATES_EXCEPTIONS=True,
@@ -71,7 +72,10 @@ class ItemsSearchViewSortByStockTest(BaseAPITest):
                 }
         response = self.api_post(reverse("products-search"), data=body)
         self.assertEqual(response.data["info"]["total_result_count"], 2)
-        self.assertEqual([rec["item_id"] for rec in response.data["records"]], ["I123", "I124"])
+
+        expect_reuslt = ["I124", "I123"] if settings.FILTER_EMPTY_STOCK else ["I123", "I124"]
+        self.assertEqual([rec["item_id"] for rec in response.data["records"]], expect_reuslt)
+
 
 
 # refs: http://stackoverflow.com/questions/4055860/unit-testing-with-django-celery
