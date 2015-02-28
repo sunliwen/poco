@@ -236,7 +236,7 @@ SIMILARITY_WEIGHT = {
     'V': []
     }
 
-FILTER_EMPTY_STOCK = True
+SEARCH_RESULT_ORDER_BY_STOCK = False
 
 # in the end
 

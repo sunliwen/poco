@@ -70,11 +70,25 @@ class ItemsSearchViewSortByStockTest(BaseAPITest):
         body = {"api_key": self.api_key,
                 "q": "能恩"
                 }
-        response = self.api_post(reverse("products-search"), data=body)
-        self.assertEqual(response.data["info"]["total_result_count"], 2)
 
-        expect_reuslt = ["I124", "I123"] if settings.FILTER_EMPTY_STOCK else ["I123", "I124"]
-        self.assertEqual([rec["item_id"] for rec in response.data["records"]], expect_reuslt)
+        origin_search_result_order_by_stock = settings.SEARCH_RESULT_ORDER_BY_STOCK
+
+        try:
+            self.clearCaches()
+            settings.SEARCH_RESULT_ORDER_BY_STOCK = False
+
+            response = self.api_post(reverse("products-search"), data=body)
+            self.assertEqual(response.data["info"]["total_result_count"], 2)
+            self.assertEqual([rec["item_id"] for rec in response.data["records"]], ["I124", "I123"])
+
+            self.clearCaches()
+            settings.SEARCH_RESULT_ORDER_BY_STOCK = True
+
+            response = self.api_post(reverse("products-search"), data=body)
+            self.assertEqual(response.data["info"]["total_result_count"], 2)
+            self.assertEqual([rec["item_id"] for rec in response.data["records"]], ["I123", "I124"])
+        finally:
+            settings.SEARCH_RESULT_ORDER_BY_STOCK = origin_search_result_order_by_stock
 
 
 
