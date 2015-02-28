@@ -10,6 +10,7 @@ from apps.apis.search import es_search_functions
 from common.test_utils import BaseAPITest
 from common import test_data1
 from apps.apis.recommender.tasks import update_keyword_hot_view_list
+from django.conf import settings
 
 
 @override_settings(CELERY_EAGER_PROPAGATES_EXCEPTIONS=True,
@@ -69,9 +70,26 @@ class ItemsSearchViewSortByStockTest(BaseAPITest):
         body = {"api_key": self.api_key,
                 "q": "能恩"
                 }
-        response = self.api_post(reverse("products-search"), data=body)
-        self.assertEqual(response.data["info"]["total_result_count"], 2)
-        self.assertEqual([rec["item_id"] for rec in response.data["records"]], ["I123", "I124"])
+
+        origin_search_result_order_by_stock = settings.SEARCH_RESULT_ORDER_BY_STOCK
+
+        try:
+            self.clearCaches()
+            settings.SEARCH_RESULT_ORDER_BY_STOCK = False
+
+            response = self.api_post(reverse("products-search"), data=body)
+            self.assertEqual(response.data["info"]["total_result_count"], 2)
+            self.assertEqual([rec["item_id"] for rec in response.data["records"]], ["I124", "I123"])
+
+            self.clearCaches()
+            settings.SEARCH_RESULT_ORDER_BY_STOCK = True
+
+            response = self.api_post(reverse("products-search"), data=body)
+            self.assertEqual(response.data["info"]["total_result_count"], 2)
+            self.assertEqual([rec["item_id"] for rec in response.data["records"]], ["I123", "I124"])
+        finally:
+            settings.SEARCH_RESULT_ORDER_BY_STOCK = origin_search_result_order_by_stock
+
 
 
 # refs: http://stackoverflow.com/questions/4055860/unit-testing-with-django-celery

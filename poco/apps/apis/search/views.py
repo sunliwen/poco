@@ -108,7 +108,7 @@ class ProductsSearch(BaseAPIView):
                                 "script": "doc['stock'].value == 0?1:0",
                                 "type": "number",
                                 "order": "asc"
-                               }}]
+                               }}] if settings.SEARCH_RESULT_ORDER_BY_STOCK else []
 
         if sort_fields == []:
             sort_fields = ["_score"]

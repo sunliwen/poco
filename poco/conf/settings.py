@@ -236,6 +236,8 @@ SIMILARITY_WEIGHT = {
     'V': []
     }
 
+SEARCH_RESULT_ORDER_BY_STOCK = False
+
 # in the end
 
 from local_settings import *
