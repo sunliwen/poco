@@ -113,7 +113,7 @@ class ProductsSearch(BaseAPIView):
         if sort_fields == []:
             sort_fields = ["_score"]
 
-        sort_fields = order_by_stock + sort_fields
+        sort_fields = sort_fields + order_by_stock
 
         s = s.order_by(*sort_fields)
 

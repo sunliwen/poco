@@ -47,20 +47,30 @@ class ItemsSearchViewSortByStockTest(BaseAPITest):
         self.assertEqual([rec["item_id"] for rec in response.data["records"]], ["I124", "I123"])
 
     def test_search(self):
-        items = [{"type": "product",
-                  "item_id": "I123",
-                  "item_name": "超级tian能恩",
-                  "item_link": "abc",
-                  "available": True,
-                  "stock": 1
+        items = [{
+                     "type": "product",
+                     "item_id": "I123",
+                     "item_name": "超级tian能恩",
+                     "item_link": "abc",
+                     "available": True,
+                     "stock": 1
                  },
-                 {"type": "product",
-                                   "item_id": "I124",
-                                   "item_name": "能恩",
-                                   "item_link": "abc",
-                                   "stock": 0,
-                                   "available": True
-                                  },
+                 {
+                     "type": "product",
+                     "item_id": "I124",
+                     "item_name": "能恩",
+                     "item_link": "abc",
+                     "stock": 0,
+                     "available": True
+                 },
+                 {
+                     "type": "product",
+                     "item_id": "I125",
+                     "item_name": "能恩",
+                     "item_link": "abc",
+                     "stock": 1,
+                     "available": True
+                 },
                  ]
         class A:
             def getItems(*args):
@@ -78,15 +88,15 @@ class ItemsSearchViewSortByStockTest(BaseAPITest):
             settings.SEARCH_RESULT_ORDER_BY_STOCK = False
 
             response = self.api_post(reverse("products-search"), data=body)
-            self.assertEqual(response.data["info"]["total_result_count"], 2)
-            self.assertEqual([rec["item_id"] for rec in response.data["records"]], ["I124", "I123"])
+            self.assertEqual(response.data["info"]["total_result_count"], 3)
+            self.assertEqual([rec["item_id"] for rec in response.data["records"]][2], "I123")
 
             self.clearCaches()
             settings.SEARCH_RESULT_ORDER_BY_STOCK = True
 
             response = self.api_post(reverse("products-search"), data=body)
-            self.assertEqual(response.data["info"]["total_result_count"], 2)
-            self.assertEqual([rec["item_id"] for rec in response.data["records"]], ["I123", "I124"])
+            self.assertEqual(response.data["info"]["total_result_count"], 3)
+            self.assertEqual([rec["item_id"] for rec in response.data["records"]], ["I125", "I124", "I123"])
         finally:
             settings.SEARCH_RESULT_ORDER_BY_STOCK = origin_search_result_order_by_stock
 
