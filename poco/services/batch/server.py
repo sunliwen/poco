@@ -112,6 +112,12 @@ class BaseFlow:
     def getWorkFile(self, file_name):
         return os.path.join(self.getWorkDir(), file_name)
 
+    def getCachedResultFile(self, file_name):
+        cache_dir = os.path.join(settings.cached_result_dir, site_id)
+        if not os.path.exists(cache_dir):
+            os.makedirs(cache_dir)
+        return os.path.join(cache_dir, file_name)
+
     def __call__(self):
         global CALC_SUCC
         writeFlowBegin(SITE_ID, self.__class__.__name__)
@@ -176,8 +182,10 @@ class PreprocessingFlow(BaseFlow):
     def do_backfill(self):
         from preprocessing import backfiller
         last_ts = None  # FIXME: load correct last_ts from somewhere
+        file_name = 'reversed_backfilled_raw_logs'
         bf = backfiller.BackFiller(connection, SITE_ID, last_ts,
-                                   self.getWorkFile("reversed_backfilled_raw_logs"))
+                                   self.getWorkFile(file_name),
+                                   self.getCachedResultFile(file_name))
         last_ts = bf.start()  # FIXME: save last_ts somewhere
 
     def do_reverse_reversed_backfilled_raw_logs(self):
