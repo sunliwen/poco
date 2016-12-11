@@ -39,4 +39,10 @@
     1. python manage.py runscript create_site --script-args=<site_id> <site_name> <api_prefix>
         * NOTE: please note down the api_key and api_token
         * The api_token is for private apis. see document of private apis for usage. (aka. items)
-
+== Crontab ==
+   Some routine work should be set up after the deploy is done.
+   1. clean the batch server calculate logs
+   ```Crontab
+   # Read the erase_batch_log.sh first, and set it up correctly
+   0 3 * * * crons_folder/erase_batch_log.sh
+   ```
