@@ -526,7 +526,7 @@ class Keywords(BaseAPIView):
             return Response({"keywords": [], "errors": errors})
 
         category_id = args.get("category_id", "null")
-        amount = args.get("amount", 5)
+        amount = int(args.get("amount", 5))
         site_id = self.getSiteID(args["api_key"])
         keywords = cached_result.get("KeywordHotView",
                                      site_id,

@@ -1054,21 +1054,21 @@ class HotKeywordsTest(BaseAPITest):
         update_keyword_hot_view_list.delay(self.TEST_SITE_ID)
 
         # Now we should get some result
-        body = {"api_key": self.api_key, "type": "hot", "amount": 1}
+        body = {"api_key": self.api_key, "type": "hot", "amount": "1"}
         response = self.api_post(reverse("keywords"), data=body)
         self.assertEqual(response.data["errors"], [])
         self.assertEqual(response.data["keywords"],
                          [u"感冒"]
                          )
 
-        body = {"api_key": self.api_key, "type": "hot", "amount": 2}
+        body = {"api_key": self.api_key, "type": "hot", "amount": "2"}
         response = self.api_post(reverse("keywords"), data=body)
         self.assertEqual(response.data["errors"], [])
         self.assertEqual(response.data["keywords"],
                          [u"感冒", u"牛黄"]
                          )
 
-        body = {"api_key": self.api_key, "type": "hot", "amount": 4}
+        body = {"api_key": self.api_key, "type": "hot", "amount": "4"}
         response = self.api_post(reverse("keywords"), data=body)
         self.assertEqual(response.data["errors"], [])
         self.assertEqual(response.data["keywords"],
@@ -1077,7 +1077,7 @@ class HotKeywordsTest(BaseAPITest):
 
         body = {"api_key": self.api_key,
                 "type": "hot",
-                "amount": 3
+                "amount": "3"
                }
         response = self.api_post(reverse("keywords"), data=body)
         self.assertEqual(response.data["errors"], [])
@@ -1092,7 +1092,7 @@ class HotKeywordsTest(BaseAPITest):
                                  **{"HTTP_AUTHORIZATION": "Token %s" % self.site_token})
         body = {"api_key": self.api_key,
                 "type": "hot",
-                "amount": 3
+                "amount": "3"
                }
         response = self.api_post(reverse("keywords"), data=body)
         self.assertEqual(response.data["errors"], [])
@@ -1107,7 +1107,7 @@ class HotKeywordsTest(BaseAPITest):
                                  **{"HTTP_AUTHORIZATION": "Token %s" % self.site_token})
         body = {"api_key": self.api_key,
                 "type": "hot",
-                "amount": 3
+                "amount": "3"
                }
         response = self.api_post(reverse("keywords"), data=body)
         self.assertEqual(response.data["errors"], [])
@@ -1116,7 +1116,7 @@ class HotKeywordsTest(BaseAPITest):
                          )
         body = {"api_key": self.api_key,
                 "type": "hot",
-                "amount": 4
+                "amount": "4"
                }
         response = self.api_post(reverse("keywords"), data=body)
         self.assertEqual(response.data["errors"], [])
