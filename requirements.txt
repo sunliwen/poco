@@ -2,7 +2,7 @@ BeautifulSoup==3.2.1
 Django==1.6.5
 Jinja2==2.7.2
 MarkupSafe==0.21
-Pygments==1.6
+Pygments==2.7.4
 South==0.8.4
 Sphinx==1.2.2
 amqp==1.4.5
