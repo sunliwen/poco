@@ -39,7 +39,7 @@ pymongo==2.7
 python-memcached==1.53
 pytz==2014.2
 redis==2.9.1
-requests==2.2.1
+requests==2.20.0
 simplejson==3.4.1
 six==1.6.1
 tornado==3.2.1
