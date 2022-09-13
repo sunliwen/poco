@@ -21,7 +21,7 @@ djangorestframework==2.3.13
 docutils==0.11
 elasticsearch==1.0.0
 elasticutils==0.9.1
-flower==0.6.0
+flower==1.2.0
 gevent==1.0.1
 greenlet==0.4.2
 gunicorn==18.0
